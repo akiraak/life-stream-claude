@@ -270,6 +270,60 @@ td .cat-input {
   background: #fff5f5;
 }
 
+/* セクション説明 */
+.section-desc {
+  font-size: 13px;
+  color: #888;
+  margin-bottom: 12px;
+}
+
+/* レシピカード */
+.recipe-ingredients {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  background: #f0f7ff;
+  border-radius: 6px;
+}
+
+.recipe-card {
+  background: #f8f8f8;
+  border-radius: 8px;
+  padding: 14px;
+  margin-top: 10px;
+}
+
+.recipe-card h3 {
+  font-size: 15px;
+  margin-bottom: 8px;
+  color: #333;
+}
+
+.recipe-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #888;
+  margin-top: 8px;
+  margin-bottom: 4px;
+}
+
+.recipe-card ul,
+.recipe-card ol {
+  padding-left: 20px;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.recipe-note {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #007aff;
+  padding: 6px 10px;
+  background: #f0f7ff;
+  border-radius: 4px;
+}
+
 /* レスポンシブ */
 @media (max-width: 600px) {
   .dashboard {

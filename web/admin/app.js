@@ -136,6 +136,59 @@ async function refresh() {
 // イベント
 deleteAllBtn.addEventListener('click', deleteAll);
 
+// レシピ推薦
+const recipeBtnEl = document.getElementById('recipe-btn');
+const recipeResponseEl = document.getElementById('recipe-response');
+
+function renderRecipes(data) {
+  const { items, recipes, rawResponse } = data;
+
+  let html = `<div class="recipe-ingredients">食材: ${items.map(i => escapeHtml(i)).join('、')}</div>`;
+
+  if (recipes.length === 0 && rawResponse) {
+    html += `<div class="claude-response">${escapeHtml(rawResponse)}</div>`;
+  } else {
+    recipes.forEach((r, i) => {
+      html += `<div class="recipe-card">`;
+      html += `<h3>${i + 1}. ${escapeHtml(r.title)}</h3>`;
+      html += `<div class="recipe-label">食材</div>`;
+      html += `<ul>${r.ingredients.map(ig => `<li>${escapeHtml(ig)}</li>`).join('')}</ul>`;
+      html += `<div class="recipe-label">手順</div>`;
+      html += `<ol>${r.steps.map(s => `<li>${escapeHtml(s)}</li>`).join('')}</ol>`;
+      if (r.note) {
+        html += `<div class="recipe-note">${escapeHtml(r.note)}</div>`;
+      }
+      html += `</div>`;
+    });
+  }
+
+  return html;
+}
+
+async function fetchRecipes() {
+  recipeBtnEl.disabled = true;
+  recipeResponseEl.style.display = '';
+  recipeResponseEl.className = 'claude-response loading';
+  recipeResponseEl.textContent = 'レシピを考えています...';
+
+  try {
+    const res = await api('GET', '/api/recipes/recommend');
+    if (res.success) {
+      recipeResponseEl.className = '';
+      recipeResponseEl.innerHTML = renderRecipes(res.data);
+    } else {
+      throw new Error(res.error || 'Unknown error');
+    }
+  } catch (err) {
+    recipeResponseEl.className = 'claude-response error';
+    recipeResponseEl.textContent = `エラー: ${err.message}`;
+  } finally {
+    recipeBtnEl.disabled = false;
+  }
+}
+
+recipeBtnEl.addEventListener('click', fetchRecipes);
+
 // Claude テスト
 const claudePromptEl = document.getElementById('claude-prompt');
 const claudeSendBtn = document.getElementById('claude-send');

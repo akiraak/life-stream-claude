@@ -68,6 +68,11 @@ export function deleteAllItems(): number {
   return result.changes;
 }
 
+export function getUncheckedItems(): ShoppingItem[] {
+  const db = getDatabase();
+  return db.prepare('SELECT * FROM shopping_items WHERE checked = 0 ORDER BY created_at DESC').all() as ShoppingItem[];
+}
+
 export function getStats(): { total: number; checked: number; unchecked: number } {
   const db = getDatabase();
   const total = (db.prepare('SELECT COUNT(*) as count FROM shopping_items').get() as { count: number }).count;

@@ -18,3 +18,7 @@
 - 2026-02-28 管理画面: サーバ状態モニタリング (ヘルスチェック + 統計)
 - 2026-02-28 管理用 API (GET/PUT/DELETE /api/admin/shopping, GET /api/admin/stats)
 - 2026-02-28 Claude Code CLI 連携 (POST /api/claude, claude-service.ts)
+
+## 2026-03
+- 2026-03-01 レシピ推薦 API (GET /api/recipes/recommend, recipes.ts)
+- 2026-03-01 管理画面: おすすめレシピ UI
