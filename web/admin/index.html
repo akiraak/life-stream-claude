@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>管理画面 - Life Stream</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>管理画面</h1>
+    <a href="/" class="link-back">買い物リストへ</a>
+  </header>
+
+  <div class="container">
+    <!-- ダッシュボード -->
+    <section class="dashboard">
+      <div class="card">
+        <div class="card-label">サーバ</div>
+        <div class="card-value" id="server-status">--</div>
+      </div>
+      <div class="card">
+        <div class="card-label">合計</div>
+        <div class="card-value" id="stat-total">0</div>
+      </div>
+      <div class="card">
+        <div class="card-label">未購入</div>
+        <div class="card-value" id="stat-unchecked">0</div>
+      </div>
+      <div class="card">
+        <div class="card-label">購入済</div>
+        <div class="card-value" id="stat-checked">0</div>
+      </div>
+    </section>
+
+    <!-- データテーブル -->
+    <section class="table-section">
+      <div class="table-header">
+        <h2>買い物リスト</h2>
+        <button id="delete-all" class="btn btn-danger">全件削除</button>
+      </div>
+
+      <div class="table-wrap">
+        <table id="items-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>名前</th>
+              <th>数量</th>
+              <th>カテゴリ</th>
+              <th>状態</th>
+              <th>作成日時</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="items-body"></tbody>
+        </table>
+      </div>
+
+      <div id="empty-message" class="empty" style="display:none">データがありません</div>
+    </section>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

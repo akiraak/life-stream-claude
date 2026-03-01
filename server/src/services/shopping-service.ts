@@ -65,3 +65,16 @@ export function deleteCheckedItems(): number {
   const result = db.prepare('DELETE FROM shopping_items WHERE checked = 1').run();
   return result.changes;
 }
+
+export function deleteAllItems(): number {
+  const db = getDatabase();
+  const result = db.prepare('DELETE FROM shopping_items').run();
+  return result.changes;
+}
+
+export function getStats(): { total: number; checked: number; unchecked: number } {
+  const db = getDatabase();
+  const total = (db.prepare('SELECT COUNT(*) as count FROM shopping_items').get() as { count: number }).count;
+  const checked = (db.prepare('SELECT COUNT(*) as count FROM shopping_items WHERE checked = 1').get() as { count: number }).count;
+  return { total, checked, unchecked: total - checked };
+}
