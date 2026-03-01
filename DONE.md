@@ -17,3 +17,4 @@
 - 2026-02-28 管理画面: データ一覧・インライン編集・削除・全件削除
 - 2026-02-28 管理画面: サーバ状態モニタリング (ヘルスチェック + 統計)
 - 2026-02-28 管理用 API (GET/PUT/DELETE /api/admin/shopping, GET /api/admin/stats)
+- 2026-02-28 Claude Code CLI 連携 (POST /api/claude, claude-service.ts)

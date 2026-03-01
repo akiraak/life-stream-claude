@@ -203,6 +203,73 @@ td .cat-input {
   font-size: 14px;
 }
 
+/* Claude テスト */
+.claude-section {
+  background: #fff;
+  border-radius: 10px;
+  padding: 16px;
+  margin-top: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+.claude-section h2 {
+  font-size: 1rem;
+  margin-bottom: 12px;
+}
+
+.claude-input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.claude-input-row input {
+  flex: 1;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 14px;
+}
+
+.claude-input-row input:focus {
+  outline: none;
+  border-color: #007aff;
+}
+
+.btn-send {
+  background: #007aff;
+  color: #fff;
+  min-width: 60px;
+}
+
+.btn-send:hover {
+  background: #0066dd;
+}
+
+.btn-send:disabled {
+  background: #aaa;
+  cursor: not-allowed;
+}
+
+.claude-response {
+  margin-top: 12px;
+  padding: 12px;
+  background: #f8f8f8;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.claude-response.loading {
+  color: #888;
+}
+
+.claude-response.error {
+  color: #ff3b30;
+  background: #fff5f5;
+}
+
 /* レスポンシブ */
 @media (max-width: 600px) {
   .dashboard {

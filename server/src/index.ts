@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import { errorHandler } from './middleware/error-handler';
 import { shoppingRouter } from './routes/shopping';
 import { adminRouter } from './routes/admin';
+import { claudeRouter } from './routes/claude';
 import { initDatabase } from './database';
 
 dotenv.config();
@@ -27,6 +28,7 @@ app.get('/api/health', (_req, res) => {
 // API ルート
 app.use('/api/shopping', shoppingRouter);
 app.use('/api/admin', adminRouter);
+app.use('/api/claude', claudeRouter);
 
 // エラーハンドリング
 app.use(errorHandler);

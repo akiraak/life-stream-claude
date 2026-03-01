@@ -136,6 +136,41 @@ async function refresh() {
 // イベント
 deleteAllBtn.addEventListener('click', deleteAll);
 
+// Claude テスト
+const claudePromptEl = document.getElementById('claude-prompt');
+const claudeSendBtn = document.getElementById('claude-send');
+const claudeResponseEl = document.getElementById('claude-response');
+
+async function sendClaude() {
+  const prompt = claudePromptEl.value.trim();
+  if (!prompt) return;
+
+  claudeSendBtn.disabled = true;
+  claudeResponseEl.style.display = '';
+  claudeResponseEl.className = 'claude-response loading';
+  claudeResponseEl.textContent = '応答を待っています...';
+
+  try {
+    const res = await api('POST', '/api/claude', { prompt });
+    if (res.success) {
+      claudeResponseEl.className = 'claude-response';
+      claudeResponseEl.textContent = res.data.response;
+    } else {
+      throw new Error(res.error || 'Unknown error');
+    }
+  } catch (err) {
+    claudeResponseEl.className = 'claude-response error';
+    claudeResponseEl.textContent = `エラー: ${err.message}`;
+  } finally {
+    claudeSendBtn.disabled = false;
+  }
+}
+
+claudeSendBtn.addEventListener('click', sendClaude);
+claudePromptEl.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') sendClaude();
+});
+
 // 初期読み込み
 checkHealth();
 refresh();
