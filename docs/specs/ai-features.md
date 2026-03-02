@@ -1,3 +1,8 @@
+---
+layout: default
+title: AI 機能アイデア一覧
+---
+
 # AI 機能アイデア一覧
 
 ## 概要

@@ -1,0 +1,8 @@
+title: Life Stream Docs
+description: Life Stream アプリ仕様書
+baseurl: /life-stream-claude
+markdown: kramdown
+kramdown:
+  input: GFM
+exclude:
+  - specs/design

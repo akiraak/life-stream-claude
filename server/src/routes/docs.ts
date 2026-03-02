@@ -21,8 +21,11 @@ docsRouter.get('/', (_req: Request, res: Response) => {
   const fileList = files.map(f => {
     const name = f.replace(/\.md$/, '');
     const content = fs.readFileSync(path.join(specsDir, f), 'utf-8');
-    const firstLine = content.split('\n').find(l => l.trim()) || name;
-    const title = firstLine.replace(/^#+\s*/, '');
+    // front matter の title: か、最初の # 行をタイトルとして取得
+    const titleMatch = content.match(/^---[\s\S]*?title:\s*(.+)[\s\S]*?---/);
+    const stripped = content.replace(/^---[\s\S]*?---\n*/, '');
+    const firstLine = stripped.split('\n').find(l => l.trim()) || name;
+    const title = titleMatch ? titleMatch[1].trim() : firstLine.replace(/^#+\s*/, '');
     return { file: f, name, title, type: 'md' as const };
   });
 
@@ -64,7 +67,9 @@ docsRouter.get('/specs/:file', (req: Request, res: Response) => {
     return;
   }
 
-  const md = fs.readFileSync(filePath, 'utf-8');
+  const raw = fs.readFileSync(filePath, 'utf-8');
+  // Jekyll front matter を除去
+  const md = raw.replace(/^---[\s\S]*?---\n*/, '');
   const html = marked(md) as string;
 
   // h2 見出しを抽出してサイドバー目次を生成
