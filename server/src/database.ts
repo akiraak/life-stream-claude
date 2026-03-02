@@ -46,5 +46,28 @@ export function initDatabase(): void {
     )
   `);
 
+  database.exec(`
+    CREATE TABLE IF NOT EXISTS purchase_history (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      item_name TEXT NOT NULL,
+      purchased_at TEXT DEFAULT (datetime('now'))
+    )
+  `);
+  database.exec(`
+    CREATE INDEX IF NOT EXISTS idx_purchase_history_name
+      ON purchase_history(item_name COLLATE NOCASE)
+  `);
+
+  // 既存のチェック済みアイテムを購入履歴にシード（初回のみ）
+  const historyCount = (database.prepare(
+    'SELECT COUNT(*) as count FROM purchase_history'
+  ).get() as { count: number }).count;
+  if (historyCount === 0) {
+    database.exec(`
+      INSERT INTO purchase_history (item_name, purchased_at)
+      SELECT name, updated_at FROM shopping_items WHERE checked = 1
+    `);
+  }
+
   console.log('Database initialized');
 }

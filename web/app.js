@@ -18,6 +18,11 @@ const modalDishSelect = document.getElementById('modal-dish-select');
 const modalOk = document.getElementById('modal-ok');
 const modalCancel = document.getElementById('modal-cancel');
 
+// サジェスト
+const suggestionsDropdown = document.getElementById('suggestions-dropdown');
+let suggestDebounceTimer = null;
+let selectedSuggestionIndex = -1;
+
 // 確認ダイアログ
 const confirmOverlay = document.getElementById('confirm-overlay');
 const confirmTitle = document.getElementById('confirm-title');
@@ -280,6 +285,7 @@ function openModal(mode, presetDishId) {
   }
   modalInput.focus();
   modalOverlay.classList.add('active');
+  if (mode === 'item') fetchSuggestions('');
 }
 
 // アイテム編集モーダル
@@ -304,6 +310,7 @@ function openEditModal(item) {
 function closeModal() {
   modalOverlay.classList.remove('active');
   modalMode = null;
+  hideSuggestions();
 }
 
 function submitModal() {
@@ -360,10 +367,97 @@ modalOverlay.addEventListener('click', (e) => {
   if (e.target === modalOverlay) closeModal();
 });
 
+// サジェスト機能
+async function fetchSuggestions(query) {
+  try {
+    const res = await api('GET', `/suggestions?q=${encodeURIComponent(query || '')}`);
+    if (res.success && res.data.length > 0) {
+      showSuggestions(res.data);
+    } else {
+      hideSuggestions();
+    }
+  } catch { hideSuggestions(); }
+}
+
+function showSuggestions(suggestions) {
+  suggestionsDropdown.innerHTML = '';
+  selectedSuggestionIndex = -1;
+  suggestions.forEach(s => {
+    const div = document.createElement('div');
+    div.className = 'suggestion-item';
+    div.innerHTML = `
+      <span class="suggestion-name">${escapeHtml(s.name)}</span>
+      <span class="suggestion-count">${s.count}回</span>
+    `;
+    div.addEventListener('click', () => selectSuggestion(s.name));
+    suggestionsDropdown.appendChild(div);
+  });
+  suggestionsDropdown.classList.add('active');
+}
+
+function hideSuggestions() {
+  suggestionsDropdown.classList.remove('active');
+  suggestionsDropdown.innerHTML = '';
+  selectedSuggestionIndex = -1;
+}
+
+function selectSuggestion(name) {
+  modalInput.value = name;
+  hideSuggestions();
+  modalInput.focus();
+}
+
+function updateSuggestionSelection() {
+  const items = suggestionsDropdown.querySelectorAll('.suggestion-item');
+  items.forEach((el, i) => el.classList.toggle('selected', i === selectedSuggestionIndex));
+  if (selectedSuggestionIndex >= 0 && items[selectedSuggestionIndex]) {
+    items[selectedSuggestionIndex].scrollIntoView({ block: 'nearest' });
+  }
+}
+
+modalInput.addEventListener('input', () => {
+  if (modalMode !== 'item') { hideSuggestions(); return; }
+  clearTimeout(suggestDebounceTimer);
+  const query = modalInput.value.trim();
+  suggestDebounceTimer = setTimeout(() => fetchSuggestions(query), 200);
+});
+
 modalInput.addEventListener('keydown', (e) => {
+  const isDropdownVisible = suggestionsDropdown.classList.contains('active');
+  const items = suggestionsDropdown.querySelectorAll('.suggestion-item');
+
+  if (isDropdownVisible && items.length > 0) {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      selectedSuggestionIndex = Math.min(selectedSuggestionIndex + 1, items.length - 1);
+      updateSuggestionSelection();
+      return;
+    }
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      selectedSuggestionIndex = Math.max(selectedSuggestionIndex - 1, -1);
+      updateSuggestionSelection();
+      return;
+    }
+    if (e.key === 'Enter' && selectedSuggestionIndex >= 0) {
+      e.preventDefault();
+      selectSuggestion(items[selectedSuggestionIndex].querySelector('.suggestion-name').textContent);
+      return;
+    }
+  }
+
   if (e.key === 'Enter') {
     e.preventDefault();
     submitModal();
+  }
+  if (e.key === 'Escape' && isDropdownVisible) {
+    hideSuggestions();
+  }
+});
+
+modal.addEventListener('click', (e) => {
+  if (e.target !== modalInput && !suggestionsDropdown.contains(e.target)) {
+    hideSuggestions();
   }
 });
 

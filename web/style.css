@@ -192,7 +192,7 @@ h1 {
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding-top: 15vh;
+  padding-top: 5vh;
   z-index: 200;
   opacity: 0;
   pointer-events: none;
@@ -230,6 +230,42 @@ h1 {
 }
 
 .modal-input:focus { outline: none; border-color: #fb923c; }
+
+/* サジェストドロップダウン */
+.suggestions-dropdown {
+  display: none;
+  background: #1c1c1c;
+  border: 1px solid #444;
+  border-top: none;
+  border-radius: 0 0 6px 6px;
+  max-height: 180px;
+  overflow-y: auto;
+  margin-top: -12px;
+  margin-bottom: 12px;
+}
+
+.suggestions-dropdown.active { display: block; }
+
+.suggestion-item {
+  padding: 10px 12px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #333;
+}
+
+.suggestion-item:last-child { border-bottom: none; }
+.suggestion-item:active, .suggestion-item.selected { background: #333; }
+
+.suggestion-name { color: #d4d4d4; font-size: 15px; }
+
+.suggestion-count {
+  color: #777;
+  font-size: 12px;
+  flex-shrink: 0;
+  margin-left: 8px;
+}
 
 .modal-dish-row { margin-bottom: 12px; }
 .modal-label { display: block; font-size: 13px; color: #777; margin-bottom: 4px; }

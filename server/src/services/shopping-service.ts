@@ -20,6 +20,11 @@ export interface UpdateItemInput {
   checked?: number;
 }
 
+export interface PurchaseSuggestion {
+  name: string;
+  count: number;
+}
+
 export function getAllItems(): ShoppingItem[] {
   const db = getDatabase();
   return db.prepare('SELECT * FROM shopping_items ORDER BY checked ASC, created_at DESC').all() as ShoppingItem[];
@@ -46,6 +51,11 @@ export function updateItem(id: number, input: UpdateItemInput): ShoppingItem | n
   db.prepare(
     "UPDATE shopping_items SET name = ?, category = ?, checked = ?, updated_at = datetime('now') WHERE id = ?"
   ).run(name, category, checked, id);
+
+  // チェック時に購入履歴を記録
+  if (input.checked === 1 && existing.checked === 0) {
+    recordPurchase(name);
+  }
 
   return db.prepare('SELECT * FROM shopping_items WHERE id = ?').get(id) as ShoppingItem;
 }
@@ -78,4 +88,30 @@ export function getStats(): { total: number; checked: number; unchecked: number 
   const total = (db.prepare('SELECT COUNT(*) as count FROM shopping_items').get() as { count: number }).count;
   const checked = (db.prepare('SELECT COUNT(*) as count FROM shopping_items WHERE checked = 1').get() as { count: number }).count;
   return { total, checked, unchecked: total - checked };
+}
+
+export function recordPurchase(itemName: string): void {
+  const db = getDatabase();
+  db.prepare('INSERT INTO purchase_history (item_name) VALUES (?)').run(itemName);
+}
+
+export function getSuggestions(query: string, limit: number = 10): PurchaseSuggestion[] {
+  const db = getDatabase();
+  if (!query) {
+    return db.prepare(`
+      SELECT item_name AS name, COUNT(*) AS count
+      FROM purchase_history
+      GROUP BY item_name COLLATE NOCASE
+      ORDER BY count DESC, MAX(purchased_at) DESC
+      LIMIT ?
+    `).all(limit) as PurchaseSuggestion[];
+  }
+  return db.prepare(`
+    SELECT item_name AS name, COUNT(*) AS count
+    FROM purchase_history
+    WHERE item_name LIKE ? COLLATE NOCASE
+    GROUP BY item_name COLLATE NOCASE
+    ORDER BY count DESC, MAX(purchased_at) DESC
+    LIMIT ?
+  `).all(`${query}%`, limit) as PurchaseSuggestion[];
 }
