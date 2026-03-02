@@ -37,10 +37,9 @@ const ingredientsLoading = document.getElementById('ingredients-loading');
 const ingredientsError = document.getElementById('ingredients-error');
 const ingredientsList = document.getElementById('ingredients-list');
 const ingredientsRecipes = document.getElementById('ingredients-recipes');
-const ingredientsAddRow = document.getElementById('ingredients-add-row');
-const ingredientsAdd = document.getElementById('ingredients-add');
 const ingredientsSkip = document.getElementById('ingredients-skip');
 const ingredientsRefresh = document.getElementById('ingredients-refresh');
+const ingredientsRefreshRow = document.getElementById('ingredients-refresh-row');
 
 // 確認ダイアログ
 const confirmOverlay = document.getElementById('confirm-overlay');
@@ -75,6 +74,18 @@ function escapeHtml(str) {
   const div = document.createElement('div');
   div.textContent = str;
   return div.innerHTML;
+}
+
+function highlightIngredients(text, ingredientNames, addedNames) {
+  if (!ingredientNames || !ingredientNames.length) return escapeHtml(text);
+  const sorted = [...ingredientNames].sort((a, b) => b.length - a.length);
+  const escaped = escapeHtml(text);
+  const pattern = sorted.map(n => escapeHtml(n).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
+  const regex = new RegExp(`(${pattern})`, 'g');
+  return escaped.replace(regex, (match) => {
+    const cls = addedNames && addedNames.has(match) ? 'recipe-ingredient added' : 'recipe-ingredient';
+    return `<span class="${cls}" data-name="${match}">${match}</span>`;
+  });
 }
 
 // アイテムがどの料理に紐づくか逆引きマップを作成
@@ -685,11 +696,8 @@ async function fetchIngredientsForModal(dishId, dishName) {
       // モーダルがまだ開いていてこの料理なら結果を表示
       if (ingredientsDishId === dishId) {
         ingredientsLoading.style.display = 'none';
-        const dish = dishes.find(d => d.id === dishId);
-        const existingNames = new Set((dish && dish.items || []).map(i => i.name));
-        const filtered = res.data.ingredients.filter(ing => !existingNames.has(ing.name));
-        renderIngredients(filtered);
-        renderRecipes(recipes);
+        renderIngredients(res.data.ingredients);
+        renderRecipes(recipes, res.data.ingredients);
       }
     } else {
       render();
@@ -717,12 +725,8 @@ function openIngredientsModalWithResults(dishId, dishName, ingredients, recipes)
   ingredientsHeader.style.display = '';
   ingredientsLoading.style.display = 'none';
   ingredientsError.style.display = 'none';
-  // 料理に既に追加されているアイテム名を取得して除外
-  const dish = dishes.find(d => d.id === dishId);
-  const existingNames = new Set((dish && dish.items || []).map(i => i.name));
-  const filtered = ingredients.filter(ing => !existingNames.has(ing.name));
-  renderIngredients(filtered);
-  renderRecipes(recipes || []);
+  renderIngredients(ingredients);
+  renderRecipes(recipes || [], ingredients);
   ingredientsOverlay.classList.add('active');
   updateBodyScroll();
 }
@@ -738,7 +742,6 @@ function openIngredientsModal(dishId, dishName) {
   ingredientsLoading.style.display = '';
   ingredientsError.style.display = 'none';
   ingredientsList.style.display = 'none';
-  ingredientsAddRow.style.display = 'none';
   ingredientsOverlay.classList.add('active');
   updateBodyScroll();
   fetchIngredients(dishId, dishName);
@@ -750,8 +753,8 @@ function closeIngredientsModal() {
   ingredientsDishId = null;
   ingredientsHeader.style.display = 'none';
   ingredientsTitleLoading.style.display = 'none';
-  ingredientsAddRow.style.display = 'none';
   if (ingredientsRecipes) ingredientsRecipes.style.display = 'none';
+  ingredientsRefreshRow.style.display = 'none';
 }
 
 async function fetchIngredients(dishId, dishName) {
@@ -782,52 +785,80 @@ async function fetchIngredients(dishId, dishName) {
 }
 
 function renderIngredients(ingredients) {
-  let html = '';
+  const dish = ingredientsDishId ? dishes.find(d => d.id === ingredientsDishId) : null;
+  const existingNames = new Set((dish && dish.items || []).map(i => i.name));
+
+  let html = '<div class="ingredients-hint">素材をタップすると追加されます</div>';
   ingredients.forEach(ing => {
-    html += `<span class="ingredient-chip" data-name="${escapeHtml(ing.name)}">${escapeHtml(ing.name)}</span>`;
+    const added = existingNames.has(ing.name);
+    html += `<span class="ingredient-chip${added ? ' selected' : ''}" data-name="${escapeHtml(ing.name)}">${escapeHtml(ing.name)}</span>`;
   });
   ingredientsList.innerHTML = html;
   ingredientsList.style.display = '';
-  ingredientsAddRow.style.display = '';
-
-  function updateAddBtnState() {
-    const hasSelected = ingredientsList.querySelector('.ingredient-chip.selected');
-    ingredientsAdd.classList.toggle('active', !!hasSelected);
-  }
-  updateAddBtnState();
 
   ingredientsList.querySelectorAll('.ingredient-chip').forEach(chip => {
-    chip.addEventListener('click', () => {
-      chip.classList.toggle('selected');
-      updateAddBtnState();
+    chip.addEventListener('click', async () => {
+      const name = chip.dataset.name;
+      if (chip.classList.contains('selected')) {
+        // 削除: 料理からアイテムを探して削除
+        const d = dishes.find(dd => dd.id === ingredientsDishId);
+        const dishItem = d && (d.items || []).find(i => i.name === name);
+        if (dishItem) {
+          chip.classList.remove('selected');
+          await api('DELETE', `/${dishItem.id}`);
+          items = items.filter(i => i.id !== dishItem.id);
+          await loadDishes();
+          render();
+          // レシピ内の同名食材も未追加状態に戻す
+          ingredientsRecipes.querySelectorAll(`.recipe-ingredient[data-name="${CSS.escape(name)}"]`).forEach(el => {
+            el.classList.remove('added');
+          });
+        }
+      } else {
+        // 追加
+        chip.classList.add('selected');
+        await addItem(name, ingredientsDishId);
+        // レシピ内の同名食材も追加済みに
+        ingredientsRecipes.querySelectorAll(`.recipe-ingredient[data-name="${CSS.escape(name)}"]`).forEach(el => {
+          el.classList.add('added');
+        });
+      }
     });
   });
 }
 
-function renderRecipes(recipes) {
+function renderRecipes(recipes, ingredients) {
   if (!ingredientsRecipes) return;
   if (!recipes || recipes.length === 0) {
     ingredientsRecipes.style.display = 'none';
+    ingredientsRefreshRow.style.display = '';
     return;
   }
+
+  // 具材名リストと既に追加済みの名前を取得
+  const ingredientNames = (ingredients || []).map(ing => ing.name);
+  const dish = ingredientsDishId ? dishes.find(d => d.id === ingredientsDishId) : null;
+  const addedNames = new Set((dish && dish.items || []).map(i => i.name));
+
   let html = '<div class="recipes-title">レシピ</div>';
   recipes.forEach((r, i) => {
     let stepsHtml = '';
     if (r.steps && r.steps.length > 0) {
       stepsHtml = `<ol class="recipe-steps" id="recipe-steps-${i}">`;
-      r.steps.forEach(s => { stepsHtml += `<li>${escapeHtml(s)}</li>`; });
+      r.steps.forEach(s => { stepsHtml += `<li>${highlightIngredients(s, ingredientNames, addedNames)}</li>`; });
       stepsHtml += '</ol>';
     }
     html += `
       <div class="recipe-card">
         <div class="recipe-card-title">${escapeHtml(r.title)}</div>
-        <div class="recipe-card-summary">${escapeHtml(r.summary)}</div>
+        <div class="recipe-card-summary">${highlightIngredients(r.summary, ingredientNames, addedNames)}</div>
         ${stepsHtml ? `<div class="recipe-detail-toggle" data-target="recipe-steps-${i}">▶ 詳細を見る</div>${stepsHtml}` : ''}
       </div>
     `;
   });
   ingredientsRecipes.innerHTML = html;
   ingredientsRecipes.style.display = '';
+  ingredientsRefreshRow.style.display = '';
 
   ingredientsRecipes.querySelectorAll('.recipe-detail-toggle').forEach(toggle => {
     toggle.addEventListener('click', () => {
@@ -838,40 +869,41 @@ function renderRecipes(recipes) {
       }
     });
   });
+
+  // 食材名タップで追加/削除トグル
+  ingredientsRecipes.querySelectorAll('.recipe-ingredient').forEach(span => {
+    span.addEventListener('click', async () => {
+      const name = span.dataset.name;
+      if (span.classList.contains('added')) {
+        // 削除
+        const d = dishes.find(dd => dd.id === ingredientsDishId);
+        const dishItem = d && (d.items || []).find(i => i.name === name);
+        if (dishItem) {
+          ingredientsRecipes.querySelectorAll(`.recipe-ingredient[data-name="${CSS.escape(name)}"]`).forEach(el => {
+            el.classList.remove('added');
+          });
+          ingredientsList.querySelectorAll(`.ingredient-chip[data-name="${CSS.escape(name)}"]`).forEach(el => {
+            el.classList.remove('selected');
+          });
+          await api('DELETE', `/${dishItem.id}`);
+          items = items.filter(i => i.id !== dishItem.id);
+          await loadDishes();
+          render();
+        }
+      } else {
+        // 追加
+        ingredientsRecipes.querySelectorAll(`.recipe-ingredient[data-name="${CSS.escape(name)}"]`).forEach(el => {
+          el.classList.add('added');
+        });
+        ingredientsList.querySelectorAll(`.ingredient-chip[data-name="${CSS.escape(name)}"]`).forEach(el => {
+          el.classList.add('selected');
+        });
+        await addItem(name, ingredientsDishId);
+      }
+    });
+  });
 }
 
-async function addSelectedIngredients() {
-  const chips = ingredientsList.querySelectorAll('.ingredient-chip.selected');
-  if (chips.length === 0) {
-    closeIngredientsModal();
-    return;
-  }
-
-  ingredientsAdd.disabled = true;
-  ingredientsAdd.textContent = '追加中…';
-
-  // 同じ料理に既にある名前を取得
-  const dish = dishes.find(d => d.id === ingredientsDishId);
-  const existingNames = new Set((dish && dish.items || []).map(i => i.name));
-
-  for (const chip of chips) {
-    const name = chip.dataset.name;
-    if (existingNames.has(name)) continue;
-    const res = await api('POST', '', { name });
-    if (res.success) {
-      items.unshift(res.data);
-      await api('POST', `/${ingredientsDishId}/items`, { itemId: res.data.id }, DISH_API);
-    }
-  }
-
-  await loadDishes();
-  render();
-  ingredientsAdd.disabled = false;
-  ingredientsAdd.textContent = '追加';
-  closeIngredientsModal();
-}
-
-ingredientsAdd.addEventListener('click', addSelectedIngredients);
 ingredientsSkip.addEventListener('click', closeIngredientsModal);
 ingredientsRefresh.addEventListener('click', () => {
   const dishId = ingredientsDishId;
@@ -880,8 +912,8 @@ ingredientsRefresh.addEventListener('click', () => {
   ingredientsCache.delete(dishId);
   // モーダル内をローディング状態に
   ingredientsList.style.display = 'none';
-  ingredientsAddRow.style.display = 'none';
   if (ingredientsRecipes) ingredientsRecipes.style.display = 'none';
+  ingredientsRefreshRow.style.display = 'none';
   ingredientsError.style.display = 'none';
   ingredientsLoading.style.display = '';
   fetchIngredientsForModal(dishId, cached.dishName);

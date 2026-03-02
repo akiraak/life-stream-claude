@@ -410,28 +410,24 @@ body.modal-open { overflow: hidden; }
 
 .ingredients-header-btn:active { opacity: 0.7; }
 
-.ingredients-header-refresh {
-  color: #fb923c;
-}
 
-.ingredients-add-btn {
-  width: auto;
-  margin: 12px auto 4px;
-  padding: 8px 32px;
-  background: none;
-  border: 1px solid #555;
-  color: #555;
-  font-size: 14px;
-  font-weight: 400;
-  transition: all 0.15s;
+
+.ingredients-refresh-btn {
   display: block;
+  width: 100%;
+  padding: 14px;
+  margin: 16px 0;
+  background: none;
+  border: 1px solid #444;
+  border-radius: 8px;
+  color: #fb923c;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
 }
 
-.ingredients-add-btn.active {
-  background: #fb923c;
-  border-color: #fb923c;
-  color: #000;
-  font-weight: 600;
+.ingredients-refresh-btn:active {
+  opacity: 0.7;
 }
 
 .ingredients-loading {
@@ -456,6 +452,14 @@ body.modal-open { overflow: hidden; }
   font-size: 14px;
   text-align: center;
   padding: 16px 0;
+}
+
+.ingredients-hint {
+  width: 100%;
+  font-size: 12px;
+  color: #666;
+  text-align: center;
+  margin-bottom: 4px;
 }
 
 .ingredients-list {
@@ -546,6 +550,17 @@ body.modal-open { overflow: hidden; }
 
 .recipe-steps li {
   margin-bottom: 4px;
+}
+
+.recipe-ingredient {
+  color: #888;
+  cursor: pointer;
+  border-bottom: 1px dashed rgba(251,146,60,0.4);
+}
+
+.recipe-ingredient.added {
+  color: #fb923c;
+  border-bottom-color: transparent;
 }
 
 /* 横向き防止 */
