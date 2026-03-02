@@ -7,6 +7,7 @@ import {
   linkItemToDish,
   unlinkItemFromDish,
   getDishSuggestions,
+  updateDishInfo,
 } from '../services/dish-service';
 import { askGemini } from '../services/gemini-service';
 
@@ -130,9 +131,23 @@ dishesRouter.post('/:id/suggest-ingredients', async (req: Request, res: Response
       return;
     }
 
+    // DBにキャッシュがあればそれを返す
+    if (dish.ingredients_json) {
+      const ingredients = JSON.parse(dish.ingredients_json);
+      const recipes = dish.recipes_json ? JSON.parse(dish.recipes_json) : [];
+      res.json({
+        success: true,
+        data: { dishId: dish.id, dishName: dish.name, ingredients, recipes },
+        error: null,
+      });
+      return;
+    }
+
+    // Gemini呼び出し → DB保存
     const prompt = buildDishInfoPrompt(dish.name);
     const raw = await askGemini(prompt);
     const info = parseDishInfo(raw);
+    updateDishInfo(dish.id, info.ingredients, info.recipes);
 
     res.json({
       success: true,

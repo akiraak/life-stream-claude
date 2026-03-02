@@ -3,6 +3,8 @@ import { getDatabase } from '../database';
 export interface Dish {
   id: number;
   name: string;
+  ingredients_json: string | null;
+  recipes_json: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -36,10 +38,24 @@ export function getDish(id: number): DishWithItems | null {
 
 export function createDish(name: string): DishWithItems {
   const db = getDatabase();
-  const result = db.prepare('INSERT INTO dishes (name) VALUES (?)').run(name);
-  const dish = db.prepare('SELECT * FROM dishes WHERE id = ?').get(result.lastInsertRowid) as Dish;
-  recordDishHistory(name);
-  return { ...dish, items: [] };
+  // 同名の最新料理からAI情報を引き継ぐ
+  const prev = db.prepare(
+    'SELECT ingredients_json, recipes_json FROM dishes WHERE name = ? COLLATE NOCASE AND ingredients_json IS NOT NULL ORDER BY created_at DESC LIMIT 1'
+  ).get(name) as { ingredients_json: string; recipes_json: string } | undefined;
+
+  if (prev) {
+    const result = db.prepare(
+      'INSERT INTO dishes (name, ingredients_json, recipes_json) VALUES (?, ?, ?)'
+    ).run(name, prev.ingredients_json, prev.recipes_json);
+    const dish = db.prepare('SELECT * FROM dishes WHERE id = ?').get(result.lastInsertRowid) as Dish;
+    recordDishHistory(name);
+    return { ...dish, items: [] };
+  } else {
+    const result = db.prepare('INSERT INTO dishes (name) VALUES (?)').run(name);
+    const dish = db.prepare('SELECT * FROM dishes WHERE id = ?').get(result.lastInsertRowid) as Dish;
+    recordDishHistory(name);
+    return { ...dish, items: [] };
+  }
 }
 
 export function deleteDish(id: number): boolean {
@@ -73,6 +89,12 @@ export function unlinkItemFromDish(dishId: number, itemId: number): boolean {
   const db = getDatabase();
   const result = db.prepare('DELETE FROM dish_items WHERE dish_id = ? AND item_id = ?').run(dishId, itemId);
   return result.changes > 0;
+}
+
+export function updateDishInfo(id: number, ingredients: unknown[], recipes: unknown[]): void {
+  const db = getDatabase();
+  db.prepare('UPDATE dishes SET ingredients_json = ?, recipes_json = ? WHERE id = ?')
+    .run(JSON.stringify(ingredients), JSON.stringify(recipes), id);
 }
 
 export interface DishSuggestion {

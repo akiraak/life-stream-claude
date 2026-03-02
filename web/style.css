@@ -221,6 +221,8 @@ h1 {
 
 .modal-overlay.active { opacity: 1; pointer-events: auto; }
 
+body.modal-open { overflow: hidden; }
+
 .modal {
   background: #242424;
   border-radius: 12px;
@@ -418,13 +420,14 @@ h1 {
 }
 
 .recipe-card-summary {
-  font-size: 13px;
-  color: #888;
-  margin-bottom: 6px;
+  font-size: 14px;
+  color: #999;
+  margin-bottom: 8px;
+  line-height: 1.5;
 }
 
 .recipe-detail-toggle {
-  font-size: 12px;
+  font-size: 14px;
   color: #fb923c;
   cursor: pointer;
   user-select: none;
@@ -435,8 +438,9 @@ h1 {
   display: none;
   margin-top: 8px;
   padding-left: 20px;
-  font-size: 13px;
-  color: #bbb;
+  line-height: 1.6;
+  font-size: 14px;
+  color: #ccc;
 }
 
 .recipe-steps.open { display: block; }

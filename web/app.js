@@ -52,6 +52,14 @@ let modalMode = null; // 'item' | 'dish' | 'edit'
 let editingItem = null; // 編集中のアイテム
 let confirmResolve = null;
 
+// モーダル開閉時のスクロール制御
+function updateBodyScroll() {
+  const anyOpen = modalOverlay.classList.contains('active')
+    || ingredientsOverlay.classList.contains('active')
+    || confirmOverlay.classList.contains('active');
+  document.body.classList.toggle('modal-open', anyOpen);
+}
+
 // API 通信
 async function api(method, path = '', body = null, base = API) {
   const opts = { method, headers: { 'Content-Type': 'application/json' } };
@@ -198,6 +206,14 @@ async function loadDishes() {
   const res = await api('GET', '', null, DISH_API);
   if (res.success) {
     dishes = res.data;
+    // DBに保存済みのAI情報をキャッシュに復元
+    dishes.forEach(d => {
+      if (d.ingredients_json && !ingredientsCache.has(d.id)) {
+        const ingredients = JSON.parse(d.ingredients_json);
+        const recipes = d.recipes_json ? JSON.parse(d.recipes_json) : [];
+        ingredientsCache.set(d.id, { dishName: d.name, ingredients, recipes });
+      }
+    });
     updateDishSelect();
     render();
   }
@@ -257,10 +273,22 @@ async function removeItem(id) {
 async function addDish(name) {
   const res = await api('POST', '', { name }, DISH_API);
   if (res.success) {
-    dishes.unshift(res.data);
+    const dish = res.data;
+    dishes.unshift(dish);
     updateDishSelect();
-    render();
-    fetchIngredientsInBackground(res.data.id, res.data.name);
+    // 前回の同名料理からAI情報を引き継いでいる場合
+    if (dish.ingredients_json) {
+      const ingredients = JSON.parse(dish.ingredients_json);
+      const recipes = dish.recipes_json ? JSON.parse(dish.recipes_json) : [];
+      ingredientsCache.set(dish.id, { dishName: dish.name, ingredients, recipes });
+      render();
+      if (!isAnyModalOpen()) {
+        openIngredientsModalWithResults(dish.id, dish.name, ingredients, recipes);
+      }
+    } else {
+      render();
+      fetchIngredientsInBackground(dish.id, dish.name);
+    }
   }
 }
 
@@ -283,12 +311,14 @@ function showConfirm(title, message) {
     confirmTitle.textContent = title;
     confirmMessage.textContent = message;
     confirmOverlay.classList.add('active');
+    updateBodyScroll();
     confirmResolve = resolve;
   });
 }
 
 function closeConfirm(result) {
   confirmOverlay.classList.remove('active');
+  updateBodyScroll();
   if (confirmResolve) {
     confirmResolve(result);
     confirmResolve = null;
@@ -320,6 +350,7 @@ function openModal(mode, presetDishId) {
   }
   modalInput.focus();
   modalOverlay.classList.add('active');
+  updateBodyScroll();
   if (mode === 'item' || mode === 'dish') fetchSuggestions('');
 }
 
@@ -340,10 +371,12 @@ function openEditModal(item) {
 
   modalInput.focus();
   modalOverlay.classList.add('active');
+  updateBodyScroll();
 }
 
 function closeModal() {
   modalOverlay.classList.remove('active');
+  updateBodyScroll();
   modalMode = null;
   hideSuggestions();
 }
@@ -539,6 +572,7 @@ function openIngredientsModalWithResults(dishId, dishName, ingredients, recipes)
   renderIngredients(filtered);
   renderRecipes(recipes || []);
   ingredientsOverlay.classList.add('active');
+  updateBodyScroll();
 }
 
 // 具材提案モーダル
@@ -552,11 +586,13 @@ function openIngredientsModal(dishId, dishName) {
   ingredientsList.style.display = 'none';
   ingredientsActions.style.display = 'none';
   ingredientsOverlay.classList.add('active');
+  updateBodyScroll();
   fetchIngredients(dishId, dishName);
 }
 
 function closeIngredientsModal() {
   ingredientsOverlay.classList.remove('active');
+  updateBodyScroll();
   ingredientsDishId = null;
   if (ingredientsRecipes) ingredientsRecipes.style.display = 'none';
 }

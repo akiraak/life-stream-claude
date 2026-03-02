@@ -70,6 +70,16 @@ export function initDatabase(): void {
       ON dish_history(dish_name COLLATE NOCASE)
   `);
 
+  // dishes テーブルに AI 情報カラムを追加（マイグレーション）
+  const dishColumns = database.prepare("PRAGMA table_info(dishes)").all() as { name: string }[];
+  const columnNames = dishColumns.map(c => c.name);
+  if (!columnNames.includes('ingredients_json')) {
+    database.exec('ALTER TABLE dishes ADD COLUMN ingredients_json TEXT');
+  }
+  if (!columnNames.includes('recipes_json')) {
+    database.exec('ALTER TABLE dishes ADD COLUMN recipes_json TEXT');
+  }
+
   // 既存の料理を料理履歴にシード（初回のみ）
   const dishHistoryCount = (database.prepare(
     'SELECT COUNT(*) as count FROM dish_history'
