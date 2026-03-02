@@ -298,7 +298,6 @@ function openEditModal(item) {
   modalDishSelect.value = dishIds.length > 0 ? dishIds[0] : '';
 
   modalInput.focus();
-  modalInput.select();
   modalOverlay.classList.add('active');
 }
 
