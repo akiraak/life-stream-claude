@@ -1,0 +1,58 @@
+<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Design 15 - Sidebar Layout</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f0f2f5;color:#333;line-height:1.7}
+.nav{display:flex;flex-wrap:wrap;gap:6px;padding:12px 16px;background:#2b2d42;font-size:12px;position:sticky;top:0;z-index:10}
+.nav a{color:#8d99ae;text-decoration:none}.nav a:hover{color:#ef233c}.nav .cur{font-weight:700;color:#ef233c}.nav .back{margin-left:auto;color:#ef233c}
+.layout{display:flex;max-width:960px;margin:0 auto;gap:0}
+.sidebar{width:220px;background:#2b2d42;min-height:calc(100vh - 44px);padding:24px 16px;flex-shrink:0}
+.sidebar h3{color:#ef233c;font-size:0.8rem;text-transform:uppercase;letter-spacing:2px;margin-bottom:12px}
+.sidebar ul{list-style:none}
+.sidebar li{margin-bottom:4px}
+.sidebar a{color:#8d99ae;text-decoration:none;font-size:13px;display:block;padding:6px 8px;border-radius:4px}
+.sidebar a:hover{background:#3a3d56;color:#fff}
+.sidebar .active{background:#ef233c;color:#fff}
+.main{flex:1;padding:32px 24px;min-width:0}
+h1{font-size:1.5rem;margin-bottom:20px;color:#2b2d42}
+h2{font-size:1.15rem;margin:28px 0 12px;color:#2b2d42;border-left:4px solid #ef233c;padding-left:12px}
+h3{font-size:1rem;margin:16px 0 8px}
+p{margin-bottom:12px;color:#555}
+table{width:100%;border-collapse:collapse;margin:16px 0}
+th,td{padding:10px 14px;text-align:left;border-bottom:1px solid #e0e0e0}
+th{font-weight:600;color:#2b2d42;border-bottom:2px solid #2b2d42}
+pre{background:#2b2d42;color:#edf2f4;padding:16px;border-radius:8px;overflow-x:auto;margin:16px 0}
+code{font-family:'SF Mono',monospace;font-size:0.85em;color:#ef233c}
+pre code{color:#edf2f4}
+blockquote{border-left:3px solid #ef233c;padding:8px 16px;margin:16px 0;background:#fdf2f4;border-radius:0 8px 8px 0}
+@media(max-width:768px){.sidebar{display:none}.layout{flex-direction:column}}
+</style></head><body>
+<nav class="nav"><a href="design-01.html">01.Minimal</a> <a href="design-02.html">02.Dark</a> <a href="design-03.html">03.GitHub</a> <a href="design-04.html">04.Notion</a> <a href="design-05.html">05.Apple</a> <a href="design-06.html">06.Material</a> <a href="design-07.html">07.Newspaper</a> <a href="design-08.html">08.Terminal</a> <a href="design-09.html">09.Pastel</a> <a href="design-10.html">10.Japanese</a> <a href="design-11.html">11.Glass</a> <a href="design-12.html">12.Brutalist</a> <a href="design-13.html">13.Neumorphism</a> <a href="design-14.html">14.Retro</a> <span class="cur">15.Sidebar</span> <a href="design-16.html">16.Magazine</a> <a href="design-17.html">17.Blueprint</a> <a href="design-18.html">18.Warm</a> <a href="design-19.html">19.Colorful</a> <a href="design-20.html">20.Monochrome</a> <a href="/docs/" class="back">← 一覧へ</a></nav>
+<div class="layout">
+<aside class="sidebar">
+<h3>目次</h3>
+<ul>
+<li><a href="#" class="active">概要</a></li>
+<li><a href="#">機能一覧</a></li>
+<li><a href="#">API エンドポイント</a></li>
+</ul>
+</aside>
+<div class="main"><h1>買い物リスト機能 仕様書</h1>
+<h2>概要</h2>
+<p>日常の買い物管理を支援するシンプルなリスト機能。Web ブラウザおよび iOS アプリから利用可能。</p>
+<h2>機能一覧</h2>
+<table><thead><tr><th>機能</th><th>説明</th></tr></thead><tbody>
+<tr><td>アイテム追加</td><td>名前を入力してリストに追加</td></tr>
+<tr><td>アイテム削除</td><td>個別に削除</td></tr>
+<tr><td>チェック</td><td>購入済みアイテムをチェックし非表示にする</td></tr>
+<tr><td>一覧表示</td><td>未チェックのアイテムのみ表示</td></tr>
+</tbody></table>
+<h2>API エンドポイント</h2>
+<h3>GET /api/shopping</h3>
+<p>未チェックのアイテム一覧を取得する。</p>
+<h3>POST /api/shopping</h3>
+<p>新しいアイテムを追加する。</p>
+<pre><code>{ "name": "牛乳" }</code></pre>
+<blockquote><p>全 API 共通のレスポンス形式: <code>{ success, data, error }</code></p></blockquote></div>
+</div>
+</body></html>

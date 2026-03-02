@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Warm Earth デザイン案一覧</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Segoe UI', -apple-system, sans-serif;
+  background: #f0ebe4;
+  color: #3d3530;
+  line-height: 1.6;
+}
+.header {
+  background: linear-gradient(135deg, #7f5539, #5a3e28);
+  padding: 36px 20px 28px;
+  text-align: center;
+  color: #fff;
+}
+.header h1 { font-size: 1.5rem; font-weight: 600; letter-spacing: 1px; margin-bottom: 6px; }
+.header p { color: #ddb892; font-size: 14px; margin-bottom: 12px; }
+.header a { color: #eedcca; text-decoration: none; font-size: 13px; }
+.header a:hover { text-decoration: underline; }
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 20px;
+  padding: 28px 20px;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+.card {
+  background: #fdfbf8;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid #e6d5c3;
+  transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+}
+.card:hover {
+  border-color: #bc6c25;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(90, 62, 40, 0.12);
+}
+.preview {
+  width: 100%;
+  height: 260px;
+  border: none;
+  background: #faf7f2;
+  pointer-events: none;
+}
+.card-link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+.card-info {
+  padding: 14px 16px 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.card-info .name { font-size: 15px; font-weight: 600; color: #5a3e28; }
+.card-info .num { font-size: 11px; color: #9c6644; background: #f5ebe0; padding: 2px 10px; border-radius: 10px; font-weight: 600; }
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px 16px 14px;
+}
+.tag {
+  font-size: 11px;
+  padding: 2px 10px;
+  border-radius: 10px;
+  background: #f5ebe0;
+  color: #7f5539;
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>WARM EARTH DESIGNS</h1>
+  <p>Design 18 ベースの Warm Earth バリエーション 20パターン</p>
+  <a href="/docs/">← ドキュメント一覧へ戻る</a> &nbsp; <a href="design-index.html">初回デザイン案へ</a>
+</div>
+
+<div class="grid">
+  <div class="card"><a href="design-warm-01.html" class="card-link"><iframe src="design-warm-01.html" class="preview" tabindex="-1" loading="lazy"></iframe><div class="card-info"><span class="name">Standard</span><span class="num">#01</span></div></a><div class="tags"><span class="tag">基本改良</span><span class="tag">コントラスト向上</span></div></div>
+
+  <div class="card"><a href="design-warm-02.html" class="card-link"><iframe src="design-warm-02.html" class="preview" tabindex="-1" loading="lazy"></iframe><div class="card-info"><span class="name">Airy</span><span class="num">#02</span></div></a><div class="tags"><span class="tag">余白たっぷり</span><span class="tag">広い行間</span></div></div>
+
+  <div class="card"><a href="design-warm-03.html" class="card-link"><iframe src="design-warm-03.html" class="preview" tabindex="-1" loading="lazy"></iframe><div class="card-info"><span class="name">Card</span><span class="num">#03</span></div></a><div class="tags"><span class="tag">カード分割</span><span class="tag">セクション区切り</span></div></div>
+
+  <div class="card"><a href="design-warm-04.html" class="card-link"><iframe src="design-warm-04.html" class="preview" tabindex="-1" loading="lazy"></iframe><div class="card-info"><span class="name">Sidebar</span><span class="num">#04</span></div></a><div class="tags"><span class="tag">サイドバー目次</span><span class="tag">2カラム</span></div></div>
+
+  <div class="card"><a href="design-warm-05.html" class="card-link"><iframe src="design-warm-05.html" class="preview" tabindex="-1" loading="lazy"></iframe><div class="card-info"><span class="name">Dark</span><span class="num">#05</span></div></a><div class="tags"><span class="tag">ダークモード</span><span class="tag">目に優しい</span></div></div>
+
+  <div class="card"><a href="design-warm-06.html" class="card-link"><iframe src="design-warm-06.html" class="preview" tabindex="-1" loading="lazy"></iframe><div class="card-info"><span class="name">Serif</span><span class="num">#06</span></div></a><div class="tags"><span class="tag">明朝体</span><span class="tag">文書風</span></div></div>
+
+  <div class="card"><a href="design-warm-07.html" class="card-link"><iframe src="design-warm-07.html" class="preview" tabindex="-1" loading="lazy"></iframe><div class="card-info"><span class="name">Compact</span><span class="num">#07</span></div></a><div class="tags"><span class="tag">情報密度高</span><span class="tag">小さめ文字</span></div></div>
+
+  <div class="card"><a href="design-warm-08.html" class="card-link"><iframe src="design-warm-08.html" class="preview" tabindex="-1" loading="lazy"></iframe><div class="card-info"><span class="name">Large</span><span class="num">#08</span></div></a><div class="tags"><span class="tag">大きめ文字</span><span class="tag">アクセシブル</span></div></div>
+
+  <div class="card"><a href="design-warm-09.html" class="card-link"><iframe src="design-warm-09.html" class="preview" tabindex="-1" loading="lazy"></iframe><div class="card-info"><span class="name">Bordered</span><span class="num">#09</span></div></a><div class="tags"><span class="tag">枠線区切り</span><span class="tag">構造明確</span></div></div>
+
+  <div class="card"><a href="design-warm-10.html" class="card-link"><iframe src="design-warm-10.html" class="preview" tabindex="-1" loading="lazy"></iframe><div class="card-info"><span class="name">Olive</span><span class="num">#10</span></div></a><div class="tags"><span class="tag">オリーブ色</span><span class="tag">自然派</span></div></div>
+
+  <div class="card"><a href="design-warm-11.html" class="card-link"><iframe src="design-warm-11.html" class="preview" tabindex="-1" loading="lazy"></iframe><div class="card-info"><span class="name">Terracotta</span><span class="num">#11</span></div></a><div class="tags"><span class="tag">テラコッタ</span><span class="tag">赤みの暖色</span></div></div>
+
+  <div class="card"><a href="design-warm-12.html" class="card-link"><iframe src="design-warm-12.html" class="preview" tabindex="-1" loading="lazy"></iframe><div class="card-info"><span class="name">Paper</span><span class="num">#12</span></div></a><div class="tags"><span class="tag">紙の質感</span><span class="tag">セリフ体</span></div></div>
+
+  <div class="card"><a href="design-warm-13.html" class="card-link"><iframe src="design-warm-13.html" class="preview" tabindex="-1" loading="lazy"></iframe><div class="card-info"><span class="name">Coffee</span><span class="num">#13</span></div></a><div class="tags"><span class="tag">深煎りダーク</span><span class="tag">高コントラスト</span></div></div>
+
+  <div class="card"><a href="design-warm-14.html" class="card-link"><iframe src="design-warm-14.html" class="preview" tabindex="-1" loading="lazy"></iframe><div class="card-info"><span class="name">Sand</span><span class="num">#14</span></div></a><div class="tags"><span class="tag">砂色</span><span class="tag">明るい</span></div></div>
+
+  <div class="card"><a href="design-warm-15.html" class="card-link"><iframe src="design-warm-15.html" class="preview" tabindex="-1" loading="lazy"></iframe><div class="card-info"><span class="name">Indent</span><span class="num">#15</span></div></a><div class="tags"><span class="tag">インデント</span><span class="tag">ライン強調</span></div></div>
+
+  <div class="card"><a href="design-warm-16.html" class="card-link"><iframe src="design-warm-16.html" class="preview" tabindex="-1" loading="lazy"></iframe><div class="card-info"><span class="name">Badge</span><span class="num">#16</span></div></a><div class="tags"><span class="tag">バッジ見出し</span><span class="tag">メリハリ</span></div></div>
+
+  <div class="card"><a href="design-warm-17.html" class="card-link"><iframe src="design-warm-17.html" class="preview" tabindex="-1" loading="lazy"></iframe><div class="card-info"><span class="name">Two Column</span><span class="num">#17</span></div></a><div class="tags"><span class="tag">2カラム</span><span class="tag">API比較</span></div></div>
+
+  <div class="card"><a href="design-warm-18.html" class="card-link"><iframe src="design-warm-18.html" class="preview" tabindex="-1" loading="lazy"></iframe><div class="card-info"><span class="name">Sticky TOC</span><span class="num">#18</span></div></a><div class="tags"><span class="tag">固定目次</span><span class="tag">ナビゲーション</span></div></div>
+
+  <div class="card"><a href="design-warm-19.html" class="card-link"><iframe src="design-warm-19.html" class="preview" tabindex="-1" loading="lazy"></iframe><div class="card-info"><span class="name">Hero</span><span class="num">#19</span></div></a><div class="tags"><span class="tag">ヒーローバナー</span><span class="tag">印象的</span></div></div>
+
+  <div class="card"><a href="design-warm-20.html" class="card-link"><iframe src="design-warm-20.html" class="preview" tabindex="-1" loading="lazy"></iframe><div class="card-info"><span class="name">Rounded</span><span class="num">#20</span></div></a><div class="tags"><span class="tag">丸み最大</span><span class="tag">やわらか</span></div></div>
+</div>
+
+</body>
+</html>

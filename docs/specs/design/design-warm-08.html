@@ -1,0 +1,41 @@
+<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Warm 08 - Large</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',-apple-system,sans-serif;background:#fdfbf8;color:#332a24;line-height:1.95;font-size:17px}
+.nav{display:flex;flex-wrap:wrap;gap:8px;padding:14px 20px;background:#f5ebe0;border-bottom:1px solid #e6d5c3;font-size:13px;position:sticky;top:0;z-index:10}
+.nav a{color:#b08968;text-decoration:none}.nav a:hover{color:#7f5539}.nav .cur{font-weight:700;color:#7f5539}.nav .back{margin-left:auto;color:#bc6c25}
+.container{max-width:720px;margin:0 auto;padding:48px 24px}
+h1{font-size:2rem;margin-bottom:32px;color:#5a3e28;font-weight:700}
+h2{font-size:1.4rem;margin:40px 0 16px;color:#7f5539;font-weight:700}
+h3{font-size:1.15rem;margin:24px 0 10px;color:#9c6644}
+p{margin-bottom:18px;color:#4a3e35}
+table{width:100%;border-collapse:separate;border-spacing:0;margin:20px 0;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(90,62,40,0.08)}
+th,td{padding:14px 20px;text-align:left;font-size:16px}
+th{background:#ddb892;color:#3d2b1a;font-weight:700}
+td{background:#fff;border-bottom:1px solid #f0e6da}
+tr:last-child td{border-bottom:none}
+pre{background:#3d2b1a;color:#f5ebe0;padding:20px;border-radius:12px;overflow-x:auto;margin:20px 0;font-size:16px}
+code{font-family:'SF Mono',monospace;font-size:0.85em;color:#bc6c25}
+pre code{color:#f5ebe0}
+blockquote{border-left:5px solid #ddb892;padding:16px 20px;margin:20px 0;background:#f5efe6;border-radius:0 10px 10px 0;color:#5a4a3e;font-size:16px}
+</style></head><body>
+<nav class="nav"><a href="design-warm-01.html">01.Standard</a> <a href="design-warm-02.html">02.Airy</a> <a href="design-warm-03.html">03.Card</a> <a href="design-warm-04.html">04.Sidebar</a> <a href="design-warm-05.html">05.Dark</a> <a href="design-warm-06.html">06.Serif</a> <a href="design-warm-07.html">07.Compact</a> <span class="cur">08.Large</span> <a href="design-warm-09.html">09.Bordered</a> <a href="design-warm-10.html">10.Olive</a> <a href="design-warm-11.html">11.Terracotta</a> <a href="design-warm-12.html">12.Paper</a> <a href="design-warm-13.html">13.Coffee</a> <a href="design-warm-14.html">14.Sand</a> <a href="design-warm-15.html">15.Indent</a> <a href="design-warm-16.html">16.Badge</a> <a href="design-warm-17.html">17.TwoCol</a> <a href="design-warm-18.html">18.Sticky</a> <a href="design-warm-19.html">19.Hero</a> <a href="design-warm-20.html">20.Rounded</a> <a href="design-warm-index.html" class="back">← まとめへ</a></nav>
+<div class="container"><h1>買い物リスト機能 仕様書</h1>
+<h2>概要</h2>
+<p>日常の買い物管理を支援するシンプルなリスト機能。Web ブラウザおよび iOS アプリから利用可能。</p>
+<h2>機能一覧</h2>
+<table><thead><tr><th>機能</th><th>説明</th></tr></thead><tbody>
+<tr><td>アイテム追加</td><td>名前を入力してリストに追加</td></tr>
+<tr><td>アイテム削除</td><td>個別に削除</td></tr>
+<tr><td>チェック</td><td>購入済みアイテムをチェックし非表示にする</td></tr>
+<tr><td>一覧表示</td><td>未チェックのアイテムのみ表示</td></tr>
+</tbody></table>
+<h2>API エンドポイント</h2>
+<h3>GET /api/shopping</h3>
+<p>未チェックのアイテム一覧を取得する。</p>
+<h3>POST /api/shopping</h3>
+<p>新しいアイテムを追加する。</p>
+<pre><code>{ "name": "牛乳" }</code></pre>
+<blockquote><p>全 API 共通のレスポンス形式: <code>{ success, data, error }</code></p></blockquote></div>
+</body></html>

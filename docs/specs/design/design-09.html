@@ -1,0 +1,41 @@
+<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Design 09 - Pastel</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',-apple-system,sans-serif;background:#fef6f9;color:#5a4a5a;line-height:1.8}
+.nav{display:flex;flex-wrap:wrap;gap:6px;padding:12px 16px;background:#fff0f5;border-bottom:1px solid #f0d0e0;font-size:12px;position:sticky;top:0;z-index:10}
+.nav a{color:#c9a;text-decoration:none}.nav a:hover{color:#e77faa}.nav .cur{font-weight:700;color:#e77faa}.nav .back{margin-left:auto;color:#7fb5e7}
+.container{max-width:680px;margin:0 auto;padding:40px 20px}
+h1{font-size:1.6rem;font-weight:600;margin-bottom:24px;color:#d46b8a;text-align:center}
+h2{font-size:1.15rem;margin:32px 0 12px;color:#7fb5e7;background:#eef5fc;padding:8px 16px;border-radius:20px;display:inline-block}
+h3{font-size:1rem;margin:20px 0 8px;color:#a78bba}
+p{margin-bottom:14px}
+table{width:100%;border-collapse:separate;border-spacing:0;margin:16px 0;border-radius:12px;overflow:hidden}
+th,td{padding:10px 14px;text-align:left}
+th{background:#e8d5f0;color:#6b4a7a;font-weight:600}
+td{background:#fff;border-bottom:1px solid #f5e8f0}
+tr:last-child td{border-bottom:none}
+pre{background:#f0e8f5;padding:16px;border-radius:12px;overflow-x:auto;margin:16px 0;color:#6b4a7a}
+code{font-family:'SF Mono',monospace;font-size:0.85em;background:#f0e8f5;padding:2px 6px;border-radius:6px;color:#c06}
+pre code{background:none;color:#6b4a7a}
+blockquote{border-left:4px solid #ffd1dc;padding:12px 16px;margin:16px 0;background:#fff8fa;border-radius:0 12px 12px 0}
+</style></head><body>
+<nav class="nav"><a href="design-01.html">01.Minimal</a> <a href="design-02.html">02.Dark</a> <a href="design-03.html">03.GitHub</a> <a href="design-04.html">04.Notion</a> <a href="design-05.html">05.Apple</a> <a href="design-06.html">06.Material</a> <a href="design-07.html">07.Newspaper</a> <a href="design-08.html">08.Terminal</a> <span class="cur">09.Pastel</span> <a href="design-10.html">10.Japanese</a> <a href="design-11.html">11.Glass</a> <a href="design-12.html">12.Brutalist</a> <a href="design-13.html">13.Neumorphism</a> <a href="design-14.html">14.Retro</a> <a href="design-15.html">15.Sidebar</a> <a href="design-16.html">16.Magazine</a> <a href="design-17.html">17.Blueprint</a> <a href="design-18.html">18.Warm</a> <a href="design-19.html">19.Colorful</a> <a href="design-20.html">20.Monochrome</a> <a href="/docs/" class="back">← 一覧へ</a></nav>
+<div class="container"><h1>買い物リスト機能 仕様書</h1>
+<h2>概要</h2>
+<p>日常の買い物管理を支援するシンプルなリスト機能。Web ブラウザおよび iOS アプリから利用可能。</p>
+<h2>機能一覧</h2>
+<table><thead><tr><th>機能</th><th>説明</th></tr></thead><tbody>
+<tr><td>アイテム追加</td><td>名前を入力してリストに追加</td></tr>
+<tr><td>アイテム削除</td><td>個別に削除</td></tr>
+<tr><td>チェック</td><td>購入済みアイテムをチェックし非表示にする</td></tr>
+<tr><td>一覧表示</td><td>未チェックのアイテムのみ表示</td></tr>
+</tbody></table>
+<h2>API エンドポイント</h2>
+<h3>GET /api/shopping</h3>
+<p>未チェックのアイテム一覧を取得する。</p>
+<h3>POST /api/shopping</h3>
+<p>新しいアイテムを追加する。</p>
+<pre><code>{ "name": "牛乳" }</code></pre>
+<blockquote><p>全 API 共通のレスポンス形式: <code>{ success, data, error }</code></p></blockquote></div>
+</body></html>

@@ -1,0 +1,42 @@
+<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Design 05 - Apple HIG</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;background:#f5f5f7;color:#1d1d1f;line-height:1.7}
+.nav{display:flex;flex-wrap:wrap;gap:6px;padding:12px 16px;background:rgba(245,245,247,0.9);backdrop-filter:blur(20px);border-bottom:1px solid #d2d2d7;font-size:12px;position:sticky;top:0;z-index:10}
+.nav a{color:#86868b;text-decoration:none}.nav a:hover{color:#0071e3}.nav .cur{font-weight:600;color:#0071e3}.nav .back{margin-left:auto;color:#0071e3}
+.container{max-width:680px;margin:0 auto;padding:48px 20px}
+h1{font-size:2rem;font-weight:700;margin-bottom:8px;letter-spacing:-0.5px}
+h1+p{font-size:1.1rem;color:#86868b}
+h2{font-size:1.2rem;font-weight:600;margin:40px 0 16px;color:#1d1d1f}
+h3{font-size:1rem;font-weight:600;margin:20px 0 8px;color:#0071e3}
+p{margin-bottom:14px;color:#424245}
+table{width:100%;margin:16px 0;border-collapse:separate;border-spacing:0;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+th,td{padding:12px 16px;text-align:left;border-bottom:1px solid #e8e8ed}
+th{background:#fafafa;font-weight:600;font-size:0.85rem;color:#86868b;text-transform:uppercase;letter-spacing:0.5px}
+td{background:#fff}
+tr:last-child td{border-bottom:none}
+pre{background:#fff;padding:20px;border-radius:12px;overflow-x:auto;margin:16px 0;box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+code{font-family:'SF Mono',Menlo,monospace;font-size:0.85em;color:#bf4800}
+pre code{color:#1d1d1f}
+blockquote{background:#fff;border-radius:12px;padding:16px 20px;margin:16px 0;box-shadow:0 1px 3px rgba(0,0,0,0.08);border-left:4px solid #0071e3}
+</style></head><body>
+<nav class="nav"><a href="design-01.html">01.Minimal</a> <a href="design-02.html">02.Dark</a> <a href="design-03.html">03.GitHub</a> <a href="design-04.html">04.Notion</a> <span class="cur">05.Apple</span> <a href="design-06.html">06.Material</a> <a href="design-07.html">07.Newspaper</a> <a href="design-08.html">08.Terminal</a> <a href="design-09.html">09.Pastel</a> <a href="design-10.html">10.Japanese</a> <a href="design-11.html">11.Glass</a> <a href="design-12.html">12.Brutalist</a> <a href="design-13.html">13.Neumorphism</a> <a href="design-14.html">14.Retro</a> <a href="design-15.html">15.Sidebar</a> <a href="design-16.html">16.Magazine</a> <a href="design-17.html">17.Blueprint</a> <a href="design-18.html">18.Warm</a> <a href="design-19.html">19.Colorful</a> <a href="design-20.html">20.Monochrome</a> <a href="/docs/" class="back">← 一覧へ</a></nav>
+<div class="container"><h1>買い物リスト機能 仕様書</h1>
+<h2>概要</h2>
+<p>日常の買い物管理を支援するシンプルなリスト機能。Web ブラウザおよび iOS アプリから利用可能。</p>
+<h2>機能一覧</h2>
+<table><thead><tr><th>機能</th><th>説明</th></tr></thead><tbody>
+<tr><td>アイテム追加</td><td>名前を入力してリストに追加</td></tr>
+<tr><td>アイテム削除</td><td>個別に削除</td></tr>
+<tr><td>チェック</td><td>購入済みアイテムをチェックし非表示にする</td></tr>
+<tr><td>一覧表示</td><td>未チェックのアイテムのみ表示</td></tr>
+</tbody></table>
+<h2>API エンドポイント</h2>
+<h3>GET /api/shopping</h3>
+<p>未チェックのアイテム一覧を取得する。</p>
+<h3>POST /api/shopping</h3>
+<p>新しいアイテムを追加する。</p>
+<pre><code>{ "name": "牛乳" }</code></pre>
+<blockquote><p>全 API 共通のレスポンス形式: <code>{ success, data, error }</code></p></blockquote></div>
+</body></html>

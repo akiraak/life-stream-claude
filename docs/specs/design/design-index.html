@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>デザイン案一覧 - Life Stream</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #0f0f0f;
+  color: #e0e0e0;
+  line-height: 1.6;
+}
+.header {
+  padding: 32px 20px 24px;
+  text-align: center;
+  border-bottom: 1px solid #222;
+}
+.header h1 { font-size: 1.6rem; font-weight: 300; letter-spacing: 2px; margin-bottom: 8px; }
+.header p { color: #888; font-size: 14px; }
+.header a { color: #007aff; text-decoration: none; font-size: 13px; }
+.header a:hover { text-decoration: underline; }
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 24px;
+  padding: 32px 24px;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+.card {
+  background: #1a1a1a;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #2a2a2a;
+  transition: border-color 0.2s, transform 0.2s;
+}
+.card:hover {
+  border-color: #007aff;
+  transform: translateY(-2px);
+}
+.preview {
+  width: 100%;
+  height: 260px;
+  border: none;
+  background: #fff;
+  pointer-events: none;
+}
+.card-info {
+  padding: 14px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.card-info .name {
+  font-size: 15px;
+  font-weight: 500;
+}
+.card-info .num {
+  font-size: 12px;
+  color: #666;
+  background: #2a2a2a;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+.card-link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 16px 14px;
+}
+.tag {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 8px;
+  background: #252525;
+  color: #999;
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>DESIGN PATTERNS</h1>
+  <p>docs/specs ページのデザイン案 20パターン</p>
+  <br>
+  <a href="/docs/">← ドキュメント一覧へ戻る</a>
+</div>
+
+<div class="grid">
+
+  <div class="card">
+    <a href="/docs/specs/design/design-01.html" class="card-link">
+      <iframe src="/docs/specs/design/design-01.html" class="preview" tabindex="-1" loading="lazy"></iframe>
+      <div class="card-info"><span class="name">Minimal White</span><span class="num">#01</span></div>
+    </a>
+    <div class="tags"><span class="tag">白基調</span><span class="tag">軽量</span><span class="tag">シンプル</span></div>
+  </div>
+
+  <div class="card">
+    <a href="/docs/specs/design/design-02.html" class="card-link">
+      <iframe src="/docs/specs/design/design-02.html" class="preview" tabindex="-1" loading="lazy"></iframe>
+      <div class="card-info"><span class="name">Dark Mode</span><span class="num">#02</span></div>
+    </a>
+    <div class="tags"><span class="tag">ダーク</span><span class="tag">濃紺</span><span class="tag">赤アクセント</span></div>
+  </div>
+
+  <div class="card">
+    <a href="/docs/specs/design/design-03.html" class="card-link">
+      <iframe src="/docs/specs/design/design-03.html" class="preview" tabindex="-1" loading="lazy"></iframe>
+      <div class="card-info"><span class="name">GitHub Style</span><span class="num">#03</span></div>
+    </a>
+    <div class="tags"><span class="tag">開発者向け</span><span class="tag">Markdown</span><span class="tag">定番</span></div>
+  </div>
+
+  <div class="card">
+    <a href="/docs/specs/design/design-04.html" class="card-link">
+      <iframe src="/docs/specs/design/design-04.html" class="preview" tabindex="-1" loading="lazy"></iframe>
+      <div class="card-info"><span class="name">Notion Style</span><span class="num">#04</span></div>
+    </a>
+    <div class="tags"><span class="tag">セリフ体</span><span class="tag">ドキュメント</span><span class="tag">モダン</span></div>
+  </div>
+
+  <div class="card">
+    <a href="/docs/specs/design/design-05.html" class="card-link">
+      <iframe src="/docs/specs/design/design-05.html" class="preview" tabindex="-1" loading="lazy"></iframe>
+      <div class="card-info"><span class="name">Apple HIG</span><span class="num">#05</span></div>
+    </a>
+    <div class="tags"><span class="tag">Apple風</span><span class="tag">ブラー</span><span class="tag">洗練</span></div>
+  </div>
+
+  <div class="card">
+    <a href="/docs/specs/design/design-06.html" class="card-link">
+      <iframe src="/docs/specs/design/design-06.html" class="preview" tabindex="-1" loading="lazy"></iframe>
+      <div class="card-info"><span class="name">Material Design</span><span class="num">#06</span></div>
+    </a>
+    <div class="tags"><span class="tag">Google風</span><span class="tag">紫</span><span class="tag">カード</span></div>
+  </div>
+
+  <div class="card">
+    <a href="/docs/specs/design/design-07.html" class="card-link">
+      <iframe src="/docs/specs/design/design-07.html" class="preview" tabindex="-1" loading="lazy"></iframe>
+      <div class="card-info"><span class="name">Newspaper</span><span class="num">#07</span></div>
+    </a>
+    <div class="tags"><span class="tag">新聞風</span><span class="tag">エディトリアル</span><span class="tag">クラシック</span></div>
+  </div>
+
+  <div class="card">
+    <a href="/docs/specs/design/design-08.html" class="card-link">
+      <iframe src="/docs/specs/design/design-08.html" class="preview" tabindex="-1" loading="lazy"></iframe>
+      <div class="card-info"><span class="name">Terminal</span><span class="num">#08</span></div>
+    </a>
+    <div class="tags"><span class="tag">ターミナル</span><span class="tag">緑×黒</span><span class="tag">ハッカー</span></div>
+  </div>
+
+  <div class="card">
+    <a href="/docs/specs/design/design-09.html" class="card-link">
+      <iframe src="/docs/specs/design/design-09.html" class="preview" tabindex="-1" loading="lazy"></iframe>
+      <div class="card-info"><span class="name">Pastel</span><span class="num">#09</span></div>
+    </a>
+    <div class="tags"><span class="tag">パステル</span><span class="tag">柔らか</span><span class="tag">ピンク系</span></div>
+  </div>
+
+  <div class="card">
+    <a href="/docs/specs/design/design-10.html" class="card-link">
+      <iframe src="/docs/specs/design/design-10.html" class="preview" tabindex="-1" loading="lazy"></iframe>
+      <div class="card-info"><span class="name">和風 Japanese</span><span class="num">#10</span></div>
+    </a>
+    <div class="tags"><span class="tag">和風</span><span class="tag">明朝体</span><span class="tag">朱色</span></div>
+  </div>
+
+  <div class="card">
+    <a href="/docs/specs/design/design-11.html" class="card-link">
+      <iframe src="/docs/specs/design/design-11.html" class="preview" tabindex="-1" loading="lazy"></iframe>
+      <div class="card-info"><span class="name">Glassmorphism</span><span class="num">#11</span></div>
+    </a>
+    <div class="tags"><span class="tag">すりガラス</span><span class="tag">グラデ</span><span class="tag">トレンド</span></div>
+  </div>
+
+  <div class="card">
+    <a href="/docs/specs/design/design-12.html" class="card-link">
+      <iframe src="/docs/specs/design/design-12.html" class="preview" tabindex="-1" loading="lazy"></iframe>
+      <div class="card-info"><span class="name">Brutalist</span><span class="num">#12</span></div>
+    </a>
+    <div class="tags"><span class="tag">ブルータル</span><span class="tag">太枠</span><span class="tag">黄×黒</span></div>
+  </div>
+
+  <div class="card">
+    <a href="/docs/specs/design/design-13.html" class="card-link">
+      <iframe src="/docs/specs/design/design-13.html" class="preview" tabindex="-1" loading="lazy"></iframe>
+      <div class="card-info"><span class="name">Neumorphism</span><span class="num">#13</span></div>
+    </a>
+    <div class="tags"><span class="tag">凹凸</span><span class="tag">ソフトUI</span><span class="tag">上品</span></div>
+  </div>
+
+  <div class="card">
+    <a href="/docs/specs/design/design-14.html" class="card-link">
+      <iframe src="/docs/specs/design/design-14.html" class="preview" tabindex="-1" loading="lazy"></iframe>
+      <div class="card-info"><span class="name">Retro</span><span class="num">#14</span></div>
+    </a>
+    <div class="tags"><span class="tag">レトロ</span><span class="tag">ヴィンテージ</span><span class="tag">茶系</span></div>
+  </div>
+
+  <div class="card">
+    <a href="/docs/specs/design/design-15.html" class="card-link">
+      <iframe src="/docs/specs/design/design-15.html" class="preview" tabindex="-1" loading="lazy"></iframe>
+      <div class="card-info"><span class="name">Sidebar Layout</span><span class="num">#15</span></div>
+    </a>
+    <div class="tags"><span class="tag">サイドバー</span><span class="tag">目次</span><span class="tag">2カラム</span></div>
+  </div>
+
+  <div class="card">
+    <a href="/docs/specs/design/design-16.html" class="card-link">
+      <iframe src="/docs/specs/design/design-16.html" class="preview" tabindex="-1" loading="lazy"></iframe>
+      <div class="card-info"><span class="name">Magazine</span><span class="num">#16</span></div>
+    </a>
+    <div class="tags"><span class="tag">雑誌風</span><span class="tag">ヒーロー</span><span class="tag">紺×赤</span></div>
+  </div>
+
+  <div class="card">
+    <a href="/docs/specs/design/design-17.html" class="card-link">
+      <iframe src="/docs/specs/design/design-17.html" class="preview" tabindex="-1" loading="lazy"></iframe>
+      <div class="card-info"><span class="name">Blueprint</span><span class="num">#17</span></div>
+    </a>
+    <div class="tags"><span class="tag">設計図</span><span class="tag">グリッド</span><span class="tag">技術文書</span></div>
+  </div>
+
+  <div class="card">
+    <a href="/docs/specs/design/design-18.html" class="card-link">
+      <iframe src="/docs/specs/design/design-18.html" class="preview" tabindex="-1" loading="lazy"></iframe>
+      <div class="card-info"><span class="name">Warm Earth</span><span class="num">#18</span></div>
+    </a>
+    <div class="tags"><span class="tag">暖色系</span><span class="tag">アース</span><span class="tag">落ち着き</span></div>
+  </div>
+
+  <div class="card">
+    <a href="/docs/specs/design/design-19.html" class="card-link">
+      <iframe src="/docs/specs/design/design-19.html" class="preview" tabindex="-1" loading="lazy"></iframe>
+      <div class="card-info"><span class="name">Colorful</span><span class="num">#19</span></div>
+    </a>
+    <div class="tags"><span class="tag">カラフル</span><span class="tag">ポップ</span><span class="tag">グラデ</span></div>
+  </div>
+
+  <div class="card">
+    <a href="/docs/specs/design/design-20.html" class="card-link">
+      <iframe src="/docs/specs/design/design-20.html" class="preview" tabindex="-1" loading="lazy"></iframe>
+      <div class="card-info"><span class="name">Monochrome</span><span class="num">#20</span></div>
+    </a>
+    <div class="tags"><span class="tag">モノクロ</span><span class="tag">上品</span><span class="tag">ミニマル</span></div>
+  </div>
+
+</div>
+
+</body>
+</html>

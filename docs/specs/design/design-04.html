@@ -1,0 +1,40 @@
+<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Design 04 - Notion Style</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:Georgia,'Times New Roman',serif;background:#fff;color:#37352f;line-height:1.8}
+.nav{display:flex;flex-wrap:wrap;gap:6px;padding:10px 16px;background:#fff;border-bottom:1px solid #e9e9e7;font-size:12px;font-family:-apple-system,sans-serif;position:sticky;top:0;z-index:10}
+.nav a{color:#999;text-decoration:none}.nav a:hover{color:#37352f;background:#f1f1ef;padding:2px 4px;border-radius:3px}.nav .cur{font-weight:700;color:#37352f}.nav .back{margin-left:auto;color:#2eaadc}
+.container{max-width:720px;margin:0 auto;padding:40px 24px}
+h1{font-size:2.2rem;font-weight:700;margin-bottom:4px;font-family:-apple-system,sans-serif}
+h1::before{content:"📋 "}
+h2{font-size:1.3rem;margin:36px 0 12px;font-family:-apple-system,sans-serif}
+h3{font-size:1.05rem;margin:20px 0 8px;color:#555;font-family:-apple-system,sans-serif}
+p{margin-bottom:12px}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:0.95rem}
+th,td{padding:8px 10px;text-align:left;border:1px solid #e9e9e7}
+th{background:#f7f6f3;font-weight:600;font-family:-apple-system,sans-serif}
+pre{background:#f7f6f3;padding:16px;border-radius:4px;overflow-x:auto;margin:16px 0;font-size:14px}
+code{font-family:'SFMono-Regular',Consolas,monospace;font-size:0.85em;background:#f7f6f3;padding:2px 5px;border-radius:3px;color:#eb5757}
+pre code{color:#37352f;background:none;padding:0}
+blockquote{border-left:3px solid #37352f;padding:8px 16px;margin:16px 0;background:#f7f6f3}
+</style></head><body>
+<nav class="nav"><a href="design-01.html">01.Minimal</a> <a href="design-02.html">02.Dark</a> <a href="design-03.html">03.GitHub</a> <span class="cur">04.Notion</span> <a href="design-05.html">05.Apple</a> <a href="design-06.html">06.Material</a> <a href="design-07.html">07.Newspaper</a> <a href="design-08.html">08.Terminal</a> <a href="design-09.html">09.Pastel</a> <a href="design-10.html">10.Japanese</a> <a href="design-11.html">11.Glass</a> <a href="design-12.html">12.Brutalist</a> <a href="design-13.html">13.Neumorphism</a> <a href="design-14.html">14.Retro</a> <a href="design-15.html">15.Sidebar</a> <a href="design-16.html">16.Magazine</a> <a href="design-17.html">17.Blueprint</a> <a href="design-18.html">18.Warm</a> <a href="design-19.html">19.Colorful</a> <a href="design-20.html">20.Monochrome</a> <a href="/docs/" class="back">← 一覧へ</a></nav>
+<div class="container"><h1>買い物リスト機能 仕様書</h1>
+<h2>概要</h2>
+<p>日常の買い物管理を支援するシンプルなリスト機能。Web ブラウザおよび iOS アプリから利用可能。</p>
+<h2>機能一覧</h2>
+<table><thead><tr><th>機能</th><th>説明</th></tr></thead><tbody>
+<tr><td>アイテム追加</td><td>名前を入力してリストに追加</td></tr>
+<tr><td>アイテム削除</td><td>個別に削除</td></tr>
+<tr><td>チェック</td><td>購入済みアイテムをチェックし非表示にする</td></tr>
+<tr><td>一覧表示</td><td>未チェックのアイテムのみ表示</td></tr>
+</tbody></table>
+<h2>API エンドポイント</h2>
+<h3>GET /api/shopping</h3>
+<p>未チェックのアイテム一覧を取得する。</p>
+<h3>POST /api/shopping</h3>
+<p>新しいアイテムを追加する。</p>
+<pre><code>{ "name": "牛乳" }</code></pre>
+<blockquote><p>全 API 共通のレスポンス形式: <code>{ success, data, error }</code></p></blockquote></div>
+</body></html>

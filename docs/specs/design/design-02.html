@@ -1,0 +1,39 @@
+<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Design 02 - Dark Mode</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1a2e;color:#e0e0e0;line-height:1.8}
+.nav{display:flex;flex-wrap:wrap;gap:6px;padding:12px 16px;background:#16213e;border-bottom:1px solid #0f3460;font-size:12px;position:sticky;top:0;z-index:10}
+.nav a{color:#8899aa;text-decoration:none}.nav a:hover{color:#e94560}.nav .cur{font-weight:700;color:#e94560}.nav .back{margin-left:auto;color:#e94560}
+.container{max-width:720px;margin:0 auto;padding:40px 20px}
+h1{font-size:1.6rem;color:#fff;margin-bottom:24px;border-bottom:2px solid #e94560;padding-bottom:12px}
+h2{font-size:1.15rem;color:#e94560;margin:32px 0 12px}
+h3{font-size:1rem;color:#ccc;margin:16px 0 8px}
+p{margin-bottom:12px;color:#bbb}
+table{width:100%;border-collapse:collapse;margin:16px 0}
+th,td{padding:10px 14px;text-align:left;border:1px solid #2a2a4a}
+th{background:#16213e;color:#e94560;font-weight:600}
+td{background:#1a1a2e}
+pre{background:#0f3460;color:#53d8fb;padding:16px;border-radius:8px;overflow-x:auto;margin:16px 0}
+code{font-family:'SF Mono',Monaco,monospace;font-size:0.9em;color:#53d8fb}
+blockquote{border-left:3px solid #e94560;padding:8px 16px;margin:16px 0;background:#16213e;color:#aaa;border-radius:0 8px 8px 0}
+</style></head><body>
+<nav class="nav"><a href="design-01.html">01.Minimal</a> <span class="cur">02.Dark</span> <a href="design-03.html">03.GitHub</a> <a href="design-04.html">04.Notion</a> <a href="design-05.html">05.Apple</a> <a href="design-06.html">06.Material</a> <a href="design-07.html">07.Newspaper</a> <a href="design-08.html">08.Terminal</a> <a href="design-09.html">09.Pastel</a> <a href="design-10.html">10.Japanese</a> <a href="design-11.html">11.Glass</a> <a href="design-12.html">12.Brutalist</a> <a href="design-13.html">13.Neumorphism</a> <a href="design-14.html">14.Retro</a> <a href="design-15.html">15.Sidebar</a> <a href="design-16.html">16.Magazine</a> <a href="design-17.html">17.Blueprint</a> <a href="design-18.html">18.Warm</a> <a href="design-19.html">19.Colorful</a> <a href="design-20.html">20.Monochrome</a> <a href="/docs/" class="back">← 一覧へ</a></nav>
+<div class="container"><h1>買い物リスト機能 仕様書</h1>
+<h2>概要</h2>
+<p>日常の買い物管理を支援するシンプルなリスト機能。Web ブラウザおよび iOS アプリから利用可能。</p>
+<h2>機能一覧</h2>
+<table><thead><tr><th>機能</th><th>説明</th></tr></thead><tbody>
+<tr><td>アイテム追加</td><td>名前を入力してリストに追加</td></tr>
+<tr><td>アイテム削除</td><td>個別に削除</td></tr>
+<tr><td>チェック</td><td>購入済みアイテムをチェックし非表示にする</td></tr>
+<tr><td>一覧表示</td><td>未チェックのアイテムのみ表示</td></tr>
+</tbody></table>
+<h2>API エンドポイント</h2>
+<h3>GET /api/shopping</h3>
+<p>未チェックのアイテム一覧を取得する。</p>
+<h3>POST /api/shopping</h3>
+<p>新しいアイテムを追加する。</p>
+<pre><code>{ "name": "牛乳" }</code></pre>
+<blockquote><p>全 API 共通のレスポンス形式: <code>{ success, data, error }</code></p></blockquote></div>
+</body></html>

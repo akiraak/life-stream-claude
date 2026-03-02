@@ -1,0 +1,38 @@
+<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Design 07 - Newspaper</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Georgia','Times New Roman',serif;background:#fdf6e3;color:#333;line-height:1.9}
+.nav{display:flex;flex-wrap:wrap;gap:6px;padding:10px 16px;background:#fdf6e3;border-bottom:2px solid #333;font-size:11px;font-family:'Helvetica',sans-serif;position:sticky;top:0;z-index:10}
+.nav a{color:#888;text-decoration:none}.nav a:hover{color:#333}.nav .cur{font-weight:700;color:#333}.nav .back{margin-left:auto;color:#8b0000}
+.container{max-width:720px;margin:0 auto;padding:32px 20px}
+h1{font-size:2.2rem;font-weight:700;text-align:center;margin-bottom:4px;font-family:'Georgia',serif;border-bottom:3px double #333;padding-bottom:12px}
+h2{font-size:1.1rem;font-weight:700;text-transform:uppercase;letter-spacing:3px;margin:32px 0 12px;border-bottom:1px solid #ccc;padding-bottom:4px;font-family:'Helvetica',sans-serif}
+h3{font-size:1rem;font-style:italic;margin:16px 0 8px}
+p{margin-bottom:14px;text-align:justify}
+table{width:100%;border-collapse:collapse;margin:16px 0}
+th,td{padding:8px 12px;text-align:left;border:1px solid #ccc}
+th{background:#333;color:#fdf6e3;font-family:'Helvetica',sans-serif;font-size:0.85rem;text-transform:uppercase;letter-spacing:1px}
+pre{background:#333;color:#fdf6e3;padding:16px;margin:16px 0;font-size:14px;border:1px solid #333}
+code{font-family:'Courier New',monospace;font-size:0.9em}
+blockquote{font-style:italic;border-left:3px solid #8b0000;padding:8px 20px;margin:16px 0;color:#555}
+</style></head><body>
+<nav class="nav"><a href="design-01.html">01.Minimal</a> <a href="design-02.html">02.Dark</a> <a href="design-03.html">03.GitHub</a> <a href="design-04.html">04.Notion</a> <a href="design-05.html">05.Apple</a> <a href="design-06.html">06.Material</a> <span class="cur">07.Newspaper</span> <a href="design-08.html">08.Terminal</a> <a href="design-09.html">09.Pastel</a> <a href="design-10.html">10.Japanese</a> <a href="design-11.html">11.Glass</a> <a href="design-12.html">12.Brutalist</a> <a href="design-13.html">13.Neumorphism</a> <a href="design-14.html">14.Retro</a> <a href="design-15.html">15.Sidebar</a> <a href="design-16.html">16.Magazine</a> <a href="design-17.html">17.Blueprint</a> <a href="design-18.html">18.Warm</a> <a href="design-19.html">19.Colorful</a> <a href="design-20.html">20.Monochrome</a> <a href="/docs/" class="back">← 一覧へ</a></nav>
+<div class="container"><h1>買い物リスト機能 仕様書</h1>
+<h2>概要</h2>
+<p>日常の買い物管理を支援するシンプルなリスト機能。Web ブラウザおよび iOS アプリから利用可能。</p>
+<h2>機能一覧</h2>
+<table><thead><tr><th>機能</th><th>説明</th></tr></thead><tbody>
+<tr><td>アイテム追加</td><td>名前を入力してリストに追加</td></tr>
+<tr><td>アイテム削除</td><td>個別に削除</td></tr>
+<tr><td>チェック</td><td>購入済みアイテムをチェックし非表示にする</td></tr>
+<tr><td>一覧表示</td><td>未チェックのアイテムのみ表示</td></tr>
+</tbody></table>
+<h2>API エンドポイント</h2>
+<h3>GET /api/shopping</h3>
+<p>未チェックのアイテム一覧を取得する。</p>
+<h3>POST /api/shopping</h3>
+<p>新しいアイテムを追加する。</p>
+<pre><code>{ "name": "牛乳" }</code></pre>
+<blockquote><p>全 API 共通のレスポンス形式: <code>{ success, data, error }</code></p></blockquote></div>
+</body></html>

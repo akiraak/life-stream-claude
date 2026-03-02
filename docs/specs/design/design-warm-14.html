@@ -1,0 +1,41 @@
+<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Warm 14 - Sand</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',-apple-system,sans-serif;background:#fefcf8;color:#40382e;line-height:1.85;font-size:15px}
+.nav{display:flex;flex-wrap:wrap;gap:6px;padding:12px 16px;background:#f8f0e4;border-bottom:1px solid #e8dcc8;font-size:12px;position:sticky;top:0;z-index:10}
+.nav a{color:#b8a080;text-decoration:none}.nav a:hover{color:#7a6040}.nav .cur{font-weight:700;color:#7a6040}.nav .back{margin-left:auto;color:#a07840}
+.container{max-width:700px;margin:0 auto;padding:40px 20px}
+h1{font-size:1.55rem;margin-bottom:24px;color:#5a4a30;font-weight:700}
+h2{font-size:1.1rem;margin:32px 0 12px;color:#8a6a3e;font-weight:700;background:#f4eadc;padding:8px 14px;border-radius:8px;display:inline-block}
+h3{font-size:0.95rem;margin:18px 0 8px;color:#9a7a50}
+p{margin-bottom:14px;color:#58503e}
+table{width:100%;border-collapse:separate;border-spacing:0;margin:16px 0;border-radius:10px;overflow:hidden;box-shadow:0 1px 6px rgba(100,80,40,0.06)}
+th,td{padding:12px 16px;text-align:left}
+th{background:#e8d4b8;color:#4a3a20;font-weight:700;font-size:0.9rem}
+td{background:#fff;border-bottom:1px solid #f0e8da}
+tr:last-child td{border-bottom:none}
+pre{background:#4a3a20;color:#f4eadc;padding:18px;border-radius:10px;overflow-x:auto;margin:16px 0;font-size:14px}
+code{font-family:'SF Mono',monospace;font-size:0.85em;color:#a07840}
+pre code{color:#f4eadc}
+blockquote{border-left:4px solid #e0c8a0;padding:12px 16px;margin:16px 0;background:#faf4ea;border-radius:0 8px 8px 0;color:#6a5a40}
+</style></head><body>
+<nav class="nav"><a href="design-warm-01.html">01.Standard</a> <a href="design-warm-02.html">02.Airy</a> <a href="design-warm-03.html">03.Card</a> <a href="design-warm-04.html">04.Sidebar</a> <a href="design-warm-05.html">05.Dark</a> <a href="design-warm-06.html">06.Serif</a> <a href="design-warm-07.html">07.Compact</a> <a href="design-warm-08.html">08.Large</a> <a href="design-warm-09.html">09.Bordered</a> <a href="design-warm-10.html">10.Olive</a> <a href="design-warm-11.html">11.Terracotta</a> <a href="design-warm-12.html">12.Paper</a> <a href="design-warm-13.html">13.Coffee</a> <span class="cur">14.Sand</span> <a href="design-warm-15.html">15.Indent</a> <a href="design-warm-16.html">16.Badge</a> <a href="design-warm-17.html">17.TwoCol</a> <a href="design-warm-18.html">18.Sticky</a> <a href="design-warm-19.html">19.Hero</a> <a href="design-warm-20.html">20.Rounded</a> <a href="design-warm-index.html" class="back">← まとめへ</a></nav>
+<div class="container"><h1>買い物リスト機能 仕様書</h1>
+<h2>概要</h2>
+<p>日常の買い物管理を支援するシンプルなリスト機能。Web ブラウザおよび iOS アプリから利用可能。</p>
+<h2>機能一覧</h2>
+<table><thead><tr><th>機能</th><th>説明</th></tr></thead><tbody>
+<tr><td>アイテム追加</td><td>名前を入力してリストに追加</td></tr>
+<tr><td>アイテム削除</td><td>個別に削除</td></tr>
+<tr><td>チェック</td><td>購入済みアイテムをチェックし非表示にする</td></tr>
+<tr><td>一覧表示</td><td>未チェックのアイテムのみ表示</td></tr>
+</tbody></table>
+<h2>API エンドポイント</h2>
+<h3>GET /api/shopping</h3>
+<p>未チェックのアイテム一覧を取得する。</p>
+<h3>POST /api/shopping</h3>
+<p>新しいアイテムを追加する。</p>
+<pre><code>{ "name": "牛乳" }</code></pre>
+<blockquote><p>全 API 共通のレスポンス形式: <code>{ success, data, error }</code></p></blockquote></div>
+</body></html>
