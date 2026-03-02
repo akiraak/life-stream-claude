@@ -7,6 +7,7 @@ import { shoppingRouter } from './routes/shopping';
 import { adminRouter } from './routes/admin';
 import { claudeRouter } from './routes/claude';
 import { recipesRouter } from './routes/recipes';
+import { docsRouter } from './routes/docs';
 import { initDatabase } from './database';
 
 dotenv.config();
@@ -31,6 +32,7 @@ app.use('/api/shopping', shoppingRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/claude', claudeRouter);
 app.use('/api/recipes', recipesRouter);
+app.use('/docs', docsRouter);
 
 // エラーハンドリング
 app.use(errorHandler);
