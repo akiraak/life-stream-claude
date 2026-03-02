@@ -278,8 +278,8 @@ function openModal(mode, presetDishId) {
     modalDishRow.style.display = 'none';
     modalOk.textContent = '追加';
   }
+  modalInput.focus();
   modalOverlay.classList.add('active');
-  setTimeout(() => modalInput.focus(), 100);
 }
 
 // アイテム編集モーダル
@@ -297,8 +297,9 @@ function openEditModal(item) {
   const dishIds = itemDishMap[item.id] || [];
   modalDishSelect.value = dishIds.length > 0 ? dishIds[0] : '';
 
+  modalInput.focus();
+  modalInput.select();
   modalOverlay.classList.add('active');
-  setTimeout(() => { modalInput.focus(); modalInput.select(); }, 100);
 }
 
 function closeModal() {
