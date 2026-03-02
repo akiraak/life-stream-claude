@@ -182,6 +182,7 @@ h1 {
 .fab:active { opacity: 0.8; }
 .fab-item { background: #f97316; }
 .fab-dish { background: #fb923c; }
+.fab-dish img { mix-blend-mode: multiply; }
 
 /* モーダル */
 .modal-overlay {
