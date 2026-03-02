@@ -23,6 +23,11 @@ const suggestionsDropdown = document.getElementById('suggestions-dropdown');
 let suggestDebounceTimer = null;
 let selectedSuggestionIndex = -1;
 
+// 具材検索中の料理ID
+const loadingIngredientsDishes = new Set();
+// 具材検索結果キャッシュ { dishId: { dishName, ingredients } }
+const ingredientsCache = new Map();
+
 // 具材提案モーダル
 const ingredientsOverlay = document.getElementById('ingredients-overlay');
 const ingredientsTitle = document.getElementById('ingredients-title');
@@ -103,13 +108,28 @@ function render() {
 
     const header = document.createElement('div');
     header.className = dishItems.length > 0 ? 'dish-header' : 'dish-header dish-header-empty';
+    let dishStatus = '';
+    if (loadingIngredientsDishes.has(dish.id)) {
+      dishStatus = '<span class="dish-loading-spinner"></span>';
+    } else if (ingredientsCache.has(dish.id)) {
+      dishStatus = '<span class="dish-ingredients-badge" title="具材リストあり">🧾</span>';
+    }
     header.innerHTML = `
-      <span class="dish-name">${escapeHtml(dish.name)}</span>
+      <span class="dish-name">${escapeHtml(dish.name)}${dishStatus}</span>
       <div class="dish-actions">
         <button class="btn-add-to-dish" title="アイテムを追加">+</button>
         <button class="btn-delete-dish" title="料理を削除">&times;</button>
       </div>
     `;
+    header.querySelector('.dish-name').addEventListener('click', () => {
+      if (loadingIngredientsDishes.has(dish.id)) return;
+      const cached = ingredientsCache.get(dish.id);
+      if (cached) {
+        openIngredientsModalWithResults(dish.id, cached.dishName, cached.ingredients);
+      } else {
+        fetchIngredientsInBackground(dish.id, dish.name);
+      }
+    });
     header.querySelector('.btn-add-to-dish').addEventListener('click', () => openModal('item', dish.id));
     header.querySelector('.btn-delete-dish').addEventListener('click', () => removeDish(dish.id));
     group.appendChild(header);
@@ -236,7 +256,7 @@ async function addDish(name) {
     dishes.unshift(res.data);
     updateDishSelect();
     render();
-    openIngredientsModal(res.data.id, res.data.name);
+    fetchIngredientsInBackground(res.data.id, res.data.name);
   }
 }
 
@@ -472,6 +492,44 @@ modal.addEventListener('click', (e) => {
     hideSuggestions();
   }
 });
+
+// モーダルが開いているか判定
+function isAnyModalOpen() {
+  return modalOverlay.classList.contains('active')
+    || ingredientsOverlay.classList.contains('active')
+    || confirmOverlay.classList.contains('active');
+}
+
+// バックグラウンド具材検索
+async function fetchIngredientsInBackground(dishId, dishName) {
+  loadingIngredientsDishes.add(dishId);
+  render();
+  try {
+    const res = await api('POST', `/${dishId}/suggest-ingredients`, {}, DISH_API);
+    loadingIngredientsDishes.delete(dishId);
+    if (res.success && res.data.ingredients.length > 0) {
+      ingredientsCache.set(dishId, { dishName, ingredients: res.data.ingredients });
+      render();
+      if (!isAnyModalOpen()) {
+        openIngredientsModalWithResults(dishId, dishName, res.data.ingredients);
+      }
+    } else {
+      render();
+    }
+  } catch {
+    loadingIngredientsDishes.delete(dishId);
+    render();
+  }
+}
+
+function openIngredientsModalWithResults(dishId, dishName, ingredients) {
+  ingredientsDishId = dishId;
+  ingredientsTitle.textContent = `「${dishName}」の具材`;
+  ingredientsLoading.style.display = 'none';
+  ingredientsError.style.display = 'none';
+  renderIngredients(ingredients);
+  ingredientsOverlay.classList.add('active');
+}
 
 // 具材提案モーダル
 let ingredientsDishId = null;
