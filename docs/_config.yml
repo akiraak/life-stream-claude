@@ -4,5 +4,5 @@ baseurl: /life-stream-claude
 markdown: kramdown
 kramdown:
   input: GFM
-exclude:
+include:
   - specs/design

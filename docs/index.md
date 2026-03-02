@@ -17,3 +17,16 @@ title: 仕様書一覧
     <span class="doc-file">specs/ai-features.md</span>
   </li>
 </ul>
+
+## デザイン案
+
+<ul class="doc-list">
+  <li class="doc-item">
+    <a href="{{ site.baseurl }}/specs/design/design-index.html">デザインパターン一覧</a>
+    <span class="doc-file">20パターン・プレビュー付き</span>
+  </li>
+  <li class="doc-item">
+    <a href="{{ site.baseurl }}/specs/design/design-warm-index.html">Warm Earth バリエーション一覧</a>
+    <span class="doc-file">20パターン・プレビュー付き</span>
+  </li>
+</ul>
