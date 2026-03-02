@@ -125,6 +125,7 @@ function render() {
 function createItemEl(item) {
   const li = document.createElement('li');
   li.className = 'list-item';
+  li.dataset.itemId = item.id;
   li.innerHTML = `
     <input type="checkbox">
     <div class="item-info">
@@ -185,6 +186,11 @@ async function addItem(name, dishId) {
 }
 
 async function toggleCheck(item) {
+  const el = document.querySelector(`[data-item-id="${item.id}"]`);
+  if (el) {
+    el.classList.add('checked-out');
+    await new Promise(r => setTimeout(r, 300));
+  }
   const res = await api('PUT', `/${item.id}`, { checked: 1 });
   if (res.success) {
     items = items.filter(i => i.id !== item.id);
@@ -193,6 +199,11 @@ async function toggleCheck(item) {
 }
 
 async function removeItem(id) {
+  const el = document.querySelector(`[data-item-id="${id}"]`);
+  if (el) {
+    el.classList.add('deleted');
+    await new Promise(r => setTimeout(r, 300));
+  }
   const res = await api('DELETE', `/${id}`);
   if (res.success) {
     items = items.filter(i => i.id !== id);
