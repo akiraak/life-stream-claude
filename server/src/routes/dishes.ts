@@ -15,30 +15,57 @@ interface Ingredient {
   category: string;
 }
 
-function buildIngredientPrompt(dishName: string): string {
-  return `あなたは料理の専門家です。「${dishName}」を作るために必要な具材をリストアップしてください。
-
-以下の条件を守ってください:
-- 一般的な調味料（塩、胡椒、醤油、砂糖、油など）は含めない
-- 主要な食材のみをリストアップする
-- 各具材にはカテゴリ（野菜、肉類、魚介類、乳製品、穀類、その他）を付ける
-- 回答は以下のJSON形式のみで返してください。JSON以外のテキストは含めないでください:
-
-[
-  { "name": "具材名", "category": "カテゴリ" }
-]`;
+interface Recipe {
+  title: string;
+  summary: string;
+  steps: string[];
 }
 
-function parseIngredients(raw: string): Ingredient[] | null {
+interface DishInfo {
+  ingredients: Ingredient[];
+  recipes: Recipe[];
+}
+
+function buildDishInfoPrompt(dishName: string): string {
+  return `あなたは料理の専門家です。「${dishName}」について以下の情報をJSON形式で返してください。
+
+1. 必要な具材リスト（一般的な調味料は含めない、主要な食材のみ）
+2. おすすめレシピを3つ（タイトル、概要、手順）
+
+回答は以下のJSON形式のみで返してください。JSON以外のテキストは含めないでください:
+
+{
+  "ingredients": [
+    { "name": "具材名", "category": "野菜|肉類|魚介類|乳製品|穀類|その他" }
+  ],
+  "recipes": [
+    {
+      "title": "レシピ名",
+      "summary": "一行の概要説明",
+      "steps": ["手順1", "手順2", "手順3"]
+    }
+  ]
+}`;
+}
+
+function parseDishInfo(raw: string): DishInfo {
   try {
     const cleaned = raw.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
     const parsed = JSON.parse(cleaned);
-    if (Array.isArray(parsed)) {
-      return parsed as Ingredient[];
+    // 新形式: { ingredients, recipes }
+    if (parsed && !Array.isArray(parsed) && Array.isArray(parsed.ingredients)) {
+      return {
+        ingredients: parsed.ingredients as Ingredient[],
+        recipes: Array.isArray(parsed.recipes) ? parsed.recipes as Recipe[] : [],
+      };
     }
-    return null;
+    // 旧形式: 配列のみ（後方互換）
+    if (Array.isArray(parsed)) {
+      return { ingredients: parsed as Ingredient[], recipes: [] };
+    }
+    return { ingredients: [], recipes: [] };
   } catch {
-    return null;
+    return { ingredients: [], recipes: [] };
   }
 }
 
@@ -103,17 +130,17 @@ dishesRouter.post('/:id/suggest-ingredients', async (req: Request, res: Response
       return;
     }
 
-    const prompt = buildIngredientPrompt(dish.name);
+    const prompt = buildDishInfoPrompt(dish.name);
     const raw = await askGemini(prompt);
-    const ingredients = parseIngredients(raw);
+    const info = parseDishInfo(raw);
 
     res.json({
       success: true,
       data: {
         dishId: dish.id,
         dishName: dish.name,
-        ingredients: ingredients ?? [],
-        rawResponse: ingredients ? undefined : raw,
+        ingredients: info.ingredients,
+        recipes: info.recipes,
       },
       error: null,
     });

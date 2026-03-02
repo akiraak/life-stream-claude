@@ -34,6 +34,7 @@ const ingredientsTitle = document.getElementById('ingredients-title');
 const ingredientsLoading = document.getElementById('ingredients-loading');
 const ingredientsError = document.getElementById('ingredients-error');
 const ingredientsList = document.getElementById('ingredients-list');
+const ingredientsRecipes = document.getElementById('ingredients-recipes');
 const ingredientsActions = document.getElementById('ingredients-actions');
 const ingredientsAdd = document.getElementById('ingredients-add');
 const ingredientsSkip = document.getElementById('ingredients-skip');
@@ -125,7 +126,7 @@ function render() {
       if (loadingIngredientsDishes.has(dish.id)) return;
       const cached = ingredientsCache.get(dish.id);
       if (cached) {
-        openIngredientsModalWithResults(dish.id, cached.dishName, cached.ingredients);
+        openIngredientsModalWithResults(dish.id, cached.dishName, cached.ingredients, cached.recipes);
       } else {
         fetchIngredientsInBackground(dish.id, dish.name);
       }
@@ -211,6 +212,11 @@ async function loadAll() {
 
 // アイテム操作
 async function addItem(name, dishId) {
+  // 同じ料理に同名アイテムが既にあればスキップ
+  if (dishId) {
+    const dish = dishes.find(d => d.id === Number(dishId));
+    if (dish && (dish.items || []).some(i => i.name === name)) return;
+  }
   const res = await api('POST', '', { name });
   if (res.success) {
     items.unshift(res.data);
@@ -508,10 +514,11 @@ async function fetchIngredientsInBackground(dishId, dishName) {
     const res = await api('POST', `/${dishId}/suggest-ingredients`, {}, DISH_API);
     loadingIngredientsDishes.delete(dishId);
     if (res.success && res.data.ingredients.length > 0) {
-      ingredientsCache.set(dishId, { dishName, ingredients: res.data.ingredients });
+      const recipes = res.data.recipes || [];
+      ingredientsCache.set(dishId, { dishName, ingredients: res.data.ingredients, recipes });
       render();
       if (!isAnyModalOpen()) {
-        openIngredientsModalWithResults(dishId, dishName, res.data.ingredients);
+        openIngredientsModalWithResults(dishId, dishName, res.data.ingredients, recipes);
       }
     } else {
       render();
@@ -522,12 +529,17 @@ async function fetchIngredientsInBackground(dishId, dishName) {
   }
 }
 
-function openIngredientsModalWithResults(dishId, dishName, ingredients) {
+function openIngredientsModalWithResults(dishId, dishName, ingredients, recipes) {
   ingredientsDishId = dishId;
-  ingredientsTitle.textContent = `「${dishName}」の具材`;
+  ingredientsTitle.textContent = `「${dishName}」`;
   ingredientsLoading.style.display = 'none';
   ingredientsError.style.display = 'none';
-  renderIngredients(ingredients);
+  // 料理に既に追加されているアイテム名を取得して除外
+  const dish = dishes.find(d => d.id === dishId);
+  const existingNames = new Set((dish && dish.items || []).map(i => i.name));
+  const filtered = ingredients.filter(ing => !existingNames.has(ing.name));
+  renderIngredients(filtered);
+  renderRecipes(recipes || []);
   ingredientsOverlay.classList.add('active');
 }
 
@@ -548,6 +560,7 @@ function openIngredientsModal(dishId, dishName) {
 function closeIngredientsModal() {
   ingredientsOverlay.classList.remove('active');
   ingredientsDishId = null;
+  if (ingredientsRecipes) ingredientsRecipes.style.display = 'none';
 }
 
 async function fetchIngredients(dishId, dishName) {
@@ -577,24 +590,58 @@ async function fetchIngredients(dishId, dishName) {
 
 function renderIngredients(ingredients) {
   let html = '';
-  ingredients.forEach((ing, i) => {
-    html += `
-      <label class="ingredient-item">
-        <input type="checkbox" data-index="${i}">
-        <span class="ingredient-name">${escapeHtml(ing.name)}</span>
-        <span class="ingredient-category">${escapeHtml(ing.category)}</span>
-      </label>
-    `;
+  ingredients.forEach(ing => {
+    html += `<span class="ingredient-chip" data-name="${escapeHtml(ing.name)}">${escapeHtml(ing.name)}</span>`;
   });
   ingredientsList.innerHTML = html;
   ingredientsList.style.display = '';
   ingredientsActions.style.display = '';
   ingredientsAdd.style.display = '';
+
+  ingredientsList.querySelectorAll('.ingredient-chip').forEach(chip => {
+    chip.addEventListener('click', () => chip.classList.toggle('selected'));
+  });
+}
+
+function renderRecipes(recipes) {
+  if (!ingredientsRecipes) return;
+  if (!recipes || recipes.length === 0) {
+    ingredientsRecipes.style.display = 'none';
+    return;
+  }
+  let html = '<div class="recipes-title">レシピ</div>';
+  recipes.forEach((r, i) => {
+    let stepsHtml = '';
+    if (r.steps && r.steps.length > 0) {
+      stepsHtml = `<ol class="recipe-steps" id="recipe-steps-${i}">`;
+      r.steps.forEach(s => { stepsHtml += `<li>${escapeHtml(s)}</li>`; });
+      stepsHtml += '</ol>';
+    }
+    html += `
+      <div class="recipe-card">
+        <div class="recipe-card-title">${escapeHtml(r.title)}</div>
+        <div class="recipe-card-summary">${escapeHtml(r.summary)}</div>
+        ${stepsHtml ? `<div class="recipe-detail-toggle" data-target="recipe-steps-${i}">▶ 詳細を見る</div>${stepsHtml}` : ''}
+      </div>
+    `;
+  });
+  ingredientsRecipes.innerHTML = html;
+  ingredientsRecipes.style.display = '';
+
+  ingredientsRecipes.querySelectorAll('.recipe-detail-toggle').forEach(toggle => {
+    toggle.addEventListener('click', () => {
+      const steps = document.getElementById(toggle.dataset.target);
+      if (steps) {
+        const isOpen = steps.classList.toggle('open');
+        toggle.textContent = isOpen ? '▼ 閉じる' : '▶ 詳細を見る';
+      }
+    });
+  });
 }
 
 async function addSelectedIngredients() {
-  const boxes = ingredientsList.querySelectorAll('input[type="checkbox"]:checked');
-  if (boxes.length === 0) {
+  const chips = ingredientsList.querySelectorAll('.ingredient-chip.selected');
+  if (chips.length === 0) {
     closeIngredientsModal();
     return;
   }
@@ -602,8 +649,13 @@ async function addSelectedIngredients() {
   ingredientsAdd.disabled = true;
   ingredientsAdd.textContent = '追加中...';
 
-  for (const box of boxes) {
-    const name = box.closest('.ingredient-item').querySelector('.ingredient-name').textContent;
+  // 同じ料理に既にある名前を取得
+  const dish = dishes.find(d => d.id === ingredientsDishId);
+  const existingNames = new Set((dish && dish.items || []).map(i => i.name));
+
+  for (const chip of chips) {
+    const name = chip.dataset.name;
+    if (existingNames.has(name)) continue;
     const res = await api('POST', '', { name });
     if (res.success) {
       items.unshift(res.data);
