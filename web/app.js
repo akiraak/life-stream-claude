@@ -70,6 +70,13 @@ async function api(method, path = '', body = null, base = API) {
   return res.json();
 }
 
+function showToast(message, duration = 3000) {
+  const toast = document.getElementById('toast');
+  toast.textContent = message;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), duration);
+}
+
 function escapeHtml(str) {
   const div = document.createElement('div');
   div.textContent = str;
@@ -661,6 +668,7 @@ function isAnyModalOpen() {
 
 // バックグラウンド具材検索
 async function fetchIngredientsInBackground(dishId, dishName, force = false) {
+  showToast(`「${dishName}」のレシピを検索中...`);
   loadingIngredientsDishes.add(dishId);
   render();
   try {
@@ -684,6 +692,7 @@ async function fetchIngredientsInBackground(dishId, dishName, force = false) {
 
 // モーダル内で再検索（force）
 async function fetchIngredientsForModal(dishId, dishName) {
+  showToast(`「${dishName}」のレシピを再取得中...`);
   loadingIngredientsDishes.add(dishId);
   render();
   try {
@@ -758,6 +767,7 @@ function closeIngredientsModal() {
 }
 
 async function fetchIngredients(dishId, dishName) {
+  showToast(`「${dishName}」のレシピを検索中...`);
   try {
     const res = await api('POST', `/${dishId}/suggest-ingredients`, {}, DISH_API);
     if (res.success && res.data.ingredients.length > 0) {

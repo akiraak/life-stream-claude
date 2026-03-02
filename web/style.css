@@ -596,3 +596,24 @@ body.modal-open { overflow: hidden; }
   padding: 40px 0;
   font-size: 15px;
 }
+
+/* トースト通知 */
+.toast {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #333;
+  color: #d4d4d4;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  z-index: 300;
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+
+.toast.show {
+  opacity: 1;
+}
