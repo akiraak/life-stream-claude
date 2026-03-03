@@ -27,8 +27,8 @@ function showLoginPage() {
 function showApp() {
   loginPage.style.display = 'none';
   appContent.style.display = '';
-  const headerEmail = document.getElementById('header-email');
-  if (headerEmail) headerEmail.textContent = getAuthEmail() || '';
+  const menuEmail = document.getElementById('header-menu-email');
+  if (menuEmail) menuEmail.textContent = getAuthEmail() || '';
   loadAll();
 }
 
@@ -135,8 +135,25 @@ otpInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') otpSubmitBtn.click();
 });
 
-// ログアウトボタン
-document.getElementById('header-logout').addEventListener('click', logout);
+// ハンバーガーメニュー
+const headerMenu = document.getElementById('header-menu');
+const headerMenuBtn = document.getElementById('header-menu-btn');
+
+headerMenuBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  headerMenu.style.display = headerMenu.style.display === 'none' ? '' : 'none';
+});
+
+document.addEventListener('click', (e) => {
+  if (headerMenu.style.display !== 'none' && !headerMenu.contains(e.target) && e.target !== headerMenuBtn) {
+    headerMenu.style.display = 'none';
+  }
+});
+
+document.getElementById('header-menu-logout').addEventListener('click', () => {
+  headerMenu.style.display = 'none';
+  logout();
+});
 
 // DOM 要素
 const listEl = document.getElementById('shopping-list');
