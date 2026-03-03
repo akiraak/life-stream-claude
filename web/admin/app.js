@@ -461,6 +461,9 @@ async function renderSavedRecipes() {
       { key: 'dish_name', label: '料理名' },
       { key: 'title', label: 'レシピ名' },
       { key: 'summary', label: '概要' },
+      { key: 'liked', label: 'いいね', width: '70px', render: r =>
+        r.liked ? '<span class="badge badge-success">♥</span>' : '<span class="badge badge-neutral">-</span>'
+      },
       { key: 'created_at', label: '保存日', render: r => formatDate(r.created_at) },
     ],
     data: res.data,
