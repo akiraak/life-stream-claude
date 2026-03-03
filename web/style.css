@@ -276,6 +276,8 @@ h1 {
   padding: 8px 0;
   background: none;
   transition: opacity 0.3s, transform 0.3s;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .list-item.checked-out {
