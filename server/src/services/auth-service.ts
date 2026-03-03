@@ -104,11 +104,11 @@ export async function sendOtpEmail(email: string, code: string): Promise<void> {
   await transport.sendMail({
     from: process.env.SMTP_FROM || process.env.SMTP_USER,
     to: email,
-    subject: '料理買い物リスト - ログインコード',
+    subject: '料理買物List - ログインコード',
     text: `ログインコード: ${code}\n\nアプリ画面でこのコードを入力してください。\n\nこのコードは15分間有効です。\nこのメールに心当たりがない場合は無視してください。`,
     html: `
       <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 20px;">
-        <h2 style="color: #333;">料理買い物リスト</h2>
+        <h2 style="color: #333;">料理買物List</h2>
         <p>以下のコードをアプリ画面で入力してください。</p>
         <div style="font-size: 32px; font-weight: bold; letter-spacing: 8px; text-align: center; padding: 16px; background: #f5f5f5; border-radius: 8px; margin: 16px 0; color: #333;">${code}</div>
         <p style="color: #888; font-size: 14px; margin-top: 20px;">このコードは15分間有効です。<br>このメールに心当たりがない場合は無視してください。</p>

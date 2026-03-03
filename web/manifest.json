@@ -1,6 +1,6 @@
 {
-  "name": "料理買い物リスト",
-  "short_name": "食材リスト",
+  "name": "料理買物List",
+  "short_name": "料理買物List",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#1c1c1c",
