@@ -12,8 +12,8 @@ import {
 export const shoppingRouter = Router();
 
 // 全アイテム取得
-shoppingRouter.get('/', (_req: Request, res: Response) => {
-  const items = getAllItems();
+shoppingRouter.get('/', (req: Request, res: Response) => {
+  const items = getAllItems(req.userId!);
   res.json({ success: true, data: items, error: null });
 });
 
@@ -24,7 +24,7 @@ shoppingRouter.post('/', (req: Request, res: Response) => {
     res.status(400).json({ success: false, data: null, error: 'name は必須です' });
     return;
   }
-  const item = createItem({ name: name.trim(), category });
+  const item = createItem(req.userId!, { name: name.trim(), category });
   res.status(201).json({ success: true, data: item, error: null });
 });
 
@@ -33,7 +33,7 @@ shoppingRouter.get('/suggestions', (req: Request, res: Response) => {
   const q = req.query.q;
   const query = (typeof q === 'string') ? q.trim() : '';
   const limit = query ? 10 : 3;
-  const suggestions = getSuggestions(query, limit);
+  const suggestions = getSuggestions(req.userId!, query, limit);
   res.json({ success: true, data: suggestions, error: null });
 });
 
@@ -45,7 +45,7 @@ shoppingRouter.put('/reorder', (req: Request, res: Response) => {
       res.status(400).json({ success: false, data: null, error: 'orderedIds は配列で指定してください' });
       return;
     }
-    reorderItems(orderedIds);
+    reorderItems(req.userId!, orderedIds);
     res.json({ success: true, data: null, error: null });
   } catch (err) {
     res.status(500).json({ success: false, data: null, error: String(err) });
@@ -53,15 +53,15 @@ shoppingRouter.put('/reorder', (req: Request, res: Response) => {
 });
 
 // チェック済み一括削除 (/:id より先に定義)
-shoppingRouter.delete('/checked', (_req: Request, res: Response) => {
-  const count = deleteCheckedItems();
+shoppingRouter.delete('/checked', (req: Request, res: Response) => {
+  const count = deleteCheckedItems(req.userId!);
   res.json({ success: true, data: { deleted: count }, error: null });
 });
 
 // アイテム更新
 shoppingRouter.put('/:id', (req: Request, res: Response) => {
   const id = Number(req.params.id);
-  const item = updateItem(id, req.body);
+  const item = updateItem(req.userId!, id, req.body);
   if (!item) {
     res.status(404).json({ success: false, data: null, error: 'アイテムが見つかりません' });
     return;
@@ -72,7 +72,7 @@ shoppingRouter.put('/:id', (req: Request, res: Response) => {
 // アイテム削除
 shoppingRouter.delete('/:id', (req: Request, res: Response) => {
   const id = Number(req.params.id);
-  const deleted = deleteItem(id);
+  const deleted = deleteItem(req.userId!, id);
   if (!deleted) {
     res.status(404).json({ success: false, data: null, error: 'アイテムが見つかりません' });
     return;

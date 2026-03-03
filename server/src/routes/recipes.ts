@@ -46,9 +46,9 @@ function parseRecipes(raw: string): Recipe[] | null {
   }
 }
 
-recipesRouter.get('/recommend', async (_req: Request, res: Response, next: NextFunction) => {
+recipesRouter.get('/recommend', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const items = getUncheckedItems();
+    const items = getUncheckedItems(req.userId!);
 
     if (items.length === 0) {
       res.status(400).json({

@@ -83,9 +83,9 @@ function parseDishInfo(raw: string): DishInfo {
 export const dishesRouter = Router();
 
 // 全料理取得
-dishesRouter.get('/', (_req: Request, res: Response) => {
+dishesRouter.get('/', (req: Request, res: Response) => {
   try {
-    const dishes = getAllDishes();
+    const dishes = getAllDishes(req.userId!);
     res.json({ success: true, data: dishes, error: null });
   } catch (err) {
     res.status(500).json({ success: false, data: null, error: String(err) });
@@ -100,7 +100,7 @@ dishesRouter.put('/reorder', (req: Request, res: Response) => {
       res.status(400).json({ success: false, data: null, error: 'orderedIds は配列で指定してください' });
       return;
     }
-    reorderDishes(orderedIds);
+    reorderDishes(req.userId!, orderedIds);
     res.json({ success: true, data: null, error: null });
   } catch (err) {
     res.status(500).json({ success: false, data: null, error: String(err) });
@@ -112,7 +112,7 @@ dishesRouter.get('/suggestions', (req: Request, res: Response) => {
   const q = req.query.q;
   const query = (typeof q === 'string') ? q.trim() : '';
   const limit = query ? 10 : 3;
-  const suggestions = getDishSuggestions(query, limit);
+  const suggestions = getDishSuggestions(req.userId!, query, limit);
   res.json({ success: true, data: suggestions, error: null });
 });
 
@@ -124,7 +124,7 @@ dishesRouter.post('/', (req: Request, res: Response) => {
       res.status(400).json({ success: false, data: null, error: 'name は必須です' });
       return;
     }
-    const dish = createDish(name.trim());
+    const dish = createDish(req.userId!, name.trim());
     res.status(201).json({ success: true, data: dish, error: null });
   } catch (err) {
     res.status(500).json({ success: false, data: null, error: String(err) });
@@ -140,7 +140,7 @@ dishesRouter.put('/:id', (req: Request, res: Response) => {
       res.status(400).json({ success: false, data: null, error: 'name は必須です' });
       return;
     }
-    const dish = updateDish(id, name.trim());
+    const dish = updateDish(req.userId!, id, name.trim());
     if (!dish) {
       res.status(404).json({ success: false, data: null, error: '料理が見つかりません' });
       return;
@@ -155,7 +155,7 @@ dishesRouter.put('/:id', (req: Request, res: Response) => {
 dishesRouter.delete('/:id', (req: Request, res: Response) => {
   try {
     const id = Number(req.params.id);
-    const deleted = deleteDish(id);
+    const deleted = deleteDish(req.userId!, id);
     if (!deleted) {
       res.status(404).json({ success: false, data: null, error: '料理が見つかりません' });
       return;
@@ -170,7 +170,7 @@ dishesRouter.delete('/:id', (req: Request, res: Response) => {
 dishesRouter.post('/:id/suggest-ingredients', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = Number(req.params.id);
-    const dish = getDish(id);
+    const dish = getDish(req.userId!, id);
     if (!dish) {
       res.status(404).json({ success: false, data: null, error: '料理が見つかりません' });
       return;
@@ -196,7 +196,7 @@ dishesRouter.post('/:id/suggest-ingredients', async (req: Request, res: Response
     const prompt = buildDishInfoPrompt(dish.name, extraIngredients.length > 0 ? extraIngredients : undefined);
     const raw = await askGemini(prompt);
     const info = parseDishInfo(raw);
-    updateDishInfo(dish.id, info.ingredients, info.recipes);
+    updateDishInfo(req.userId!, dish.id, info.ingredients, info.recipes);
 
     res.json({
       success: true,
@@ -222,12 +222,12 @@ dishesRouter.post('/:id/items', (req: Request, res: Response) => {
       res.status(400).json({ success: false, data: null, error: 'itemId は必須です' });
       return;
     }
-    const linked = linkItemToDish(dishId, Number(itemId));
+    const linked = linkItemToDish(req.userId!, dishId, Number(itemId));
     if (!linked) {
       res.status(400).json({ success: false, data: null, error: 'リンクに失敗しました' });
       return;
     }
-    const dish = getDish(dishId);
+    const dish = getDish(req.userId!, dishId);
     res.json({ success: true, data: dish, error: null });
   } catch (err) {
     res.status(500).json({ success: false, data: null, error: String(err) });
@@ -243,7 +243,7 @@ dishesRouter.put('/:id/items/reorder', (req: Request, res: Response) => {
       res.status(400).json({ success: false, data: null, error: 'orderedItemIds は配列で指定してください' });
       return;
     }
-    reorderDishItems(dishId, orderedItemIds);
+    reorderDishItems(req.userId!, dishId, orderedItemIds);
     res.json({ success: true, data: null, error: null });
   } catch (err) {
     res.status(500).json({ success: false, data: null, error: String(err) });
@@ -255,7 +255,7 @@ dishesRouter.delete('/:id/items/:itemId', (req: Request, res: Response) => {
   try {
     const dishId = Number(req.params.id);
     const itemId = Number(req.params.itemId);
-    const unlinked = unlinkItemFromDish(dishId, itemId);
+    const unlinked = unlinkItemFromDish(req.userId!, dishId, itemId);
     if (!unlinked) {
       res.status(404).json({ success: false, data: null, error: 'リンクが見つかりません' });
       return;

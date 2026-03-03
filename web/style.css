@@ -9,6 +9,121 @@ body {
   -webkit-text-size-adjust: 100%;
 }
 
+/* ログインページ */
+.login-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 24px;
+}
+
+.login-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 32px;
+}
+
+.login-desc {
+  font-size: 14px;
+  color: #888;
+  text-align: center;
+  margin-bottom: 20px;
+  line-height: 1.6;
+}
+
+.login-input {
+  width: 100%;
+  max-width: 320px;
+  padding: 14px;
+  border: 1px solid #444;
+  border-radius: 8px;
+  font-size: 16px;
+  background: #242424;
+  color: #d4d4d4;
+  margin-bottom: 12px;
+}
+
+.login-input:focus { outline: none; border-color: #fb923c; }
+
+.login-btn {
+  width: 100%;
+  max-width: 320px;
+  padding: 14px;
+  background: #f97316;
+  border: none;
+  border-radius: 8px;
+  color: #000;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.login-btn:active { opacity: 0.8; }
+.login-btn:disabled { opacity: 0.5; cursor: default; }
+
+.login-error {
+  color: #f87171;
+  font-size: 14px;
+  margin-top: 12px;
+  text-align: center;
+}
+
+.login-sent-message {
+  font-size: 15px;
+  color: #d4d4d4;
+  text-align: center;
+  line-height: 1.6;
+  margin-bottom: 20px;
+  max-width: 320px;
+}
+
+.login-retry-btn {
+  background: none;
+  border: 1px solid #444;
+  color: #888;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.login-retry-btn:active { opacity: 0.7; }
+
+/* ヘッダーユーザー情報 */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header-email {
+  font-size: 12px;
+  color: #666;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.header-logout {
+  background: none;
+  border: 1px solid #444;
+  color: #888;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.header-logout:active { color: #f87171; border-color: #f87171; }
+
 .container {
   padding: 12px 0 90px;
 }

@@ -1,6 +1,93 @@
 const API = '/api/shopping';
 const DISH_API = '/api/dishes';
 
+// 認証状態管理
+function getAuthToken() { return localStorage.getItem('auth_token'); }
+function getAuthEmail() { return localStorage.getItem('auth_email'); }
+function isAuthenticated() { return !!getAuthToken(); }
+
+function logout() {
+  localStorage.removeItem('auth_token');
+  localStorage.removeItem('auth_email');
+  showLoginPage();
+}
+
+// ページ表示制御
+const loginPage = document.getElementById('login-page');
+const appContent = document.getElementById('app-content');
+
+function showLoginPage() {
+  loginPage.style.display = '';
+  appContent.style.display = 'none';
+}
+
+function showApp() {
+  loginPage.style.display = 'none';
+  appContent.style.display = '';
+  const headerEmail = document.getElementById('header-email');
+  if (headerEmail) headerEmail.textContent = getAuthEmail() || '';
+  loadAll();
+}
+
+// ログインページ UI
+const loginEmailInput = document.getElementById('login-email');
+const loginSubmitBtn = document.getElementById('login-submit');
+const loginError = document.getElementById('login-error');
+const loginForm = document.getElementById('login-form');
+const loginSent = document.getElementById('login-sent');
+const loginSentMessage = document.getElementById('login-sent-message');
+const loginRetryBtn = document.getElementById('login-retry');
+
+loginSubmitBtn.addEventListener('click', async () => {
+  const email = loginEmailInput.value.trim();
+  if (!email || !email.includes('@')) {
+    loginError.textContent = '有効なメールアドレスを入力してください';
+    loginError.style.display = '';
+    return;
+  }
+  loginError.style.display = 'none';
+  loginSubmitBtn.disabled = true;
+  loginSubmitBtn.textContent = '送信中...';
+
+  try {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      loginForm.style.display = 'none';
+      loginSentMessage.textContent = `${email} にログインリンクを送信しました。メールを確認してリンクをクリックしてください。`;
+      loginSent.style.display = '';
+    } else {
+      loginError.textContent = data.error || 'エラーが発生しました';
+      loginError.style.display = '';
+    }
+  } catch {
+    loginError.textContent = 'サーバーに接続できません';
+    loginError.style.display = '';
+  } finally {
+    loginSubmitBtn.disabled = false;
+    loginSubmitBtn.textContent = 'ログインリンクを送信';
+  }
+});
+
+loginEmailInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') loginSubmitBtn.click();
+});
+
+loginRetryBtn.addEventListener('click', () => {
+  loginSent.style.display = 'none';
+  loginForm.style.display = '';
+  loginEmailInput.value = '';
+  loginEmailInput.focus();
+});
+
+// ログアウトボタン
+document.getElementById('header-logout').addEventListener('click', logout);
+
+// DOM 要素
 const listEl = document.getElementById('shopping-list');
 const emptyEl = document.getElementById('empty-message');
 
@@ -68,11 +155,19 @@ function updateBodyScroll() {
   document.body.classList.toggle('modal-open', anyOpen);
 }
 
-// API 通信
+// API 通信（認証ヘッダー付き）
 async function api(method, path = '', body = null, base = API) {
-  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  const headers = { 'Content-Type': 'application/json' };
+  const token = getAuthToken();
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  const opts = { method, headers };
   if (body) opts.body = JSON.stringify(body);
   const res = await fetch(base + path, opts);
+  // 401 の場合はログインページへ
+  if (res.status === 401) {
+    logout();
+    return { success: false, data: null, error: '認証が必要です' };
+  }
   return res.json();
 }
 
@@ -156,7 +251,7 @@ function render() {
     if (loadingIngredientsDishes.has(dish.id)) {
       dishStatus = '<span class="dish-loading-spinner"></span>';
     } else if (ingredientsCache.has(dish.id)) {
-      dishStatus = '<span class="dish-ingredients-badge" title="具材リストあり">🧾</span>';
+      dishStatus = '<span class="dish-ingredients-badge" title="具材リストあり">&#x1F9FE;</span>';
     }
     header.innerHTML = `
       <span class="dish-name">${escapeHtml(dish.name)}${dishStatus}</span>
@@ -1092,5 +1187,9 @@ if (screen.orientation && screen.orientation.lock) {
   screen.orientation.lock('portrait').catch(() => {});
 }
 
-// 初期読み込み
-loadAll();
+// 初期化: 認証状態チェック
+if (isAuthenticated()) {
+  showApp();
+} else {
+  showLoginPage();
+}

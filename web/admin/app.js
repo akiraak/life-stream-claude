@@ -11,11 +11,24 @@ const emptyEl = document.getElementById('empty-message');
 
 let items = [];
 
-// API 通信
+// 認証トークン取得
+function getAuthToken() { return localStorage.getItem('auth_token'); }
+
+// API 通信（認証ヘッダー付き）
 async function api(method, url, body = null) {
-  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  const headers = { 'Content-Type': 'application/json' };
+  const token = getAuthToken();
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  const opts = { method, headers };
   if (body) opts.body = JSON.stringify(body);
   const res = await fetch(url, opts);
+  if (res.status === 401) {
+    // 認証エラー → メインページへリダイレクト
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('auth_email');
+    location.href = '/';
+    return { success: false, data: null, error: '認証が必要です' };
+  }
   return res.json();
 }
 
@@ -224,6 +237,10 @@ claudePromptEl.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') sendClaude();
 });
 
-// 初期読み込み
-checkHealth();
-refresh();
+// 認証チェック → 初期読み込み
+if (!getAuthToken()) {
+  location.href = '/';
+} else {
+  checkHealth();
+  refresh();
+}

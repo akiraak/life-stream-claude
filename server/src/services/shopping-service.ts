@@ -25,24 +25,24 @@ export interface PurchaseSuggestion {
   count: number;
 }
 
-export function getAllItems(): ShoppingItem[] {
+export function getAllItems(userId: number): ShoppingItem[] {
   const db = getDatabase();
-  return db.prepare('SELECT * FROM shopping_items ORDER BY checked ASC, position ASC, created_at DESC').all() as ShoppingItem[];
+  return db.prepare('SELECT * FROM shopping_items WHERE user_id = ? ORDER BY checked ASC, position ASC, created_at DESC').all(userId) as ShoppingItem[];
 }
 
-export function createItem(input: CreateItemInput): ShoppingItem {
+export function createItem(userId: number, input: CreateItemInput): ShoppingItem {
   const db = getDatabase();
-  db.prepare('UPDATE shopping_items SET position = position + 1 WHERE checked = 0').run();
+  db.prepare('UPDATE shopping_items SET position = position + 1 WHERE user_id = ? AND checked = 0').run(userId);
   const stmt = db.prepare(
-    'INSERT INTO shopping_items (name, category, position) VALUES (?, ?, 0)'
+    'INSERT INTO shopping_items (user_id, name, category, position) VALUES (?, ?, ?, 0)'
   );
-  const result = stmt.run(input.name, input.category ?? '');
+  const result = stmt.run(userId, input.name, input.category ?? '');
   return db.prepare('SELECT * FROM shopping_items WHERE id = ?').get(result.lastInsertRowid) as ShoppingItem;
 }
 
-export function updateItem(id: number, input: UpdateItemInput): ShoppingItem | null {
+export function updateItem(userId: number, id: number, input: UpdateItemInput): ShoppingItem | null {
   const db = getDatabase();
-  const existing = db.prepare('SELECT * FROM shopping_items WHERE id = ?').get(id) as ShoppingItem | undefined;
+  const existing = db.prepare('SELECT * FROM shopping_items WHERE id = ? AND user_id = ?').get(id, userId) as ShoppingItem | undefined;
   if (!existing) return null;
 
   const name = input.name ?? existing.name;
@@ -50,79 +50,79 @@ export function updateItem(id: number, input: UpdateItemInput): ShoppingItem | n
   const checked = input.checked ?? existing.checked;
 
   db.prepare(
-    "UPDATE shopping_items SET name = ?, category = ?, checked = ?, updated_at = datetime('now') WHERE id = ?"
-  ).run(name, category, checked, id);
+    "UPDATE shopping_items SET name = ?, category = ?, checked = ?, updated_at = datetime('now') WHERE id = ? AND user_id = ?"
+  ).run(name, category, checked, id, userId);
 
   // チェック時に購入履歴を記録
   if (input.checked === 1 && existing.checked === 0) {
-    recordPurchase(name);
+    recordPurchase(userId, name);
   }
 
   return db.prepare('SELECT * FROM shopping_items WHERE id = ?').get(id) as ShoppingItem;
 }
 
-export function deleteItem(id: number): boolean {
+export function deleteItem(userId: number, id: number): boolean {
   const db = getDatabase();
-  const result = db.prepare('DELETE FROM shopping_items WHERE id = ?').run(id);
+  const result = db.prepare('DELETE FROM shopping_items WHERE id = ? AND user_id = ?').run(id, userId);
   return result.changes > 0;
 }
 
-export function deleteCheckedItems(): number {
+export function deleteCheckedItems(userId: number): number {
   const db = getDatabase();
-  const result = db.prepare('DELETE FROM shopping_items WHERE checked = 1').run();
+  const result = db.prepare('DELETE FROM shopping_items WHERE user_id = ? AND checked = 1').run(userId);
   return result.changes;
 }
 
-export function deleteAllItems(): number {
+export function deleteAllItems(userId: number): number {
   const db = getDatabase();
-  const result = db.prepare('DELETE FROM shopping_items').run();
+  const result = db.prepare('DELETE FROM shopping_items WHERE user_id = ?').run(userId);
   return result.changes;
 }
 
-export function getUncheckedItems(): ShoppingItem[] {
+export function getUncheckedItems(userId: number): ShoppingItem[] {
   const db = getDatabase();
-  return db.prepare('SELECT * FROM shopping_items WHERE checked = 0 ORDER BY created_at DESC').all() as ShoppingItem[];
+  return db.prepare('SELECT * FROM shopping_items WHERE user_id = ? AND checked = 0 ORDER BY created_at DESC').all(userId) as ShoppingItem[];
 }
 
-export function getStats(): { total: number; checked: number; unchecked: number } {
+export function getStats(userId: number): { total: number; checked: number; unchecked: number } {
   const db = getDatabase();
-  const total = (db.prepare('SELECT COUNT(*) as count FROM shopping_items').get() as { count: number }).count;
-  const checked = (db.prepare('SELECT COUNT(*) as count FROM shopping_items WHERE checked = 1').get() as { count: number }).count;
+  const total = (db.prepare('SELECT COUNT(*) as count FROM shopping_items WHERE user_id = ?').get(userId) as { count: number }).count;
+  const checked = (db.prepare('SELECT COUNT(*) as count FROM shopping_items WHERE user_id = ? AND checked = 1').get(userId) as { count: number }).count;
   return { total, checked, unchecked: total - checked };
 }
 
-export function reorderItems(orderedIds: number[]): void {
+export function reorderItems(userId: number, orderedIds: number[]): void {
   const db = getDatabase();
-  const stmt = db.prepare('UPDATE shopping_items SET position = ? WHERE id = ?');
+  const stmt = db.prepare('UPDATE shopping_items SET position = ? WHERE id = ? AND user_id = ?');
   db.transaction(() => {
-    orderedIds.forEach((id, index) => stmt.run(index, id));
+    orderedIds.forEach((id, index) => stmt.run(index, id, userId));
   })();
 }
 
-export function recordPurchase(itemName: string): void {
+export function recordPurchase(userId: number, itemName: string): void {
   const db = getDatabase();
-  db.prepare('INSERT INTO purchase_history (item_name) VALUES (?)').run(itemName);
+  db.prepare('INSERT INTO purchase_history (user_id, item_name) VALUES (?, ?)').run(userId, itemName);
 }
 
-export function getSuggestions(query: string, limit: number = 10): PurchaseSuggestion[] {
+export function getSuggestions(userId: number, query: string, limit: number = 10): PurchaseSuggestion[] {
   const db = getDatabase();
-  const excludeClause = 'AND item_name COLLATE NOCASE NOT IN (SELECT name COLLATE NOCASE FROM shopping_items WHERE checked = 0)';
+  const excludeClause = 'AND item_name COLLATE NOCASE NOT IN (SELECT name COLLATE NOCASE FROM shopping_items WHERE user_id = ? AND checked = 0)';
   if (!query) {
     return db.prepare(`
       SELECT item_name AS name, COUNT(*) AS count
       FROM purchase_history
-      WHERE 1=1 ${excludeClause}
+      WHERE user_id = ? ${excludeClause}
       GROUP BY item_name COLLATE NOCASE
       ORDER BY count DESC, MAX(purchased_at) DESC
       LIMIT ?
-    `).all(limit) as PurchaseSuggestion[];
+    `).all(userId, userId, limit) as PurchaseSuggestion[];
   }
   return db.prepare(`
     SELECT item_name AS name, COUNT(*) AS count
     FROM purchase_history
-    WHERE item_name LIKE ? COLLATE NOCASE ${excludeClause}
+    WHERE user_id = ? AND item_name LIKE ? COLLATE NOCASE ${excludeClause}
     GROUP BY item_name COLLATE NOCASE
     ORDER BY count DESC, MAX(purchased_at) DESC
     LIMIT ?
-  `).all(`${query}%`, limit) as PurchaseSuggestion[];
+  `).all(userId, `${query}%`, userId, limit) as PurchaseSuggestion[];
 }

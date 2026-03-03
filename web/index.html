@@ -12,88 +12,114 @@
   <link rel="stylesheet" href="style.css?v=__CACHE_VERSION__">
 </head>
 <body>
-  <div class="container">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding:0 14px">
-      <h1 style="margin:0">料理買い物リスト</h1>
-      <a href="/admin/" style="color:#555;font-size:13px;text-decoration:none">管理画面</a>
-    </div>
-
-    <div id="shopping-list"></div>
-
-    <div id="empty-message" class="empty" style="display:none">
-      リストは空です
-    </div>
-  </div>
-
-  <!-- FAB -->
-  <div class="fab-group">
-    <button class="fab fab-dish" id="fab-dish" title="料理を追加">
-      <img src="icon_dish.png" width="40" height="40" alt="料理を追加">
-    </button>
-    <button class="fab fab-item" id="fab-item" title="アイテムを追加">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-    </button>
-  </div>
-
-  <!-- モーダル -->
-  <div class="modal-overlay" id="modal-overlay">
-    <div class="modal" id="modal">
-      <div class="modal-title" id="modal-title"></div>
-      <input type="text" class="modal-input" id="modal-input" placeholder="" autocomplete="off">
-      <div class="suggestions-dropdown" id="suggestions-dropdown"></div>
-      <div class="modal-dish-row" id="modal-dish-row" style="display:none">
-        <label class="modal-label">料理</label>
-        <select class="modal-select" id="modal-dish-select">
-          <option value="">未分類</option>
-        </select>
+  <!-- ログインページ -->
+  <div id="login-page" style="display:none">
+    <div class="login-container">
+      <h1 class="login-title">料理買い物リスト</h1>
+      <div id="login-form">
+        <p class="login-desc">メールアドレスを入力してログインリンクを受け取ってください。</p>
+        <input type="email" class="login-input" id="login-email" placeholder="メールアドレス" autocomplete="email">
+        <button class="login-btn" id="login-submit">ログインリンクを送信</button>
+        <div class="login-error" id="login-error" style="display:none"></div>
       </div>
-      <div class="modal-actions">
-        <button class="modal-btn modal-cancel" id="modal-cancel">キャンセル</button>
-        <button class="modal-btn modal-ok" id="modal-ok">追加</button>
+      <div id="login-sent" style="display:none">
+        <p class="login-sent-message" id="login-sent-message"></p>
+        <button class="login-retry-btn" id="login-retry">別のメールアドレスで試す</button>
       </div>
     </div>
   </div>
 
-  <!-- 具材提案モーダル -->
-  <div class="modal-overlay ingredients-overlay" id="ingredients-overlay">
-    <div class="modal ingredients-modal">
-      <div class="ingredients-header" id="ingredients-header" style="display:none">
-        <button class="ingredients-header-btn" id="ingredients-skip">閉じる</button>
-        <div class="modal-title ingredients-header-title" id="ingredients-title"></div>
-        <input type="text" class="ingredients-title-input" id="ingredients-title-input" style="display:none" autocomplete="off">
-        <span class="ingredients-header-btn"></span>
+  <!-- アプリコンテンツ -->
+  <div id="app-content" style="display:none">
+    <div class="container">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding:0 14px">
+        <h1 style="margin:0">料理買い物リスト</h1>
+        <div class="header-right">
+          <span class="header-email" id="header-email"></span>
+          <button class="header-logout" id="header-logout" title="ログアウト">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          </button>
+        </div>
       </div>
-      <div class="modal-title" id="ingredients-title-loading">具材を検索中...</div>
-      <div id="ingredients-loading" class="ingredients-loading">
-        <div class="spinner"></div>
-      </div>
-      <div id="ingredients-error" class="ingredients-error" style="display:none"></div>
-      <div id="ingredients-list" class="ingredients-list" style="display:none"></div>
-      <div id="extra-ingredients-section" class="extra-ingredients-section" style="display:none">
-        <div class="extra-ingredients-label">追加素材（買い物リストから）</div>
-        <div id="extra-ingredients-chips" class="extra-ingredients-chips"></div>
-        <button id="extra-search-btn" class="extra-search-btn">この素材でレシピを再検索</button>
-      </div>
-      <div id="ingredients-recipes" class="ingredients-recipes" style="display:none"></div>
-      <div id="ingredients-refresh-row" style="display:none">
-        <button class="ingredients-refresh-btn" id="ingredients-refresh">レシピを再取得</button>
+
+      <div id="shopping-list"></div>
+
+      <div id="empty-message" class="empty" style="display:none">
+        リストは空です
       </div>
     </div>
-  </div>
 
-  <!-- 確認ダイアログ -->
-  <div class="modal-overlay" id="confirm-overlay">
-    <div class="modal">
-      <div class="modal-title" id="confirm-title"></div>
-      <div class="confirm-message" id="confirm-message"></div>
-      <div class="modal-actions">
-        <button class="modal-btn modal-cancel" id="confirm-cancel">キャンセル</button>
-        <button class="modal-btn modal-danger" id="confirm-ok">削除</button>
+    <!-- FAB -->
+    <div class="fab-group">
+      <button class="fab fab-dish" id="fab-dish" title="料理を追加">
+        <img src="icon_dish.png" width="40" height="40" alt="料理を追加">
+      </button>
+      <button class="fab fab-item" id="fab-item" title="アイテムを追加">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
+    </div>
+
+    <!-- モーダル -->
+    <div class="modal-overlay" id="modal-overlay">
+      <div class="modal" id="modal">
+        <div class="modal-title" id="modal-title"></div>
+        <input type="text" class="modal-input" id="modal-input" placeholder="" autocomplete="off">
+        <div class="suggestions-dropdown" id="suggestions-dropdown"></div>
+        <div class="modal-dish-row" id="modal-dish-row" style="display:none">
+          <label class="modal-label">料理</label>
+          <select class="modal-select" id="modal-dish-select">
+            <option value="">未分類</option>
+          </select>
+        </div>
+        <div class="modal-actions">
+          <button class="modal-btn modal-cancel" id="modal-cancel">キャンセル</button>
+          <button class="modal-btn modal-ok" id="modal-ok">追加</button>
+        </div>
       </div>
     </div>
+
+    <!-- 具材提案モーダル -->
+    <div class="modal-overlay ingredients-overlay" id="ingredients-overlay">
+      <div class="modal ingredients-modal">
+        <div class="ingredients-header" id="ingredients-header" style="display:none">
+          <button class="ingredients-header-btn" id="ingredients-skip">閉じる</button>
+          <div class="modal-title ingredients-header-title" id="ingredients-title"></div>
+          <input type="text" class="ingredients-title-input" id="ingredients-title-input" style="display:none" autocomplete="off">
+          <span class="ingredients-header-btn"></span>
+        </div>
+        <div class="modal-title" id="ingredients-title-loading">具材を検索中...</div>
+        <div id="ingredients-loading" class="ingredients-loading">
+          <div class="spinner"></div>
+        </div>
+        <div id="ingredients-error" class="ingredients-error" style="display:none"></div>
+        <div id="ingredients-list" class="ingredients-list" style="display:none"></div>
+        <div id="extra-ingredients-section" class="extra-ingredients-section" style="display:none">
+          <div class="extra-ingredients-label">追加素材（買い物リストから）</div>
+          <div id="extra-ingredients-chips" class="extra-ingredients-chips"></div>
+          <button id="extra-search-btn" class="extra-search-btn">この素材でレシピを再検索</button>
+        </div>
+        <div id="ingredients-recipes" class="ingredients-recipes" style="display:none"></div>
+        <div id="ingredients-refresh-row" style="display:none">
+          <button class="ingredients-refresh-btn" id="ingredients-refresh">レシピを再取得</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 確認ダイアログ -->
+    <div class="modal-overlay" id="confirm-overlay">
+      <div class="modal">
+        <div class="modal-title" id="confirm-title"></div>
+        <div class="confirm-message" id="confirm-message"></div>
+        <div class="modal-actions">
+          <button class="modal-btn modal-cancel" id="confirm-cancel">キャンセル</button>
+          <button class="modal-btn modal-danger" id="confirm-ok">削除</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
   </div>
 
-  <div id="toast" class="toast"></div>
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
   <script src="app.js?v=__CACHE_VERSION__"></script>
 </body>
