@@ -9,7 +9,6 @@ import {
   getAllDishes,
   deleteDish,
   getAllPurchaseHistory,
-  getAllDishHistory,
   getAllSavedRecipesAdmin,
   deleteSavedRecipeAdmin,
   getSystemInfo,
@@ -89,13 +88,6 @@ adminRouter.delete('/dishes/:id', (req: Request, res: Response) => {
 adminRouter.get('/purchase-history', (req: Request, res: Response) => {
   const limit = Number(req.query.limit) || 500;
   const history = getAllPurchaseHistory(limit);
-  res.json({ success: true, data: history, error: null });
-});
-
-// 料理履歴
-adminRouter.get('/dish-history', (req: Request, res: Response) => {
-  const limit = Number(req.query.limit) || 500;
-  const history = getAllDishHistory(limit);
   res.json({ success: true, data: history, error: null });
 });
 

@@ -10,7 +10,6 @@ export function getDashboardStats() {
   const totalItems = (db.prepare('SELECT COUNT(*) as c FROM shopping_items').get() as any).c;
   const totalDishes = (db.prepare('SELECT COUNT(*) as c FROM dishes').get() as any).c;
   const totalPurchases = (db.prepare('SELECT COUNT(*) as c FROM purchase_history').get() as any).c;
-  const totalDishHistory = (db.prepare('SELECT COUNT(*) as c FROM dish_history').get() as any).c;
   const recentUsersCount = (db.prepare(
     "SELECT COUNT(*) as c FROM users WHERE created_at >= datetime('now', '-7 days')"
   ).get() as any).c;
@@ -26,7 +25,6 @@ export function getDashboardStats() {
     totalItems,
     totalDishes,
     totalPurchases,
-    totalDishHistory,
     recentUsersCount,
     recentItemsCount,
     activeUsersToday,
@@ -42,8 +40,7 @@ export function getAllUsers() {
       u.id, u.email, u.created_at, u.last_login_at,
       (SELECT COUNT(*) FROM shopping_items WHERE user_id = u.id) as shopping_count,
       (SELECT COUNT(*) FROM dishes WHERE user_id = u.id) as dish_count,
-      (SELECT COUNT(*) FROM purchase_history WHERE user_id = u.id) as purchase_count,
-      (SELECT COUNT(*) FROM dish_history WHERE user_id = u.id) as dish_history_count
+      (SELECT COUNT(*) FROM purchase_history WHERE user_id = u.id) as purchase_count
     FROM users u
     ORDER BY u.created_at DESC
   `).all();
@@ -62,13 +59,10 @@ export function getAllShoppingItems() {
   const db = getDatabase();
   return db.prepare(`
     SELECT si.*, u.email,
-      (SELECT GROUP_CONCAT(d.name, ', ')
-       FROM dish_items di
-       JOIN dishes d ON di.dish_id = d.id AND d.active = 1
-       WHERE di.item_id = si.id AND di.user_id = si.user_id
-      ) as dish_names
+      d.name as dish_names
     FROM shopping_items si
     JOIN users u ON si.user_id = u.id
+    LEFT JOIN dishes d ON si.dish_id = d.id AND d.active = 1
     ORDER BY si.created_at DESC
   `).all();
 }
@@ -129,19 +123,6 @@ export function getAllPurchaseHistory(limit: number = 500) {
   `).all(limit);
 }
 
-// --- Dish History ---
-
-export function getAllDishHistory(limit: number = 500) {
-  const db = getDatabase();
-  return db.prepare(`
-    SELECT dh.*, u.email
-    FROM dish_history dh
-    JOIN users u ON dh.user_id = u.id
-    ORDER BY dh.created_at DESC
-    LIMIT ?
-  `).all(limit);
-}
-
 // --- Cooking Recipes (all users) ---
 
 export function getAllSavedRecipesAdmin() {
@@ -173,7 +154,7 @@ export function getSystemInfo() {
     dbSizeBytes = stat.size;
   } catch {}
 
-  const tables = ['users', 'shopping_items', 'dishes', 'dish_items', 'magic_link_tokens', 'purchase_history', 'dish_history', 'saved_recipes', 'recipe_likes'];
+  const tables = ['users', 'shopping_items', 'dishes', 'magic_link_tokens', 'purchase_history', 'saved_recipes', 'recipe_likes'];
   const tableCounts: Record<string, number> = {};
   for (const table of tables) {
     tableCounts[table] = (db.prepare(`SELECT COUNT(*) as c FROM ${table}`).get() as any).c;

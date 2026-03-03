@@ -197,7 +197,6 @@ const Pages = {
   users:              { title: 'ユーザー管理',     render: renderUsers },
   dishes:             { title: '料理',             render: renderDishes },
   'saved-recipes':    { title: '料理レシピ',       render: renderSavedRecipes },
-  'dish-history':     { title: '料理履歴',         render: renderDishHistory },
   shopping:           { title: '買い物アイテム',   render: renderShopping },
   'purchase-history': { title: '購入履歴',         render: renderPurchaseHistory },
   system:             { title: 'システム情報',     render: renderSystem },
@@ -256,10 +255,6 @@ async function renderDashboard() {
       <div class="stat-card">
         <div class="stat-label">購入履歴</div>
         <div class="stat-value">${d.totalPurchases}</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">料理履歴</div>
-        <div class="stat-value">${d.totalDishHistory}</div>
       </div>
       <div class="stat-card">
         <div class="stat-label">今日のアクティブ</div>
@@ -396,28 +391,6 @@ async function renderPurchaseHistory() {
     ],
     data: res.data,
     searchFields: ['item_name', 'email'],
-  });
-}
-
-// ============================================================
-// Dish History
-// ============================================================
-async function renderDishHistory() {
-  const area = document.getElementById('content-area');
-  area.innerHTML = '<div class="loading-text">読み込み中...</div>';
-
-  const res = await api('GET', `${API}/dish-history?limit=500`);
-  if (!res.success) return;
-
-  renderDataTable(area, {
-    columns: [
-      { key: 'id', label: 'ID', width: '60px' },
-      { key: 'email', label: 'ユーザー' },
-      { key: 'dish_name', label: '料理名' },
-      { key: 'created_at', label: '作成日', render: r => formatDate(r.created_at) },
-    ],
-    data: res.data,
-    searchFields: ['dish_name', 'email'],
   });
 }
 

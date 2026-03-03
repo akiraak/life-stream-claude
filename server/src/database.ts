@@ -65,22 +65,6 @@ export function initDatabase(): void {
     `);
     database.exec('CREATE INDEX idx_magic_link_tokens_token ON magic_link_tokens(token)');
 
-    // shopping_items テーブル（user_id 追加）
-    database.exec(`
-      CREATE TABLE shopping_items (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER NOT NULL,
-        name TEXT NOT NULL,
-        category TEXT DEFAULT '',
-        checked INTEGER DEFAULT 0,
-        position INTEGER,
-        created_at TEXT DEFAULT (datetime('now')),
-        updated_at TEXT DEFAULT (datetime('now')),
-        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-      )
-    `);
-    database.exec('CREATE INDEX idx_shopping_items_user ON shopping_items(user_id)');
-
     // dishes テーブル（user_id 追加）
     database.exec(`
       CREATE TABLE dishes (
@@ -97,21 +81,24 @@ export function initDatabase(): void {
     `);
     database.exec('CREATE INDEX idx_dishes_user ON dishes(user_id)');
 
-    // dish_items テーブル（user_id 追加）
+    // shopping_items テーブル（dish_id で料理にリンク）
     database.exec(`
-      CREATE TABLE dish_items (
+      CREATE TABLE shopping_items (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER NOT NULL,
-        dish_id INTEGER NOT NULL,
-        item_id INTEGER NOT NULL,
+        name TEXT NOT NULL,
+        category TEXT DEFAULT '',
+        checked INTEGER DEFAULT 0,
         position INTEGER,
+        dish_id INTEGER,
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now')),
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-        FOREIGN KEY (dish_id) REFERENCES dishes(id) ON DELETE CASCADE,
-        FOREIGN KEY (item_id) REFERENCES shopping_items(id) ON DELETE CASCADE,
-        UNIQUE(dish_id, item_id)
+        FOREIGN KEY (dish_id) REFERENCES dishes(id) ON DELETE SET NULL
       )
     `);
-    database.exec('CREATE INDEX idx_dish_items_user ON dish_items(user_id)');
+    database.exec('CREATE INDEX idx_shopping_items_user ON shopping_items(user_id)');
+    database.exec('CREATE INDEX idx_shopping_items_dish ON shopping_items(dish_id)');
 
     // purchase_history テーブル（user_id 追加）
     database.exec(`
@@ -125,19 +112,6 @@ export function initDatabase(): void {
     `);
     database.exec('CREATE INDEX idx_purchase_history_user ON purchase_history(user_id)');
     database.exec('CREATE INDEX idx_purchase_history_name ON purchase_history(item_name COLLATE NOCASE)');
-
-    // dish_history テーブル（user_id 追加）
-    database.exec(`
-      CREATE TABLE dish_history (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER NOT NULL,
-        dish_name TEXT NOT NULL,
-        created_at TEXT DEFAULT (datetime('now')),
-        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-      )
-    `);
-    database.exec('CREATE INDEX idx_dish_history_user ON dish_history(user_id)');
-    database.exec('CREATE INDEX idx_dish_history_name ON dish_history(dish_name COLLATE NOCASE)');
 
     // スキーマバージョンを更新
     database.prepare("INSERT OR REPLACE INTO _meta (key, value) VALUES ('schema_version', ?)").run(String(SCHEMA_VERSION));
@@ -208,6 +182,31 @@ export function initDatabase(): void {
   } catch {
     // カラムが既に存在する場合は無視
   }
+
+  // マイグレーション: dish_items を shopping_items.dish_id に統合
+  try {
+    database.exec('ALTER TABLE shopping_items ADD COLUMN dish_id INTEGER');
+  } catch {
+    // カラムが既に存在する場合は無視
+  }
+  try {
+    database.exec(`
+      UPDATE shopping_items SET
+        dish_id = (SELECT di.dish_id FROM dish_items di WHERE di.item_id = shopping_items.id LIMIT 1),
+        position = COALESCE(
+          (SELECT di.position FROM dish_items di WHERE di.item_id = shopping_items.id LIMIT 1),
+          shopping_items.position
+        )
+      WHERE id IN (SELECT item_id FROM dish_items)
+    `);
+    database.exec('DROP TABLE IF EXISTS dish_items');
+  } catch {
+    // dish_items テーブルが既に削除されている場合は無視
+  }
+  database.exec('CREATE INDEX IF NOT EXISTS idx_shopping_items_dish ON shopping_items(dish_id)');
+
+  // マイグレーション: dish_history テーブル削除（dishes テーブルで代替）
+  database.exec('DROP TABLE IF EXISTS dish_history');
 
   console.log('Database initialized');
 }
