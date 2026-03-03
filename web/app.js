@@ -199,10 +199,13 @@ let editingItem = null; // 編集中のアイテム
 let confirmResolve = null;
 
 // モーダル開閉時のスクロール制御
+const recipePageOverlay = document.getElementById('recipe-page-overlay');
+
 function updateBodyScroll() {
   const anyOpen = modalOverlay.classList.contains('active')
     || ingredientsOverlay.classList.contains('active')
-    || confirmOverlay.classList.contains('active');
+    || confirmOverlay.classList.contains('active')
+    || recipePageOverlay.classList.contains('active');
   document.body.classList.toggle('modal-open', anyOpen);
 }
 
@@ -825,7 +828,8 @@ modal.addEventListener('click', (e) => {
 function isAnyModalOpen() {
   return modalOverlay.classList.contains('active')
     || ingredientsOverlay.classList.contains('active')
-    || confirmOverlay.classList.contains('active');
+    || confirmOverlay.classList.contains('active')
+    || recipePageOverlay.classList.contains('active');
 }
 
 // バックグラウンド具材検索
@@ -1114,6 +1118,7 @@ function renderRecipes(recipes, ingredients) {
     const state = recipeStates[i];
     const savedId = state ? state.id : 0;
     const liked = state ? state.liked : 0;
+    const likeCount = state ? (state.like_count || 0) : 0;
     let stepsHtml = '';
     if (r.steps && r.steps.length > 0) {
       stepsHtml = `<ol class="recipe-steps" id="recipe-steps-${i}">`;
@@ -1124,7 +1129,7 @@ function renderRecipes(recipes, ingredients) {
       <div class="recipe-card">
         <div class="recipe-card-header">
           <div class="recipe-card-title">${escapeHtml(r.title)}</div>
-          ${savedId ? `<button class="recipe-like-btn${liked ? ' liked' : ''}" data-recipe-id="${savedId}">${liked ? '♥' : '♡'}</button>` : ''}
+          ${savedId ? `<div><button class="recipe-like-btn${liked ? ' liked' : ''}" data-recipe-id="${savedId}">${liked ? '♥' : '♡'}</button>${likeCount > 0 ? `<span class="recipe-like-count">${likeCount}</span>` : ''}</div>` : ''}
         </div>
         <div class="recipe-card-summary">${highlightIngredients(r.summary, ingredientNames, addedNames)}</div>
         ${stepsHtml ? `<div class="recipe-detail-toggle" data-target="recipe-steps-${i}">▶ 詳細を見る</div>${stepsHtml}` : ''}
@@ -1187,14 +1192,28 @@ function renderRecipes(recipes, ingredients) {
       if (!recipeId) return;
       const res = await api('PUT', `/${recipeId}/like`, {}, '/api/saved-recipes');
       if (res.success) {
-        const liked = res.data.liked;
+        const { liked, like_count } = res.data;
         btn.textContent = liked ? '♥' : '♡';
         btn.classList.toggle('liked', !!liked);
+        // いいね数更新
+        const countEl = btn.parentElement.querySelector('.recipe-like-count');
+        if (countEl) {
+          countEl.textContent = like_count > 0 ? like_count : '';
+          if (like_count === 0) countEl.remove();
+        } else if (like_count > 0) {
+          const span = document.createElement('span');
+          span.className = 'recipe-like-count';
+          span.textContent = like_count;
+          btn.parentElement.appendChild(span);
+        }
         // キャッシュも更新
         const cached = ingredientsCache.get(ingredientsDishId);
         if (cached && cached.recipeStates) {
           const state = cached.recipeStates.find(s => s.id === recipeId);
-          if (state) state.liked = liked;
+          if (state) {
+            state.liked = liked;
+            state.like_count = like_count;
+          }
         }
       }
     });
@@ -1277,6 +1296,172 @@ extraSearchBtn.addEventListener('click', searchWithExtraIngredients);
 // 画面回転ロック（対応ブラウザのみ）
 if (screen.orientation && screen.orientation.lock) {
   screen.orientation.lock('portrait').catch(() => {});
+}
+
+// 料理レシピページ
+const recipePageContent = document.getElementById('recipe-page-content');
+const recipePageLikeCount = document.getElementById('recipe-page-like-count');
+
+document.getElementById('header-recipe-btn').addEventListener('click', openRecipePage);
+document.getElementById('recipe-page-close').addEventListener('click', closeRecipePage);
+
+async function openRecipePage() {
+  recipePageOverlay.classList.add('active');
+  updateBodyScroll();
+  recipePageContent.innerHTML = '<div class="recipe-page-empty">読み込み中...</div>';
+  recipePageLikeCount.textContent = '';
+
+  const res = await api('GET', '', null, '/api/saved-recipes');
+  if (res.success) {
+    renderRecipePage(res.data);
+  } else {
+    recipePageContent.innerHTML = '<div class="recipe-page-empty">読み込みに失敗しました</div>';
+  }
+}
+
+function closeRecipePage() {
+  recipePageOverlay.classList.remove('active');
+  updateBodyScroll();
+}
+
+function renderRecipePage(recipes) {
+  if (!recipes || recipes.length === 0) {
+    recipePageContent.innerHTML = '<div class="recipe-page-empty">まだレシピがありません。<br>料理を追加するとレシピが自動で保存されます。</div>';
+    recipePageLikeCount.textContent = '';
+    return;
+  }
+
+  // いいね合計数
+  const totalLikes = recipes.reduce((sum, r) => sum + (r.like_count || 0), 0);
+  recipePageLikeCount.textContent = totalLikes > 0 ? `♥ ${totalLikes}` : '';
+
+  // dish_name でグループ化
+  const groups = new Map();
+  for (const r of recipes) {
+    const key = r.dish_name;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(r);
+  }
+
+  // グループをいいね数合計でソート（APIのソート順で既にlike_count DESC）
+  const sortedGroups = [...groups.entries()].sort((a, b) => {
+    const aLikes = a[1].reduce((s, r) => s + (r.like_count || 0), 0);
+    const bLikes = b[1].reduce((s, r) => s + (r.like_count || 0), 0);
+    return bLikes - aLikes;
+  });
+
+  let html = '';
+  let stepIdx = 0;
+  for (const [dishName, groupRecipes] of sortedGroups) {
+    const groupLikes = groupRecipes.reduce((s, r) => s + (r.like_count || 0), 0);
+    html += `<div class="recipe-group">`;
+    html += `<div class="recipe-group-header">`;
+    html += `<div class="recipe-group-title">${escapeHtml(dishName)}</div>`;
+    if (groupLikes > 0) html += `<span class="recipe-group-like-count">♥ ${groupLikes}</span>`;
+    html += `</div>`;
+
+    for (const r of groupRecipes) {
+      const liked = r.liked;
+      const likeCount = r.like_count || 0;
+      let steps = [];
+      try { steps = JSON.parse(r.steps_json); } catch {}
+      let stepsHtml = '';
+      if (steps && steps.length > 0) {
+        stepsHtml = `<ol class="recipe-steps" id="rp-steps-${stepIdx}">`;
+        steps.forEach(s => { stepsHtml += `<li>${escapeHtml(s)}</li>`; });
+        stepsHtml += '</ol>';
+      }
+      html += `
+        <div class="recipe-card">
+          <div class="recipe-card-header">
+            <div class="recipe-card-title">${escapeHtml(r.title)}</div>
+            <div>
+              <button class="recipe-like-btn${liked ? ' liked' : ''}" data-recipe-id="${r.id}">${liked ? '♥' : '♡'}</button>
+              ${likeCount > 0 ? `<span class="recipe-like-count">${likeCount}</span>` : ''}
+            </div>
+          </div>
+          <div class="recipe-card-summary">${escapeHtml(r.summary)}</div>
+          ${stepsHtml ? `<div class="recipe-detail-toggle" data-target="rp-steps-${stepIdx}">▶ 詳細を見る</div>${stepsHtml}` : ''}
+        </div>
+      `;
+      stepIdx++;
+    }
+    html += `</div>`;
+  }
+
+  recipePageContent.innerHTML = html;
+
+  // 詳細展開トグル
+  recipePageContent.querySelectorAll('.recipe-detail-toggle').forEach(toggle => {
+    toggle.addEventListener('click', () => {
+      const steps = document.getElementById(toggle.dataset.target);
+      if (steps) {
+        const isOpen = steps.classList.toggle('open');
+        toggle.textContent = isOpen ? '▼ 閉じる' : '▶ 詳細を見る';
+      }
+    });
+  });
+
+  // いいねトグル
+  recipePageContent.querySelectorAll('.recipe-like-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const recipeId = Number(btn.dataset.recipeId);
+      if (!recipeId) return;
+      const res = await api('PUT', `/${recipeId}/like`, {}, '/api/saved-recipes');
+      if (res.success) {
+        const { liked, like_count } = res.data;
+        btn.textContent = liked ? '♥' : '♡';
+        btn.classList.toggle('liked', !!liked);
+        // いいね数更新
+        const countEl = btn.parentElement.querySelector('.recipe-like-count');
+        if (countEl) {
+          countEl.textContent = like_count > 0 ? like_count : '';
+          if (like_count === 0) countEl.remove();
+        } else if (like_count > 0) {
+          const span = document.createElement('span');
+          span.className = 'recipe-like-count';
+          span.textContent = like_count;
+          btn.parentElement.appendChild(span);
+        }
+
+        // グループいいね数を再計算
+        const group = btn.closest('.recipe-group');
+        if (group) {
+          let groupLikes = 0;
+          group.querySelectorAll('.recipe-like-count').forEach(el => {
+            groupLikes += Number(el.textContent) || 0;
+          });
+          const groupCountEl = group.querySelector('.recipe-group-like-count');
+          if (groupCountEl) {
+            groupCountEl.textContent = groupLikes > 0 ? `♥ ${groupLikes}` : '';
+          } else if (groupLikes > 0) {
+            const span = document.createElement('span');
+            span.className = 'recipe-group-like-count';
+            span.textContent = `♥ ${groupLikes}`;
+            group.querySelector('.recipe-group-header').appendChild(span);
+          }
+        }
+
+        // ヘッダー合計更新
+        let totalLikes = 0;
+        recipePageContent.querySelectorAll('.recipe-like-count').forEach(el => {
+          totalLikes += Number(el.textContent) || 0;
+        });
+        recipePageLikeCount.textContent = totalLikes > 0 ? `♥ ${totalLikes}` : '';
+
+        // ingredientsCache のrecipeStatesも同期
+        for (const [, cached] of ingredientsCache) {
+          if (cached.recipeStates) {
+            const state = cached.recipeStates.find(s => s.id === recipeId);
+            if (state) {
+              state.liked = liked;
+              state.like_count = like_count;
+            }
+          }
+        }
+      }
+    });
+  });
 }
 
 // 初期化: 認証状態チェック

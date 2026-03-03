@@ -178,5 +178,29 @@ export function initDatabase(): void {
     // カラムが既に存在する場合は無視
   }
 
+  // マイグレーション: recipe_likes テーブル追加（複数ユーザーいいね対応）
+  try {
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS recipe_likes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        saved_recipe_id INTEGER NOT NULL,
+        created_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (saved_recipe_id) REFERENCES saved_recipes(id) ON DELETE CASCADE,
+        UNIQUE(user_id, saved_recipe_id)
+      )
+    `);
+    database.exec('CREATE INDEX IF NOT EXISTS idx_recipe_likes_recipe ON recipe_likes(saved_recipe_id)');
+    database.exec('CREATE INDEX IF NOT EXISTS idx_recipe_likes_user ON recipe_likes(user_id)');
+    // 既存の liked=1 データを recipe_likes に移行
+    database.exec(`
+      INSERT OR IGNORE INTO recipe_likes (user_id, saved_recipe_id)
+        SELECT user_id, id FROM saved_recipes WHERE liked = 1
+    `);
+  } catch {
+    // テーブルが既に存在する場合は無視
+  }
+
   console.log('Database initialized');
 }
