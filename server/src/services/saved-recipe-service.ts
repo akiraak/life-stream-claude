@@ -60,7 +60,25 @@ export function deleteSavedRecipe(userId: number, id: number): boolean {
   return result.changes > 0;
 }
 
-// AI レシピ取得時に自動保存（既存の同タイトルは上書き）
+export function toggleLike(userId: number, id: number): number | null {
+  const db = getDatabase();
+  const recipe = db.prepare(
+    'SELECT liked FROM saved_recipes WHERE id = ? AND user_id = ?'
+  ).get(id, userId) as { liked: number } | undefined;
+  if (!recipe) return null;
+  const newLiked = recipe.liked ? 0 : 1;
+  db.prepare('UPDATE saved_recipes SET liked = ? WHERE id = ?').run(newLiked, id);
+  return newLiked;
+}
+
+export function getSavedRecipeStates(userId: number, dishId: number): { id: number; liked: number }[] {
+  const db = getDatabase();
+  return db.prepare(
+    'SELECT id, liked FROM saved_recipes WHERE user_id = ? AND source_dish_id = ? ORDER BY id ASC'
+  ).all(userId, dishId) as { id: number; liked: number }[];
+}
+
+// AI レシピ取得時に自動保存（いいね状態を保持）
 export function autoSaveRecipes(
   userId: number,
   dishName: string,
@@ -69,14 +87,21 @@ export function autoSaveRecipes(
   ingredients: { name: string; category: string }[]
 ): void {
   const db = getDatabase();
-  // この料理の既存レシピを削除して最新に置き換え
+  // いいね済みタイトルを保存
+  const likedTitles = new Set(
+    (db.prepare(
+      'SELECT title FROM saved_recipes WHERE user_id = ? AND source_dish_id = ? AND liked = 1'
+    ).all(userId, dishId) as { title: string }[]).map(r => r.title)
+  );
+  // 既存を削除して再挿入
   db.prepare('DELETE FROM saved_recipes WHERE user_id = ? AND source_dish_id = ?').run(userId, dishId);
   const stmt = db.prepare(
-    `INSERT INTO saved_recipes (user_id, dish_name, title, summary, steps_json, ingredients_json, source_dish_id)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO saved_recipes (user_id, dish_name, title, summary, steps_json, ingredients_json, source_dish_id, liked)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
   );
   const ingredientsJson = JSON.stringify(ingredients);
   for (const r of recipes) {
-    stmt.run(userId, dishName, r.title, r.summary || '', JSON.stringify(r.steps || []), ingredientsJson, dishId);
+    const liked = likedTitles.has(r.title) ? 1 : 0;
+    stmt.run(userId, dishName, r.title, r.summary || '', JSON.stringify(r.steps || []), ingredientsJson, dishId, liked);
   }
 }

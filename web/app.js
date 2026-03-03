@@ -492,7 +492,7 @@ async function loadDishes() {
       if (d.ingredients_json && !ingredientsCache.has(d.id)) {
         const ingredients = JSON.parse(d.ingredients_json);
         const recipes = d.recipes_json ? JSON.parse(d.recipes_json) : [];
-        ingredientsCache.set(d.id, { dishName: d.name, ingredients, recipes });
+        ingredientsCache.set(d.id, { dishName: d.name, ingredients, recipes, recipeStates: [] });
       }
     });
     updateDishSelect();
@@ -561,7 +561,7 @@ async function addDish(name) {
     if (dish.ingredients_json) {
       const ingredients = JSON.parse(dish.ingredients_json);
       const recipes = dish.recipes_json ? JSON.parse(dish.recipes_json) : [];
-      ingredientsCache.set(dish.id, { dishName: dish.name, ingredients, recipes });
+      ingredientsCache.set(dish.id, { dishName: dish.name, ingredients, recipes, recipeStates: [] });
       render();
       if (!isAnyModalOpen()) {
         openIngredientsModalWithResults(dish.id, dish.name, ingredients, recipes);
@@ -828,7 +828,8 @@ async function fetchIngredientsInBackground(dishId, dishName, force = false) {
     loadingIngredientsDishes.delete(dishId);
     if (res.success && res.data.ingredients.length > 0) {
       const recipes = res.data.recipes || [];
-      ingredientsCache.set(dishId, { dishName, ingredients: res.data.ingredients, recipes });
+      const recipeStates = res.data.recipeStates || [];
+      ingredientsCache.set(dishId, { dishName, ingredients: res.data.ingredients, recipes, recipeStates });
       render();
       if (!isAnyModalOpen()) {
         openIngredientsModalWithResults(dishId, dishName, res.data.ingredients, recipes);
@@ -852,7 +853,8 @@ async function fetchIngredientsForModal(dishId, dishName) {
     loadingIngredientsDishes.delete(dishId);
     if (res.success && res.data.ingredients.length > 0) {
       const recipes = res.data.recipes || [];
-      ingredientsCache.set(dishId, { dishName, ingredients: res.data.ingredients, recipes });
+      const recipeStates = res.data.recipeStates || [];
+      ingredientsCache.set(dishId, { dishName, ingredients: res.data.ingredients, recipes, recipeStates });
       render();
       // モーダルがまだ開いていてこの料理なら結果を表示
       if (ingredientsDishId === dishId) {
@@ -964,7 +966,8 @@ async function searchWithExtraIngredients() {
     loadingIngredientsDishes.delete(dishId);
     if (res.success && res.data.ingredients.length > 0) {
       const recipes = res.data.recipes || [];
-      ingredientsCache.set(dishId, { dishName: cached.dishName, ingredients: res.data.ingredients, recipes });
+      const recipeStates = res.data.recipeStates || [];
+      ingredientsCache.set(dishId, { dishName: cached.dishName, ingredients: res.data.ingredients, recipes, recipeStates });
       render();
       if (ingredientsDishId === dishId) {
         ingredientsLoading.style.display = 'none';
@@ -1093,9 +1096,14 @@ function renderRecipes(recipes, ingredients) {
   const ingredientNames = (ingredients || []).map(ing => ing.name);
   const dish = ingredientsDishId ? dishes.find(d => d.id === ingredientsDishId) : null;
   const addedNames = new Set((dish && dish.items || []).filter(i => !i.checked).map(i => i.name));
+  const cached = ingredientsDishId ? ingredientsCache.get(ingredientsDishId) : null;
+  const recipeStates = (cached && cached.recipeStates) || [];
 
   let html = '<div class="recipes-title">レシピ</div>';
   recipes.forEach((r, i) => {
+    const state = recipeStates[i];
+    const savedId = state ? state.id : 0;
+    const liked = state ? state.liked : 0;
     let stepsHtml = '';
     if (r.steps && r.steps.length > 0) {
       stepsHtml = `<ol class="recipe-steps" id="recipe-steps-${i}">`;
@@ -1104,7 +1112,10 @@ function renderRecipes(recipes, ingredients) {
     }
     html += `
       <div class="recipe-card">
-        <div class="recipe-card-title">${escapeHtml(r.title)}</div>
+        <div class="recipe-card-header">
+          <div class="recipe-card-title">${escapeHtml(r.title)}</div>
+          ${savedId ? `<button class="recipe-like-btn${liked ? ' liked' : ''}" data-recipe-id="${savedId}">${liked ? '♥' : '♡'}</button>` : ''}
+        </div>
         <div class="recipe-card-summary">${highlightIngredients(r.summary, ingredientNames, addedNames)}</div>
         ${stepsHtml ? `<div class="recipe-detail-toggle" data-target="recipe-steps-${i}">▶ 詳細を見る</div>${stepsHtml}` : ''}
       </div>
@@ -1159,6 +1170,25 @@ function renderRecipes(recipes, ingredients) {
     });
   });
 
+  // いいねボタン
+  ingredientsRecipes.querySelectorAll('.recipe-like-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const recipeId = Number(btn.dataset.recipeId);
+      if (!recipeId) return;
+      const res = await api('PUT', `/${recipeId}/like`, {}, '/api/saved-recipes');
+      if (res.success) {
+        const liked = res.data.liked;
+        btn.textContent = liked ? '♥' : '♡';
+        btn.classList.toggle('liked', !!liked);
+        // キャッシュも更新
+        const cached = ingredientsCache.get(ingredientsDishId);
+        if (cached && cached.recipeStates) {
+          const state = cached.recipeStates.find(s => s.id === recipeId);
+          if (state) state.liked = liked;
+        }
+      }
+    });
+  });
 }
 
 // 料理名タップで編集

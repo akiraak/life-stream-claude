@@ -4,6 +4,7 @@ import {
   getSavedRecipe,
   createSavedRecipe,
   deleteSavedRecipe,
+  toggleLike,
 } from '../services/saved-recipe-service';
 
 export const savedRecipesRouter = Router();
@@ -50,6 +51,21 @@ savedRecipesRouter.post('/', (req: Request, res: Response) => {
       sourceDishId: sourceDishId ? Number(sourceDishId) : undefined,
     });
     res.status(201).json({ success: true, data: recipe, error: null });
+  } catch (err) {
+    res.status(500).json({ success: false, data: null, error: String(err) });
+  }
+});
+
+// PUT /api/saved-recipes/:id/like — いいねトグル
+savedRecipesRouter.put('/:id/like', (req: Request, res: Response) => {
+  try {
+    const id = Number(req.params.id);
+    const liked = toggleLike(req.userId!, id);
+    if (liked === null) {
+      res.status(404).json({ success: false, data: null, error: 'レシピが見つかりません' });
+      return;
+    }
+    res.json({ success: true, data: { liked }, error: null });
   } catch (err) {
     res.status(500).json({ success: false, data: null, error: String(err) });
   }

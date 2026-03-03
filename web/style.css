@@ -754,12 +754,30 @@ body.modal-open { overflow: hidden; }
 
 .recipe-card:last-child { margin-bottom: 0; }
 
+.recipe-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
 .recipe-card-title {
   font-size: 14px;
   font-weight: 600;
   color: #e5e5e5;
-  margin-bottom: 4px;
 }
+
+.recipe-like-btn {
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: #666;
+  cursor: pointer;
+  padding: 0 2px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.recipe-like-btn.liked { color: #f87171; }
 
 .recipe-card-summary {
   font-size: 14px;

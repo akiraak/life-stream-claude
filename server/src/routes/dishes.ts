@@ -14,7 +14,7 @@ import {
   reorderDishItems,
 } from '../services/dish-service';
 import { askGemini } from '../services/gemini-service';
-import { autoSaveRecipes } from '../services/saved-recipe-service';
+import { autoSaveRecipes, getSavedRecipeStates } from '../services/saved-recipe-service';
 
 interface Ingredient {
   name: string;
@@ -185,9 +185,10 @@ dishesRouter.post('/:id/suggest-ingredients', async (req: Request, res: Response
     if (!force && dish.ingredients_json) {
       const ingredients = JSON.parse(dish.ingredients_json);
       const recipes = dish.recipes_json ? JSON.parse(dish.recipes_json) : [];
+      const recipeStates = getSavedRecipeStates(req.userId!, dish.id);
       res.json({
         success: true,
-        data: { dishId: dish.id, dishName: dish.name, ingredients, recipes },
+        data: { dishId: dish.id, dishName: dish.name, ingredients, recipes, recipeStates },
         error: null,
       });
       return;
@@ -204,6 +205,7 @@ dishesRouter.post('/:id/suggest-ingredients', async (req: Request, res: Response
       autoSaveRecipes(req.userId!, dish.name, dish.id, info.recipes, info.ingredients);
     }
 
+    const recipeStates = getSavedRecipeStates(req.userId!, dish.id);
     res.json({
       success: true,
       data: {
@@ -211,6 +213,7 @@ dishesRouter.post('/:id/suggest-ingredients', async (req: Request, res: Response
         dishName: dish.name,
         ingredients: info.ingredients,
         recipes: info.recipes,
+        recipeStates,
       },
       error: null,
     });

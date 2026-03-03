@@ -171,5 +171,12 @@ export function initDatabase(): void {
     // テーブルが既に存在する場合は無視
   }
 
+  // マイグレーション: saved_recipes に liked カラム追加
+  try {
+    database.exec('ALTER TABLE saved_recipes ADD COLUMN liked INTEGER DEFAULT 0');
+  } catch {
+    // カラムが既に存在する場合は無視
+  }
+
   console.log('Database initialized');
 }
