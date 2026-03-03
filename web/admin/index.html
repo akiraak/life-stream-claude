@@ -3,81 +3,57 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>管理画面 - Life Stream</title>
+  <title>管理画面 - 料理買物List</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header>
-    <h1>管理画面</h1>
-    <a href="/" class="link-back">買い物リストへ</a>
-  </header>
+  <div class="admin-layout">
+    <aside class="sidebar">
+      <div class="sidebar-logo">管理画面</div>
+      <nav class="sidebar-nav" id="sidebar-nav">
+        <a href="#dashboard" class="nav-item active" data-page="dashboard">
+          <span class="nav-icon">&#9635;</span> ダッシュボード
+        </a>
+        <a href="#users" class="nav-item" data-page="users">
+          <span class="nav-icon">&#9787;</span> ユーザー
+        </a>
+        <div class="nav-group-label">データ管理</div>
+        <a href="#shopping" class="nav-item" data-page="shopping">
+          <span class="nav-icon">&#10003;</span> 買い物アイテム
+        </a>
+        <a href="#dishes" class="nav-item" data-page="dishes">
+          <span class="nav-icon">&#9733;</span> 料理
+        </a>
+        <a href="#dish-items" class="nav-item" data-page="dish-items">
+          <span class="nav-icon">&#8644;</span> 料理-食材リンク
+        </a>
+        <a href="#purchase-history" class="nav-item" data-page="purchase-history">
+          <span class="nav-icon">&#8635;</span> 購入履歴
+        </a>
+        <a href="#dish-history" class="nav-item" data-page="dish-history">
+          <span class="nav-icon">&#8635;</span> 料理履歴
+        </a>
+        <div class="nav-group-label">システム</div>
+        <a href="#system" class="nav-item" data-page="system">
+          <span class="nav-icon">&#9881;</span> システム情報
+        </a>
+        <div class="nav-divider"></div>
+        <a href="/" class="nav-item nav-back">
+          <span class="nav-icon">&#8592;</span> アプリへ戻る
+        </a>
+      </nav>
+    </aside>
 
-  <div class="container">
-    <!-- ダッシュボード -->
-    <section class="dashboard">
-      <div class="card">
-        <div class="card-label">サーバ</div>
-        <div class="card-value" id="server-status">--</div>
-      </div>
-      <div class="card">
-        <div class="card-label">合計</div>
-        <div class="card-value" id="stat-total">0</div>
-      </div>
-      <div class="card">
-        <div class="card-label">未購入</div>
-        <div class="card-value" id="stat-unchecked">0</div>
-      </div>
-      <div class="card">
-        <div class="card-label">購入済</div>
-        <div class="card-value" id="stat-checked">0</div>
-      </div>
-    </section>
-
-    <!-- データテーブル -->
-    <section class="table-section">
-      <div class="table-header">
-        <h2>買い物リスト</h2>
-        <button id="delete-all" class="btn btn-danger">全件削除</button>
-      </div>
-
-      <div class="table-wrap">
-        <table id="items-table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>名前</th>
-              <th>カテゴリ</th>
-              <th>状態</th>
-              <th>作成日時</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-          <tbody id="items-body"></tbody>
-        </table>
-      </div>
-
-      <div id="empty-message" class="empty" style="display:none">データがありません</div>
-    </section>
-
-    <!-- レシピ推薦 -->
-    <section class="claude-section">
-      <h2>おすすめレシピ</h2>
-      <p class="section-desc">買い物リストの食材からレシピを提案します</p>
-      <button id="recipe-btn" class="btn btn-send">レシピを取得</button>
-      <div id="recipe-response" style="display:none"></div>
-    </section>
-
-    <!-- Claude テスト -->
-    <section class="claude-section">
-      <h2>Claude Code テスト</h2>
-      <div class="claude-input-row">
-        <input type="text" id="claude-prompt" placeholder="プロンプトを入力..." />
-        <button id="claude-send" class="btn btn-send">送信</button>
-      </div>
-      <div id="claude-response" class="claude-response" style="display:none"></div>
-    </section>
+    <main class="main-content">
+      <header class="topbar">
+        <h2 class="topbar-title" id="page-title">ダッシュボード</h2>
+        <div class="topbar-user" id="topbar-user"></div>
+      </header>
+      <div class="content-area" id="content-area"></div>
+    </main>
   </div>
 
+  <div class="toast-container" id="toast-container"></div>
   <script src="app.js"></script>
 </body>
 </html>

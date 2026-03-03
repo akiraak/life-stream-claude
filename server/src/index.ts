@@ -4,7 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import dotenv from 'dotenv';
 import { errorHandler } from './middleware/error-handler';
-import { requireAuth } from './middleware/auth';
+import { requireAuth, requireAdmin } from './middleware/auth';
 import { authRouter } from './routes/auth';
 import { shoppingRouter } from './routes/shopping';
 import { adminRouter } from './routes/admin';
@@ -47,7 +47,7 @@ app.use('/api/auth', authRouter);
 
 // 保護された API ルート
 app.use('/api/shopping', requireAuth, shoppingRouter);
-app.use('/api/admin', requireAuth, adminRouter);
+app.use('/api/admin', requireAuth, requireAdmin, adminRouter);
 app.use('/api/claude', requireAuth, claudeRouter);
 app.use('/api/recipes', requireAuth, recipesRouter);
 app.use('/api/dishes', requireAuth, dishesRouter);
