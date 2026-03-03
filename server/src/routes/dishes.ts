@@ -33,8 +33,8 @@ interface DishInfo {
 
 function buildDishInfoPrompt(dishName: string, extraIngredients?: string[]): string {
   const extraSection = extraIngredients && extraIngredients.length > 0
-    ? `\nユーザーが以下の食材を使いたいと指定しています：${extraIngredients.join('、')}
-上記の食材をすべて活用したレシピにしてください。具材リストにも上記の食材を含めてください。\n`
+    ? `\nユーザーが以下の食材を必ず使いたいと指定しています：${extraIngredients.join('、')}
+上記の食材は必ずレシピに含めてください。ただし上記以外の食材も自由に追加してください。上記の食材だけに限定せず、料理に必要な食材をすべて含めた本格的なレシピを提案してください。\n`
     : '';
 
   return `あなたは料理の専門家です。「${dishName}」について以下の情報をJSON形式で返してください。
