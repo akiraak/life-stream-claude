@@ -22,7 +22,7 @@ export interface DishItem {
 
 export function getAllDishes(userId: number): DishWithItems[] {
   const db = getDatabase();
-  const dishes = db.prepare('SELECT * FROM dishes WHERE user_id = ? ORDER BY position ASC, created_at DESC').all(userId) as Dish[];
+  const dishes = db.prepare('SELECT * FROM dishes WHERE user_id = ? AND active = 1 ORDER BY position ASC, created_at DESC').all(userId) as Dish[];
   return dishes.map(dish => ({
     ...dish,
     items: getItemsForDish(userId, dish.id),
@@ -63,7 +63,7 @@ export function createDish(userId: number, name: string): DishWithItems {
 
 export function deleteDish(userId: number, id: number): boolean {
   const db = getDatabase();
-  const result = db.prepare('DELETE FROM dishes WHERE id = ? AND user_id = ?').run(id, userId);
+  const result = db.prepare('UPDATE dishes SET active = 0 WHERE id = ? AND user_id = ?').run(id, userId);
   return result.changes > 0;
 }
 
@@ -136,7 +136,7 @@ export function recordDishHistory(userId: number, dishName: string): void {
 
 export function getDishSuggestions(userId: number, query: string, limit: number = 10): DishSuggestion[] {
   const db = getDatabase();
-  const excludeClause = 'AND dish_name COLLATE NOCASE NOT IN (SELECT name COLLATE NOCASE FROM dishes WHERE user_id = ?)';
+  const excludeClause = 'AND dish_name COLLATE NOCASE NOT IN (SELECT name COLLATE NOCASE FROM dishes WHERE user_id = ? AND active = 1)';
   if (!query) {
     return db.prepare(`
       SELECT dish_name AS name, COUNT(*) AS count

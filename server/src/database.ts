@@ -202,5 +202,12 @@ export function initDatabase(): void {
     // テーブルが既に存在する場合は無視
   }
 
+  // マイグレーション: dishes に active カラム追加（ソフトデリート対応）
+  try {
+    database.exec('ALTER TABLE dishes ADD COLUMN active INTEGER DEFAULT 1');
+  } catch {
+    // カラムが既に存在する場合は無視
+  }
+
   console.log('Database initialized');
 }

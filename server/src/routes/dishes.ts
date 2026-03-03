@@ -185,7 +185,12 @@ dishesRouter.post('/:id/suggest-ingredients', async (req: Request, res: Response
     if (!force && dish.ingredients_json) {
       const ingredients = JSON.parse(dish.ingredients_json);
       const recipes = dish.recipes_json ? JSON.parse(dish.recipes_json) : [];
-      const recipeStates = getSavedRecipeStates(req.userId!, dish.id);
+      let recipeStates = getSavedRecipeStates(req.userId!, dish.id);
+      // saved_recipes 未登録のレシピがあれば自動保存
+      if (recipeStates.length === 0 && recipes.length > 0) {
+        autoSaveRecipes(req.userId!, dish.name, dish.id, recipes, ingredients);
+        recipeStates = getSavedRecipeStates(req.userId!, dish.id);
+      }
       res.json({
         success: true,
         data: { dishId: dish.id, dishName: dish.name, ingredients, recipes, recipeStates },
