@@ -195,12 +195,12 @@ function renderDataTable(container, { columns, data, searchFields, actions }) {
 const Pages = {
   dashboard:          { title: 'ダッシュボード',   render: renderDashboard },
   users:              { title: 'ユーザー管理',     render: renderUsers },
-  shopping:           { title: '買い物アイテム',   render: renderShopping },
   dishes:             { title: '料理',             render: renderDishes },
+  'saved-recipes':    { title: '料理レシピ',       render: renderSavedRecipes },
   'dish-items':       { title: '料理-食材リンク',  render: renderDishItems },
-  'purchase-history': { title: '購入履歴',         render: renderPurchaseHistory },
   'dish-history':     { title: '料理履歴',         render: renderDishHistory },
-  'saved-recipes':    { title: '料理レシピ',         render: renderSavedRecipes },
+  shopping:           { title: '買い物アイテム',   render: renderShopping },
+  'purchase-history': { title: '購入履歴',         render: renderPurchaseHistory },
   system:             { title: 'システム情報',     render: renderSystem },
 };
 
