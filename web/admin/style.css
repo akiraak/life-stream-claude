@@ -472,6 +472,60 @@ td input[type="text"]:focus {
   background: #dc2626;
 }
 
+/* Docs grid */
+.docs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 14px;
+}
+
+.docs-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.docs-card:hover {
+  border-color: #007aff;
+  box-shadow: 0 2px 12px rgba(0, 122, 255, 0.12);
+}
+
+.docs-card-icon {
+  font-size: 28px;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f0f9ff;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.docs-card-body {
+  min-width: 0;
+}
+
+.docs-card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 4px;
+}
+
+.docs-card-desc {
+  font-size: 12px;
+  color: #64748b;
+  line-height: 1.4;
+}
+
 /* App name grid */
 .name-grid {
   display: grid;

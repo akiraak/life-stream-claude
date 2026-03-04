@@ -200,9 +200,10 @@ const Pages = {
   shopping:           { title: '買い物アイテム',   render: renderShopping },
   'purchase-history': { title: '購入履歴',         render: renderPurchaseHistory },
   system:             { title: 'システム情報',     render: renderSystem },
-  'icon-preview':     { title: 'アイコン候補',     render: renderIconPreview },
-  'app-name':         { title: 'アプリ名候補',     render: renderAppName },
-  'monetization':     { title: 'マネタイズ検討',   render: renderMonetization },
+  docs:               { title: '企画ドキュメント', render: renderDocs },
+  'icon-preview':     { title: 'アイコン候補',     render: renderIconPreview, parent: 'docs' },
+  'app-name':         { title: 'アプリ名候補',     render: renderAppName, parent: 'docs' },
+  'monetization':     { title: 'マネタイズ検討',   render: renderMonetization, parent: 'docs' },
 };
 
 // ============================================================
@@ -217,10 +218,12 @@ const Router = {
   navigate() {
     const hash = location.hash.slice(1) || 'dashboard';
     this.currentPage = hash;
-    document.querySelectorAll('.nav-item').forEach(el => {
-      el.classList.toggle('active', el.dataset.page === hash);
-    });
     const page = Pages[hash];
+    // サブページの場合は親のナビをアクティブにする
+    const navTarget = (page && page.parent) || hash;
+    document.querySelectorAll('.nav-item').forEach(el => {
+      el.classList.toggle('active', el.dataset.page === navTarget);
+    });
     if (page) {
       document.getElementById('page-title').textContent = page.title;
       page.render();
@@ -482,6 +485,32 @@ async function renderSystem() {
     <div style="margin-top:16px">
       <button class="btn btn-primary" onclick="renderSystem()">更新</button>
     </div>`;
+}
+
+// ============================================================
+// Docs (企画ドキュメント一覧)
+// ============================================================
+function renderDocs() {
+  const docs = [
+    { hash: 'icon-preview', icon: '&#127912;', title: 'アイコン候補', desc: 'ヘッダーアイコンの組み合わせ比較' },
+    { hash: 'app-name', icon: '&#9998;', title: 'アプリ名候補', desc: 'アプリ名の候補一覧（決定：お料理バスケット）' },
+    { hash: 'monetization', icon: '&#128176;', title: 'マネタイズ検討', desc: '収益モデル比較、競合価格帯、推奨プラン、ロードマップ' },
+  ];
+
+  const area = document.getElementById('content-area');
+  let html = '<div class="docs-grid">';
+  for (const d of docs) {
+    html += `
+      <a href="#${d.hash}" class="docs-card">
+        <div class="docs-card-icon">${d.icon}</div>
+        <div class="docs-card-body">
+          <div class="docs-card-title">${escapeHtml(d.title)}</div>
+          <div class="docs-card-desc">${escapeHtml(d.desc)}</div>
+        </div>
+      </a>`;
+  }
+  html += '</div>';
+  area.innerHTML = html;
 }
 
 // ============================================================
