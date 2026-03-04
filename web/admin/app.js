@@ -202,6 +202,7 @@ const Pages = {
   system:             { title: 'システム情報',     render: renderSystem },
   'icon-preview':     { title: 'アイコン候補',     render: renderIconPreview },
   'app-name':         { title: 'アプリ名候補',     render: renderAppName },
+  'monetization':     { title: 'マネタイズ検討',   render: renderMonetization },
 };
 
 // ============================================================
@@ -741,6 +742,244 @@ function renderAppName() {
     });
     countEl.textContent = visible + ' 件';
   });
+}
+
+// ============================================================
+// Monetization
+// ============================================================
+function renderMonetization() {
+  const area = document.getElementById('content-area');
+
+  const sections = [
+    {
+      title: '1. 収益モデルの比較',
+      content: `
+        <table>
+          <thead><tr><th>モデル</th><th>概要</th><th>メリット</th><th>デメリット</th><th>適合度</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><strong>フリーミアム</strong></td>
+              <td>基本無料＋有料プレミアム機能</td>
+              <td>ユーザー獲得しやすい、段階的に課金導入可能</td>
+              <td>無料→有料の壁が高い</td>
+              <td><span class="badge badge-success">★★★</span></td>
+            </tr>
+            <tr>
+              <td><strong>サブスクリプション</strong></td>
+              <td>月額/年額課金</td>
+              <td>安定収入、LTV が高い</td>
+              <td>初期ユーザー数が少ないと厳しい</td>
+              <td><span class="badge badge-success">★★★</span></td>
+            </tr>
+            <tr>
+              <td><strong>広告</strong></td>
+              <td>バナー・インタースティシャル広告</td>
+              <td>導入が簡単</td>
+              <td>UX 低下、単価が低い、PWA は広告 SDK の制約あり</td>
+              <td><span class="badge badge-warning">★★</span></td>
+            </tr>
+            <tr>
+              <td><strong>アフィリエイト</strong></td>
+              <td>食材購入リンクで紹介料</td>
+              <td>レシピ→買い物の導線と相性抜群</td>
+              <td>提携先の開拓が必要</td>
+              <td><span class="badge badge-success">★★★</span></td>
+            </tr>
+            <tr>
+              <td><strong>買い切り</strong></td>
+              <td>アプリ購入で一括課金</td>
+              <td>シンプル</td>
+              <td>PWA では課金が難しい、継続収入なし</td>
+              <td><span class="badge badge-neutral">★</span></td>
+            </tr>
+            <tr>
+              <td><strong>投げ銭・寄付</strong></td>
+              <td>任意の支援金</td>
+              <td>ユーザーの善意、導入が簡単</td>
+              <td>収入が不安定</td>
+              <td><span class="badge badge-warning">★★</span></td>
+            </tr>
+          </tbody>
+        </table>`
+    },
+    {
+      title: '2. 競合アプリの価格帯（日本市場）',
+      content: `
+        <table>
+          <thead><tr><th>アプリ</th><th>月額</th><th>年額</th><th>無料機能</th><th>有料機能</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><strong>Cookpad</strong></td>
+              <td>¥280</td>
+              <td>-</td>
+              <td>レシピ閲覧、投稿</td>
+              <td>人気順検索、プレミアム限定レシピ</td>
+            </tr>
+            <tr>
+              <td><strong>DELISH KITCHEN</strong></td>
+              <td>¥480</td>
+              <td>¥4,500</td>
+              <td>レシピ動画閲覧</td>
+              <td>管理栄養士監修、献立提案</td>
+            </tr>
+            <tr>
+              <td><strong>クラシル</strong></td>
+              <td>¥480</td>
+              <td>-</td>
+              <td>レシピ動画</td>
+              <td>人気ランキング、栄養表示、広告非表示</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="monetize-note">
+          → 日本の料理アプリ市場では<strong>月額 ¥280〜500</strong>が一般的な価格帯
+        </div>`
+    },
+    {
+      title: '3. 推奨プラン：フリーミアム＋アフィリエイト',
+      content: `
+        <div class="monetize-plan">
+          <div class="monetize-plan-header">無料プラン（現状の機能）</div>
+          <ul>
+            <li>買い物リストの作成・管理</li>
+            <li>料理の登録・管理</li>
+            <li>AI 具材検索（1日3回まで）</li>
+            <li>AI レシピ提案（1日3回まで）</li>
+            <li>みんなのレシピ閲覧・いいね</li>
+          </ul>
+        </div>
+        <div class="monetize-plan">
+          <div class="monetize-plan-header premium">プレミアムプラン（月額 ¥300）</div>
+          <ul>
+            <li>AI 具材検索・レシピ提案 <strong>無制限</strong></li>
+            <li>栄養情報の表示（カロリー、たんぱく質等）</li>
+            <li>週間こんだて自動生成</li>
+            <li>買い物リストの共有（家族・パートナー）</li>
+            <li>レシピのエクスポート（PDF / 画像）</li>
+            <li>広告非表示</li>
+          </ul>
+        </div>
+        <div class="monetize-plan">
+          <div class="monetize-plan-header affiliate">アフィリエイト連携</div>
+          <ul>
+            <li>買い物リストから<strong>ネットスーパー</strong>へワンタップ注文</li>
+            <li>提携候補：Amazon フレッシュ、楽天西友、Oisix、イオンネットスーパー</li>
+            <li>紹介手数料 <strong>5〜15%</strong>（商品カテゴリによる）</li>
+            <li>レシピ内の食材リンク → 購入ページへの導線</li>
+          </ul>
+        </div>`
+    },
+    {
+      title: '4. 実装ロードマップ',
+      content: `
+        <table>
+          <thead><tr><th>フェーズ</th><th>施策</th><th>目的</th><th>必要な作業</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><span class="badge badge-info">Phase 1</span></td>
+              <td>AI 利用回数の制限導入</td>
+              <td>無料/有料の差別化の土台</td>
+              <td>API コール回数カウント、日次リセット</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-info">Phase 2</span></td>
+              <td>Stripe 決済導入</td>
+              <td>サブスクリプション課金基盤</td>
+              <td>Stripe Checkout、Webhook、ユーザー課金状態管理</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-info">Phase 3</span></td>
+              <td>プレミアム機能の開発</td>
+              <td>有料プランの価値を提供</td>
+              <td>栄養情報 API 連携、献立自動生成、PDF エクスポート</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-info">Phase 4</span></td>
+              <td>アフィリエイト連携</td>
+              <td>追加収益源の確保</td>
+              <td>ネットスーパー API 連携、アフィリエイトリンク生成</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-info">Phase 5</span></td>
+              <td>投げ銭・寄付の導入</td>
+              <td>無料ユーザーからの支援</td>
+              <td>Stripe の単発決済 or Buy Me a Coffee 導入</td>
+            </tr>
+          </tbody>
+        </table>`
+    },
+    {
+      title: '5. 収益シミュレーション',
+      content: `
+        <div class="monetize-note">前提：ユーザー数 1,000人時点の月間収益見込み</div>
+        <table>
+          <thead><tr><th>収益源</th><th>転換率</th><th>単価</th><th>月間収益</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>サブスクリプション</td>
+              <td>5%（50人）</td>
+              <td>¥300/月</td>
+              <td><strong>¥15,000</strong></td>
+            </tr>
+            <tr>
+              <td>アフィリエイト</td>
+              <td>10%（100人が月1回購入）</td>
+              <td>¥200/件</td>
+              <td><strong>¥20,000</strong></td>
+            </tr>
+            <tr>
+              <td>投げ銭</td>
+              <td>1%（10人）</td>
+              <td>¥500/月</td>
+              <td><strong>¥5,000</strong></td>
+            </tr>
+            <tr style="background:#f0f9ff">
+              <td colspan="3" style="text-align:right;font-weight:700">合計</td>
+              <td><strong>¥40,000/月</strong></td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="monetize-note">
+          ※ ユーザー数 10,000人 なら <strong>¥400,000/月</strong>、AI API コスト（Gemini）は月 ¥5,000〜20,000 程度
+        </div>`
+    },
+    {
+      title: '6. 技術的な考慮事項',
+      content: `
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px">
+          <div class="info-section" style="margin:0">
+            <div class="info-section-title">決済基盤</div>
+            <div class="info-row"><span class="info-label">推奨</span><span class="info-value">Stripe</span></div>
+            <div class="info-row"><span class="info-label">理由</span><span class="info-value">PWA 対応、日本円対応、Webhook が充実</span></div>
+            <div class="info-row"><span class="info-label">手数料</span><span class="info-value">3.6%</span></div>
+          </div>
+          <div class="info-section" style="margin:0">
+            <div class="info-section-title">注意点</div>
+            <div class="info-row"><span class="info-label">Apple 税</span><span class="info-value">PWA なので App Store 手数料なし</span></div>
+            <div class="info-row"><span class="info-label">特商法</span><span class="info-value">有料化時に特定商取引法の表記が必要</span></div>
+            <div class="info-row"><span class="info-label">資金決済法</span><span class="info-value">ポイント制はライセンスが必要な場合あり</span></div>
+          </div>
+        </div>`
+    },
+  ];
+
+  let html = `
+    <div class="info-section" style="margin-bottom:20px">
+      <div class="info-section-title">マネタイズ検討ドキュメント</div>
+      <div style="color:#64748b;font-size:13px">
+        お料理バスケット（PWA）の収益化戦略。2026年3月時点の分析。
+      </div>
+    </div>`;
+
+  for (const s of sections) {
+    html += `
+      <div class="info-section monetize-section">
+        <div class="info-section-title">${escapeHtml(s.title)}</div>
+        ${s.content}
+      </div>`;
+  }
+
+  area.innerHTML = html;
 }
 
 // ============================================================
