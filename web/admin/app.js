@@ -205,6 +205,7 @@ const Pages = {
   'app-name':         { title: 'アプリ名候補',     render: renderAppName, parent: 'docs' },
   'monetization':     { title: 'マネタイズ検討',   render: renderMonetization, parent: 'docs' },
   'native-app':       { title: 'ネイティブアプリ技術検討', render: renderNativeApp, parent: 'docs' },
+  'remote-dev':       { title: 'リモート開発環境検討', render: renderRemoteDev, parent: 'docs' },
 };
 
 // ============================================================
@@ -497,6 +498,7 @@ function renderDocs() {
     { hash: 'app-name', icon: '&#9998;', title: 'アプリ名候補', desc: 'アプリ名の候補一覧（決定：お料理バスケット）' },
     { hash: 'monetization', icon: '&#128176;', title: 'マネタイズ検討', desc: '収益モデル比較、競合価格帯、推奨プラン、ロードマップ' },
     { hash: 'native-app', icon: '&#128241;', title: 'ネイティブアプリ技術検討', desc: 'iPhone/Android アプリ化の技術比較・推奨アプローチ・コスト試算' },
+    { hash: 'remote-dev', icon: '&#128225;', title: 'リモート開発環境検討', desc: 'WSL2 + Claude Code をスマホから外出先で操作する方法の比較' },
   ];
 
   const area = document.getElementById('content-area');
@@ -1377,6 +1379,395 @@ function renderNativeApp() {
 
   let html = '<a href="#docs" class="back-link">&larr; ドキュメント一覧</a>';
   html += '<div class="info-section-title" style="font-size:18px;margin-bottom:20px;">ネイティブアプリ技術検討（2026-03）</div>';
+  for (const s of sections) {
+    html += `<div class="info-section"><div class="info-section-title">${s.title}</div>${s.content}</div>`;
+  }
+  area.innerHTML = html;
+}
+
+// ============================================================
+// Remote Dev Environment Investigation (リモート開発環境検討)
+// ============================================================
+function renderRemoteDev() {
+  const area = document.getElementById('content-area');
+
+  const sections = [
+    {
+      title: '1. やりたいこと',
+      content: `
+        <div class="info-section">
+          <table>
+            <thead><tr><th>項目</th><th>内容</th></tr></thead>
+            <tbody>
+              <tr><td><strong>目的</strong></td><td>自宅 WSL2 上の Claude Code（VSCode Terminal）を、外出先からスマホで操作したい</td></tr>
+              <tr><td><strong>開発環境</strong></td><td>Windows + WSL2（Ubuntu）+ VSCode + Claude Code CLI</td></tr>
+              <tr><td><strong>クライアント</strong></td><td>iPhone / Android スマホ（Wi-Fi / モバイル回線）</td></tr>
+              <tr><td><strong>要件</strong></td><td>セッション維持（途中で切れても再接続可能）、セキュア、低コスト</td></tr>
+            </tbody>
+          </table>
+        </div>
+      `
+    },
+    {
+      title: '2. 技術選択肢の比較',
+      content: `
+        <table>
+          <thead><tr><th>アプローチ</th><th>概要</th><th>コスト</th><th>難易度</th><th>スマホ対応</th><th>適合度</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><strong>A. Claude Code Remote Control</strong></td>
+              <td>公式機能。ローカル CLI セッションをスマホの Claude アプリ/Web から操作</td>
+              <td><span class="badge badge-warning">Max プラン必要</span></td>
+              <td><span class="badge badge-success">低</span></td>
+              <td>Claude アプリ / ブラウザ</td>
+              <td><span class="badge badge-success">★★★</span></td>
+            </tr>
+            <tr>
+              <td><strong>B. VS Code Tunnel</strong></td>
+              <td>Microsoft 公式。WSL2 から vscode.dev にトンネル接続</td>
+              <td><span class="badge badge-success">無料</span></td>
+              <td><span class="badge badge-success">低</span></td>
+              <td>ブラウザ (vscode.dev)</td>
+              <td><span class="badge badge-success">★★★</span></td>
+            </tr>
+            <tr>
+              <td><strong>C. Tailscale + SSH + tmux</strong></td>
+              <td>VPN メッシュで WSL2 に直接 SSH。tmux でセッション維持</td>
+              <td><span class="badge badge-success">無料（個人利用）</span></td>
+              <td><span class="badge badge-warning">中</span></td>
+              <td>Termius / Blink 等の SSH アプリ</td>
+              <td><span class="badge badge-success">★★★</span></td>
+            </tr>
+            <tr>
+              <td><strong>D. Cloudflare Tunnel + SSH</strong></td>
+              <td>Cloudflare Zero Trust 経由で SSH。ブラウザ SSH も可</td>
+              <td><span class="badge badge-success">無料</span></td>
+              <td><span class="badge badge-warning">中</span></td>
+              <td>ブラウザ / SSH アプリ</td>
+              <td><span class="badge badge-warning">★★</span></td>
+            </tr>
+            <tr>
+              <td><strong>E. code-server</strong></td>
+              <td>VSCode をセルフホスト。ブラウザでフル IDE アクセス</td>
+              <td><span class="badge badge-success">無料</span></td>
+              <td><span class="badge badge-warning">中</span></td>
+              <td>ブラウザ（フル VSCode UI）</td>
+              <td><span class="badge badge-warning">★★</span></td>
+            </tr>
+            <tr>
+              <td><strong>F. ポート転送 + DDNS</strong></td>
+              <td>ルーターのポート転送 + DDNS でグローバル公開</td>
+              <td><span class="badge badge-success">無料</span></td>
+              <td><span class="badge badge-warning">高</span></td>
+              <td>SSH アプリ</td>
+              <td><span class="badge badge-neutral">★</span></td>
+            </tr>
+          </tbody>
+        </table>
+      `
+    },
+    {
+      title: '3. 各アプローチの詳細',
+      content: `
+        <div class="info-section" style="border-left: 4px solid #007aff;">
+          <div class="info-section-title" style="color: #007aff;">A. Claude Code Remote Control（公式機能・2026年2月リリース）</div>
+          <p>Anthropic 公式のリモート操作機能。ローカル CLI セッションをスマホから直接操作。</p>
+          <table>
+            <thead><tr><th>項目</th><th>内容</th></tr></thead>
+            <tbody>
+              <tr><td><strong>仕組み</strong></td><td>CLI でセッション URL + QR コードが表示される → スマホでスキャンして接続</td></tr>
+              <tr><td><strong>セットアップ</strong></td><td><code>/mobile</code> コマンドで設定。「Enable Remote Control for all sessions」を有効化</td></tr>
+              <tr><td><strong>できること</strong></td><td>リアルタイムで進捗確認、ファイル変更の承認/拒否、追加指示、複数セッション管理</td></tr>
+              <tr><td><strong>制約</strong></td><td>Claude Max プラン（$100〜/月）が必要。コードはローカルに残る（クラウド実行ではない）</td></tr>
+            </tbody>
+          </table>
+          <table>
+            <thead><tr><th>メリット</th><th>デメリット</th></tr></thead>
+            <tbody>
+              <tr>
+                <td>
+                  ・公式サポート、セットアップが最も簡単<br>
+                  ・Claude Code に最適化された UI<br>
+                  ・ファイル変更の承認/拒否が可能<br>
+                  ・コードがローカルから離れない
+                </td>
+                <td>
+                  ・Max プラン（$100〜/月）が必要<br>
+                  ・Claude Code 以外のターミナル操作は不可<br>
+                  ・Research Preview 段階
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="info-section">
+          <div class="info-section-title">B. VS Code Tunnel（Microsoft 公式）</div>
+          <p>WSL2 内の VS Code Server からトンネルを張り、スマホブラウザで vscode.dev にアクセス。</p>
+          <table>
+            <thead><tr><th>項目</th><th>内容</th></tr></thead>
+            <tbody>
+              <tr><td><strong>仕組み</strong></td><td>WSL2 で <code>code tunnel</code> を実行 → Microsoft dev tunnel 経由で vscode.dev に接続</td></tr>
+              <tr><td><strong>セットアップ</strong></td><td>① WSL2 で <code>code tunnel</code> 実行<br>② GitHub アカウントで認証<br>③ スマホで <code>vscode.dev/tunnel/&lt;名前&gt;</code> を開く</td></tr>
+              <tr><td><strong>できること</strong></td><td>フル VSCode UI（エディタ、ターミナル、拡張機能）をブラウザで利用</td></tr>
+              <tr><td><strong>制約</strong></td><td>GitHub アカウント必要。トンネル数・転送量に制限あり</td></tr>
+            </tbody>
+          </table>
+          <table>
+            <thead><tr><th>メリット</th><th>デメリット</th></tr></thead>
+            <tbody>
+              <tr>
+                <td>
+                  ・無料、セットアップ簡単<br>
+                  ・フル VSCode UI（ターミナル含む）<br>
+                  ・Microsoft 公式で安定<br>
+                  ・ポート転送不要
+                </td>
+                <td>
+                  ・Microsoft インフラに依存<br>
+                  ・スマホでの VSCode UI はやや使いにくい<br>
+                  ・Claude Code CLI のインタラクティブ操作は制限的
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="info-section">
+          <div class="info-section-title">C. Tailscale + SSH + tmux</div>
+          <p>Tailscale VPN で WSL2 に直接 SSH 接続。tmux でセッション維持。</p>
+          <table>
+            <thead><tr><th>項目</th><th>内容</th></tr></thead>
+            <tbody>
+              <tr><td><strong>仕組み</strong></td><td>Tailscale が WireGuard ベースの P2P VPN を構築 → SSH で WSL2 に接続 → tmux でセッション永続化</td></tr>
+              <tr><td><strong>セットアップ</strong></td><td>① Windows に Tailscale インストール<br>② WSL2 に SSH サーバ + tmux 設定<br>③ スマホに Tailscale + Termius インストール</td></tr>
+              <tr><td><strong>無料枠</strong></td><td>個人利用: 3 ユーザー、100 デバイスまで無料</td></tr>
+              <tr><td><strong>接続安定性</strong></td><td>Mosh 併用で Wi-Fi ↔ モバイル回線の切り替えにも耐える</td></tr>
+            </tbody>
+          </table>
+          <table>
+            <thead><tr><th>メリット</th><th>デメリット</th></tr></thead>
+            <tbody>
+              <tr>
+                <td>
+                  ・無料（個人利用）<br>
+                  ・tmux でセッション永続化（切断しても復帰可能）<br>
+                  ・P2P 接続で低遅延<br>
+                  ・フルターミナルアクセス（Claude Code をそのまま操作）<br>
+                  ・約20分でセットアップ完了
+                </td>
+                <td>
+                  ・SSH アプリでの操作感はターミナルそのもの（IDE 機能なし）<br>
+                  ・スマホでの長文タイピングは不便<br>
+                  ・WSL2 の SSH 設定にやや手間がかかる
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="info-section">
+          <div class="info-section-title">D. Cloudflare Tunnel + SSH</div>
+          <p>Cloudflare Zero Trust 経由で SSH。ブラウザベースの SSH アクセスも可能。</p>
+          <table>
+            <thead><tr><th>メリット</th><th>デメリット</th></tr></thead>
+            <tbody>
+              <tr>
+                <td>
+                  ・無料プランあり<br>
+                  ・ブラウザから SSH 可能（アプリ不要）<br>
+                  ・Zero Trust 認証でセキュア<br>
+                  ・独自ドメイン連携
+                </td>
+                <td>
+                  ・設定が Tailscale より複雑<br>
+                  ・cloudflared のインストール・設定が必要<br>
+                  ・Cloudflare インフラ経由のため P2P より遅延あり
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="info-section">
+          <div class="info-section-title">E. code-server（セルフホスト VSCode）</div>
+          <p>Coder 社の OSS。VSCode をブラウザで完全に動かす。</p>
+          <table>
+            <thead><tr><th>メリット</th><th>デメリット</th></tr></thead>
+            <tbody>
+              <tr>
+                <td>
+                  ・フル VSCode UI をブラウザで利用<br>
+                  ・完全セルフホスト（外部サービス不要）<br>
+                  ・拡張機能もほぼすべて使える
+                </td>
+                <td>
+                  ・外部アクセスには Tailscale / Cloudflare Tunnel 等が別途必要<br>
+                  ・VS Code Tunnel より設定が複雑<br>
+                  ・スマホでの VSCode UI は使いにくい
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="info-section">
+          <div class="info-section-title">F. ポート転送 + DDNS（非推奨）</div>
+          <table>
+            <thead><tr><th>メリット</th><th>デメリット</th></tr></thead>
+            <tbody>
+              <tr>
+                <td>
+                  ・外部サービスに依存しない<br>
+                  ・追加コストなし
+                </td>
+                <td>
+                  ・セキュリティリスクが高い（ポートがグローバルに公開）<br>
+                  ・ルーター設定が必要（ISP によっては不可）<br>
+                  ・動的 IP の場合 DDNS 設定が必要<br>
+                  ・WSL2 のネットワークは Windows と共有で設定が複雑
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      `
+    },
+    {
+      title: '4. 推奨アプローチ',
+      content: `
+        <div class="info-section" style="border-left: 4px solid #007aff;">
+          <div class="info-section-title" style="color: #007aff;">推奨: B + C の組み合わせ（VS Code Tunnel + Tailscale/SSH/tmux）</div>
+
+          <div style="margin-bottom:16px;">
+            <strong>メイン: VS Code Tunnel（ブラウザで VSCode を使いたい場合）</strong>
+            <ul style="margin:8px 0; padding-left:20px; line-height:1.8;">
+              <li>WSL2 で <code>code tunnel</code> を実行するだけ</li>
+              <li>スマホのブラウザで vscode.dev にアクセス</li>
+              <li>エディタ + ターミナルをフルに利用可能</li>
+              <li>コスト: <span class="badge badge-success">無料</span>　セットアップ: <span class="badge badge-info">5分</span></li>
+            </ul>
+          </div>
+
+          <div style="margin-bottom:16px;">
+            <strong>サブ: Tailscale + SSH + tmux（ターミナル直接操作したい場合）</strong>
+            <ul style="margin:8px 0; padding-left:20px; line-height:1.8;">
+              <li>Claude Code CLI をそのまま操作可能</li>
+              <li>tmux でセッション永続化（電車内で切断されても復帰可能）</li>
+              <li>Termius（iOS/Android）で快適な SSH 操作</li>
+              <li>コスト: <span class="badge badge-success">無料</span>　セットアップ: <span class="badge badge-info">20分</span></li>
+            </ul>
+          </div>
+
+          <div style="margin-bottom:16px;">
+            <strong>将来: Claude Code Remote Control（公式機能が安定したら）</strong>
+            <ul style="margin:8px 0; padding-left:20px; line-height:1.8;">
+              <li>Claude Code に最適化された UI で最も快適</li>
+              <li>ただし Max プラン（$100〜/月）が必要</li>
+              <li>Pro プラン対応を待つのも選択肢</li>
+              <li>コスト: <span class="badge badge-warning">$100〜/月</span></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="info-section">
+          <div class="info-section-title">推奨の理由</div>
+          <table>
+            <thead><tr><th>観点</th><th>説明</th></tr></thead>
+            <tbody>
+              <tr><td><strong>コスト</strong></td><td>VS Code Tunnel も Tailscale も無料。追加費用ゼロで始められる</td></tr>
+              <tr><td><strong>用途の使い分け</strong></td><td>コード編集 → VS Code Tunnel、Claude Code 操作 → SSH + tmux</td></tr>
+              <tr><td><strong>セッション永続性</strong></td><td>tmux により回線切断してもセッションが維持される</td></tr>
+              <tr><td><strong>セキュリティ</strong></td><td>ポート転送不要。Tailscale は WireGuard ベースで暗号化</td></tr>
+              <tr><td><strong>導入の容易さ</strong></td><td>VS Code Tunnel は 5 分、Tailscale は 20 分で完了</td></tr>
+            </tbody>
+          </table>
+        </div>
+      `
+    },
+    {
+      title: '5. セットアップ手順',
+      content: `
+        <div class="info-section">
+          <div class="info-section-title">VS Code Tunnel セットアップ</div>
+          <table>
+            <thead><tr><th>ステップ</th><th>コマンド / 操作</th></tr></thead>
+            <tbody>
+              <tr><td><strong>1. WSL2 でトンネル起動</strong></td><td><code>code tunnel</code></td></tr>
+              <tr><td><strong>2. GitHub 認証</strong></td><td>表示される URL を開いてコードを入力</td></tr>
+              <tr><td><strong>3. スマホからアクセス</strong></td><td>ブラウザで <code>https://vscode.dev/tunnel/&lt;マシン名&gt;</code> を開く</td></tr>
+              <tr><td><strong>4. 常時起動（任意）</strong></td><td><code>code tunnel service install</code> で systemd サービス化</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="info-section">
+          <div class="info-section-title">Tailscale + SSH + tmux セットアップ</div>
+          <table>
+            <thead><tr><th>ステップ</th><th>コマンド / 操作</th></tr></thead>
+            <tbody>
+              <tr><td><strong>1. Windows に Tailscale</strong></td><td><a href="https://tailscale.com/download/windows" target="_blank">tailscale.com</a> からインストール</td></tr>
+              <tr><td><strong>2. WSL2 に SSH サーバ</strong></td><td><code>sudo apt install openssh-server</code><br><code>sudo service ssh start</code></td></tr>
+              <tr><td><strong>3. WSL2 に tmux</strong></td><td><code>sudo apt install tmux</code></td></tr>
+              <tr><td><strong>4. スマホに Tailscale</strong></td><td>App Store / Play Store から Tailscale インストール</td></tr>
+              <tr><td><strong>5. スマホに SSH アプリ</strong></td><td>Termius（iOS/Android 対応・無料）を推奨</td></tr>
+              <tr><td><strong>6. 接続テスト</strong></td><td>Termius で Tailscale IP に SSH → <code>tmux new -s dev</code></td></tr>
+              <tr><td><strong>7. 再接続</strong></td><td><code>tmux attach -t dev</code> でセッション復帰</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="info-section">
+          <div class="info-section-title">Claude Code Remote Control セットアップ</div>
+          <table>
+            <thead><tr><th>ステップ</th><th>コマンド / 操作</th></tr></thead>
+            <tbody>
+              <tr><td><strong>1. 有効化</strong></td><td>Claude Code CLI で <code>/mobile</code> を実行</td></tr>
+              <tr><td><strong>2. 設定</strong></td><td>「Enable Remote Control for all sessions」を有効化</td></tr>
+              <tr><td><strong>3. スマホ接続</strong></td><td>表示される QR コードをスキャン → Claude アプリ or ブラウザで操作</td></tr>
+            </tbody>
+          </table>
+          <p style="margin-top:8px;font-size:13px;color:#64748b;">※ Claude Max プラン（$100〜/月）が必要</p>
+        </div>
+      `
+    },
+    {
+      title: '6. スマホ操作の実用 Tips',
+      content: `
+        <div class="info-section">
+          <table>
+            <thead><tr><th>Tips</th><th>詳細</th></tr></thead>
+            <tbody>
+              <tr><td><strong>tmux のキーバインド</strong></td><td>Ctrl+B はスマホキーボードで押しにくい。<code>set -g prefix C-a</code> に変更推奨</td></tr>
+              <tr><td><strong>Mosh の導入</strong></td><td>SSH より接続が安定。Wi-Fi ↔ モバイル回線の切り替えに強い: <code>sudo apt install mosh</code></td></tr>
+              <tr><td><strong>Claude Code の使い方</strong></td><td>長い指示は事前にメモアプリで書いてペースト。<code>claude -p "指示"</code> の非対話モードも活用</td></tr>
+              <tr><td><strong>外部キーボード</strong></td><td>Bluetooth キーボードがあると生産性が大幅にアップ</td></tr>
+              <tr><td><strong>ホーム画面に追加</strong></td><td>vscode.dev のトンネル URL を iOS/Android のホーム画面に追加してワンタップアクセス</td></tr>
+            </tbody>
+          </table>
+        </div>
+      `
+    },
+    {
+      title: '7. 参考リンク',
+      content: `
+        <table>
+          <thead><tr><th>リソース</th><th>URL</th></tr></thead>
+          <tbody>
+            <tr><td>Claude Code Remote Control 公式</td><td><a href="https://code.claude.com/docs/en/remote-control" target="_blank">code.claude.com/docs/en/remote-control</a></td></tr>
+            <tr><td>VS Code Tunnel 公式ドキュメント</td><td><a href="https://code.visualstudio.com/docs/remote/tunnels" target="_blank">code.visualstudio.com/docs/remote/tunnels</a></td></tr>
+            <tr><td>Tailscale + WSL2 + VSCode</td><td><a href="https://www.hanselman.com/blog/using-tailscale-on-windows-to-network-more-easily-with-wsl2-and-visual-studio-code" target="_blank">hanselman.com - Tailscale WSL2</a></td></tr>
+            <tr><td>SSH + tmux で Claude Code (iPhone)</td><td><a href="https://dev.to/shimo4228/running-claude-code-from-iphone-via-ssh-tmux-4c10" target="_blank">dev.to - Running Claude Code from iPhone</a></td></tr>
+            <tr><td>Cloudflare Tunnel SSH</td><td><a href="https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/use-cases/ssh/" target="_blank">developers.cloudflare.com - SSH Tunnel</a></td></tr>
+            <tr><td>Tailscale 無料プラン</td><td><a href="https://tailscale.com/pricing" target="_blank">tailscale.com/pricing</a></td></tr>
+          </tbody>
+        </table>
+      `
+    }
+  ];
+
+  let html = '<a href="#docs" class="back-link">&larr; ドキュメント一覧</a>';
+  html += '<div class="info-section-title" style="font-size:18px;margin-bottom:20px;">リモート開発環境検討 — スマホから WSL2 + Claude Code を操作（2026-03）</div>';
   for (const s of sections) {
     html += `<div class="info-section"><div class="info-section-title">${s.title}</div>${s.content}</div>`;
   }
