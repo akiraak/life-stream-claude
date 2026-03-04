@@ -201,6 +201,7 @@ const Pages = {
   'purchase-history': { title: '購入履歴',         render: renderPurchaseHistory },
   system:             { title: 'システム情報',     render: renderSystem },
   'icon-preview':     { title: 'アイコン候補',     render: renderIconPreview },
+  'app-name':         { title: 'アプリ名候補',     render: renderAppName },
 };
 
 // ============================================================
@@ -550,6 +551,196 @@ function renderIconPreview() {
 
   html += '</div>';
   document.getElementById('content-area').innerHTML = html;
+}
+
+// ============================================================
+// App Name Candidates
+// ============================================================
+function renderAppName() {
+  const currentName = '料理買物List';
+
+  const categories = [
+    {
+      label: 'こんだて・献立 系',
+      items: [
+        { name: 'こんだてリスト', short: 'こんだて', desc: '直球。献立＋リスト' },
+        { name: 'こんだてメモ', short: 'こんだて', desc: 'メモ感で気軽さ' },
+        { name: 'こんだてノート', short: 'こんだて', desc: '記録・管理感' },
+        { name: 'こんだてかご', short: 'こんだて', desc: '献立＋買い物かご' },
+        { name: 'こんだてボード', short: 'こんだて', desc: 'ホワイトボード的な' },
+        { name: 'こんだてポケット', short: 'こんだて', desc: 'ポケットに入る手軽さ' },
+        { name: 'こんだてストック', short: 'こんだて', desc: '食材ストック感' },
+        { name: 'こんだて帳', short: 'こんだて帳', desc: '手帳っぽい' },
+      ]
+    },
+    {
+      label: 'レシピ 系',
+      items: [
+        { name: 'レシピかご', short: 'レシピかご', desc: 'かわいい響き' },
+        { name: 'レシピメモ', short: 'レシピメモ', desc: 'シンプル' },
+        { name: 'レシピノート', short: 'レシピノート', desc: '記録感' },
+        { name: 'レシピリスト', short: 'レシピリスト', desc: '直球' },
+        { name: 'レシピポケット', short: 'レシピ', desc: '手元にある感' },
+        { name: 'レシピボックス', short: 'レシピ', desc: '箱に入れてストック' },
+        { name: 'レシピストック', short: 'レシピ', desc: '蓄える感じ' },
+        { name: 'レシピ棚', short: 'レシピ棚', desc: 'パントリー的' },
+      ]
+    },
+    {
+      label: '食材・具材 系',
+      items: [
+        { name: '食材リスト', short: '食材リスト', desc: '機能そのまま' },
+        { name: '食材メモ', short: '食材メモ', desc: '気軽' },
+        { name: '食材ノート', short: '食材ノート', desc: '記録' },
+        { name: '食材かご', short: '食材かご', desc: '買い物かご感' },
+        { name: '食材ポケット', short: '食材', desc: 'コンパクト' },
+        { name: '具材メモ', short: '具材メモ', desc: '具材にフォーカス' },
+        { name: '具材リスト', short: '具材リスト', desc: '直球' },
+        { name: '具材かご', short: '具材かご', desc: 'かわいい' },
+      ]
+    },
+    {
+      label: 'ごはん・お料理 系',
+      items: [
+        { name: 'ごはんメモ', short: 'ごはんメモ', desc: '親しみやすい' },
+        { name: 'ごはんリスト', short: 'ごはん', desc: 'カジュアル' },
+        { name: 'ごはんノート', short: 'ごはん', desc: '日記っぽさ' },
+        { name: 'ごはんかご', short: 'ごはん', desc: 'やわらかい' },
+        { name: 'お料理メモ', short: 'お料理メモ', desc: '丁寧な響き' },
+        { name: 'お料理かご', short: 'お料理かご', desc: '上品＋かわいい' },
+        { name: 'お料理ノート', short: 'お料理', desc: '記録感' },
+        { name: 'おかずメモ', short: 'おかずメモ', desc: '日常感' },
+        { name: 'おかずかご', short: 'おかずかご', desc: '庶民的でかわいい' },
+      ]
+    },
+    {
+      label: '買い物・キッチン 系',
+      items: [
+        { name: 'おかいものメモ', short: 'おかいもの', desc: 'やさしい響き' },
+        { name: 'おかいものかご', short: 'おかいもの', desc: 'スーパーのかご感' },
+        { name: 'かいものノート', short: 'かいもの', desc: 'シンプル' },
+        { name: 'キッチンメモ', short: 'キッチン', desc: 'おしゃれ' },
+        { name: 'キッチンリスト', short: 'キッチン', desc: 'スマート' },
+        { name: 'キッチンノート', short: 'キッチン', desc: '台所の相棒感' },
+      ]
+    },
+    {
+      label: '食卓・まいにち 系',
+      items: [
+        { name: '食卓メモ', short: '食卓メモ', desc: '食卓を囲むイメージ' },
+        { name: '食卓ノート', short: '食卓ノート', desc: 'あたたかみ' },
+        { name: '食卓リスト', short: '食卓リスト', desc: 'きちんと感' },
+        { name: 'まいにちごはん', short: 'まいにち', desc: '毎日使うアプリ感' },
+        { name: 'まいにちこんだて', short: 'まいにち', desc: '日常に寄り添う' },
+      ]
+    },
+    {
+      label: '〇〇バスケット 系',
+      items: [
+        { name: 'こんだてバスケット', short: 'こんだて', desc: '献立＋買い物かごの英語版' },
+        { name: 'レシピバスケット', short: 'レシピ', desc: 'レシピを入れるかご' },
+        { name: '食材バスケット', short: '食材', desc: '食材を買い物かごに' },
+        { name: '具材バスケット', short: '具材', desc: '具材を集めるイメージ' },
+        { name: 'ごはんバスケット', short: 'ごはん', desc: 'カジュアル＋おしゃれ' },
+        { name: 'お料理バスケット', short: 'お料理', desc: '丁寧で上品' },
+        { name: 'おかずバスケット', short: 'おかず', desc: '日常感＋英語のおしゃれ感' },
+        { name: 'キッチンバスケット', short: 'キッチン', desc: '台所のかご。インテリア感' },
+        { name: '食卓バスケット', short: '食卓', desc: 'テーブルに並ぶイメージ' },
+        { name: 'おかいものバスケット', short: 'おかいもの', desc: 'スーパーの買い物かご' },
+      ]
+    },
+    {
+      label: 'ひねり系',
+      items: [
+        { name: 'ごはんのたね', short: 'ごはんのたね', desc: '食材＝ごはんの種' },
+        { name: 'こんだてのたね', short: 'こんだてのたね', desc: '献立の素' },
+        { name: 'おかずのもと', short: 'おかずのもと', desc: '料理の元＝食材' },
+        { name: 'レシピのもと', short: 'レシピのもと', desc: 'レシピ作りの素材' },
+        { name: '食材パントリー', short: '食材', desc: '食料庫イメージ' },
+      ]
+    },
+  ];
+
+  const area = document.getElementById('content-area');
+
+  // 変更対象の箇所
+  const targets = [
+    { file: 'web/index.html', location: '<title>', current: currentName },
+    { file: 'web/index.html', location: 'ログイン画面 <h1>', current: currentName },
+    { file: 'web/index.html', location: 'ヘッダー <h1>', current: currentName },
+    { file: 'web/manifest.json', location: 'name', current: currentName },
+    { file: 'web/manifest.json', location: 'short_name', current: currentName },
+    { file: 'web/admin/index.html', location: '<title>', current: '管理画面 - ' + currentName },
+  ];
+
+  let html = '';
+
+  // 現在の名前
+  html += `
+    <div class="info-section" style="margin-bottom:20px">
+      <div class="info-section-title">現在のアプリ名</div>
+      <div style="font-size:24px;font-weight:700;color:#1e293b;margin-bottom:16px">${escapeHtml(currentName)}</div>
+      <div class="info-section-title" style="margin-top:12px">変更対象の箇所</div>
+      ${targets.map(t => `
+        <div class="info-row">
+          <span class="info-label"><code>${escapeHtml(t.file)}</code> — ${escapeHtml(t.location)}</span>
+          <span class="info-value">${escapeHtml(t.current)}</span>
+        </div>
+      `).join('')}
+    </div>`;
+
+  // 検索
+  html += `
+    <div style="margin-bottom:16px;display:flex;gap:12px;align-items:center">
+      <input type="text" class="search-input" id="app-name-search" placeholder="候補を検索..." style="width:300px">
+      <span class="table-count" id="app-name-count">${categories.reduce((s, c) => s + c.items.length, 0)} 件</span>
+    </div>`;
+
+  // カテゴリごとのカード
+  html += '<div id="app-name-list">';
+  for (const cat of categories) {
+    html += `<div class="name-category" data-category="${escapeHtml(cat.label)}">`;
+    html += `<div style="font-size:14px;font-weight:700;color:#64748b;margin:20px 0 10px;text-transform:uppercase;letter-spacing:0.03em">${escapeHtml(cat.label)}</div>`;
+    html += '<div class="name-grid">';
+    for (const item of cat.items) {
+      html += `
+        <div class="name-card" data-name="${escapeHtml(item.name)}" data-desc="${escapeHtml(item.desc)}">
+          <div class="name-card-name">${escapeHtml(item.name)}</div>
+          <div class="name-card-short">short_name: ${escapeHtml(item.short)}</div>
+          <div class="name-card-desc">${escapeHtml(item.desc)}</div>
+        </div>`;
+    }
+    html += '</div></div>';
+  }
+  html += '</div>';
+
+  area.innerHTML = html;
+
+  // 検索機能
+  const searchInput = document.getElementById('app-name-search');
+  const countEl = document.getElementById('app-name-count');
+  searchInput.addEventListener('input', () => {
+    const q = searchInput.value.toLowerCase().trim();
+    let visible = 0;
+    area.querySelectorAll('.name-card').forEach(card => {
+      const match = !q ||
+        card.dataset.name.toLowerCase().includes(q) ||
+        card.dataset.desc.toLowerCase().includes(q);
+      card.style.display = match ? '' : 'none';
+      if (match) visible++;
+    });
+    // カテゴリ見出しの表示/非表示
+    area.querySelectorAll('.name-category').forEach(cat => {
+      const hasVisible = cat.querySelectorAll('.name-card[style=""], .name-card:not([style])').length > 0;
+      // Check if any card is visible
+      let anyVisible = false;
+      cat.querySelectorAll('.name-card').forEach(c => {
+        if (c.style.display !== 'none') anyVisible = true;
+      });
+      cat.style.display = anyVisible ? '' : 'none';
+    });
+    countEl.textContent = visible + ' 件';
+  });
 }
 
 // ============================================================
