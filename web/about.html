@@ -263,46 +263,6 @@
       margin-top: 8px;
     }
 
-    /* App Screenshots Gallery */
-    .app-gallery {
-      padding: 0 0 32px;
-    }
-    .gallery-scroll {
-      display: flex;
-      gap: 12px;
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-      padding: 4px 0 8px;
-      scroll-snap-type: x mandatory;
-    }
-    .gallery-scroll::-webkit-scrollbar { display: none; }
-    .gallery-item {
-      flex-shrink: 0;
-      text-align: center;
-      scroll-snap-align: center;
-    }
-    .gallery-item img, .gallery-item .img-placeholder {
-      width: 180px;
-      height: 390px;
-      border-radius: 16px;
-      border: 1px solid #333;
-      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
-      object-fit: cover;
-    }
-    .gallery-item .img-placeholder {
-      background: #2a2a2a;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      color: #555;
-    }
-    .gallery-item .gallery-caption {
-      font-size: 12px;
-      color: #888;
-      margin-top: 8px;
-    }
-
     /* Features */
     .features {
       padding: 20px 0 32px;
@@ -320,6 +280,55 @@
       display: flex;
       align-items: flex-start;
       gap: 14px;
+    }
+    .feature-card-vertical {
+      flex-direction: column;
+      gap: 0;
+    }
+    .feature-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+    }
+    .feature-screenshot {
+      margin-top: 14px;
+      text-align: center;
+    }
+    .feature-screenshot img, .feature-screenshot .img-placeholder {
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid #333;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      object-fit: cover;
+    }
+    .feature-screenshot .img-placeholder {
+      background: #2a2a2a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      color: #555;
+    }
+    .feature-screenshot-row {
+      margin-top: 14px;
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+    }
+    .feature-screenshot-row img, .feature-screenshot-row .img-placeholder {
+      width: 48%;
+      border-radius: 12px;
+      border: 1px solid #333;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      object-fit: cover;
+    }
+    .feature-screenshot-row .img-placeholder {
+      background: #2a2a2a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      color: #555;
     }
     .feature-icon {
       width: 36px;
@@ -368,84 +377,78 @@
       <p class="app-tagline">料理の買い物をスマートに管理</p>
     </section>
 
-    <!-- App Screenshots -->
-    <section class="app-gallery">
-      <h2 class="section-title">画面イメージ</h2>
-      <div class="gallery-scroll">
-        <div class="gallery-item">
-          <img src="img/ss-list.png" alt="買い物リスト画面">
-          <div class="gallery-caption">買い物リスト</div>
-        </div>
-        <div class="gallery-item">
-          <img src="img/ss-ingredients.png" alt="AI 具材提案画面">
-          <div class="gallery-caption">AI がレシピと食材を提案</div>
-        </div>
-        <div class="gallery-item">
-          <img src="img/ss-recipe.png" alt="自分のレシピ画面">
-          <div class="gallery-caption">自分のレシピ</div>
-        </div>
-        <div class="gallery-item">
-          <img src="img/ss-shared.png" alt="みんなのレシピ画面">
-          <div class="gallery-caption">みんなのレシピ</div>
-        </div>
-        <div class="gallery-item">
-          <img src="img/ss-search.png" alt="なんでもレシピ検索">
-          <div class="gallery-caption">なんでもレシピ検索</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Features -->
+    <!-- Features with embedded screenshots -->
     <section class="features">
       <h2 class="section-title">特徴</h2>
       <div class="feature-list">
-        <div class="feature-card">
-          <div class="feature-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M9 11l3 3L22 4"/>
-              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
-            </svg>
+        <div class="feature-card feature-card-vertical">
+          <div class="feature-header">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 11l3 3L22 4"/>
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+              </svg>
+            </div>
+            <div>
+              <div class="feature-name">買い物リスト管理</div>
+              <div class="feature-desc">料理ごとに食材をまとめて管理、買ったものから消していこう</div>
+            </div>
           </div>
-          <div>
-            <div class="feature-name">買い物リスト管理</div>
-            <div class="feature-desc">料理ごとに食材をまとめて管理、買ったものから消していこう</div>
-          </div>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 2a5 5 0 0 1 5 5c0 2.76-2.24 5-5 5s-5-2.24-5-5a5 5 0 0 1 5-5z"/>
-              <path d="M17 7h.01"/>
-              <path d="M12 12v10"/>
-              <path d="M8 18l4 4 4-4"/>
-            </svg>
-          </div>
-          <div>
-            <div class="feature-name">AI がレシピ・食材を提案</div>
-            <div class="feature-desc">料理名を入れるだけで AI が作り方と必要な食材を提案してくれる</div>
+          <div class="feature-screenshot">
+            <img src="img/ss-list.png" alt="買い物リスト画面">
           </div>
         </div>
-        <div class="feature-card">
-          <div class="feature-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/>
-            </svg>
+        <div class="feature-card feature-card-vertical">
+          <div class="feature-header">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2a5 5 0 0 1 5 5c0 2.76-2.24 5-5 5s-5-2.24-5-5a5 5 0 0 1 5-5z"/>
+                <path d="M17 7h.01"/>
+                <path d="M12 12v10"/>
+                <path d="M8 18l4 4 4-4"/>
+              </svg>
+            </div>
+            <div>
+              <div class="feature-name">AI がレシピと食材を提案</div>
+              <div class="feature-desc">料理名を入れるだけで AI が作り方と必要な食材を提案してくれる</div>
+            </div>
           </div>
-          <div>
-            <div class="feature-name">レシピを保存・共有</div>
-            <div class="feature-desc">気になるレシピを保存して、みんなのレシピから食材をそのまま買い物リストへ</div>
+          <div class="feature-screenshot">
+            <img src="img/ss-ingredients.png" alt="AI 具材提案画面">
           </div>
         </div>
-        <div class="feature-card">
-          <div class="feature-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="11" cy="11" r="8"/>
-              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-            </svg>
+        <div class="feature-card feature-card-vertical">
+          <div class="feature-header">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/>
+              </svg>
+            </div>
+            <div>
+              <div class="feature-name">レシピを保存・共有</div>
+              <div class="feature-desc">気になるレシピを保存して、みんなのレシピから食材をそのまま買い物リストへ</div>
+            </div>
           </div>
-          <div>
-            <div class="feature-name">なんでもレシピ検索</div>
-            <div class="feature-desc">「キャベツの大量消費」みたいに、やりたい事を入れるだけで AI がレシピを探してくれる</div>
+          <div class="feature-screenshot-row">
+            <img src="img/ss-recipe.png" alt="自分のレシピ画面">
+            <img src="img/ss-shared.png" alt="みんなのレシピ画面">
+          </div>
+        </div>
+        <div class="feature-card feature-card-vertical">
+          <div class="feature-header">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"/>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+            </div>
+            <div>
+              <div class="feature-name">なんでもレシピ検索</div>
+              <div class="feature-desc">「キャベツの大量消費」みたいに、やりたい事を入れるだけで AI がレシピを探してくれる</div>
+            </div>
+          </div>
+          <div class="feature-screenshot">
+            <img src="img/ss-search.png" alt="なんでもレシピ検索">
           </div>
         </div>
       </div>
