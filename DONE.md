@@ -79,3 +79,4 @@
 - 2026-03-04 iPhoneアプリとAndroidアプリ開発の技術検討（管理画面にドキュメント追加）
 - 2026-03-04 WSL2 + Claude Code リモート開発環境検討（管理画面にドキュメント追加）
 - 2026-03-04 React Native 開発計画ドキュメント作成（管理画面にページ追加）
+- 2026-03-04 Gemini 3.1 Flash-Lite対応（デフォルトモデルをgemini-3.1-flash-lite-previewに変更）

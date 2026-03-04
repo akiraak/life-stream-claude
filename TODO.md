@@ -3,7 +3,6 @@
 ## 仕様・設計
 
 ## 機能開発
-- [ ] Gemini 3.1 Flash-Lite対応
 - [ ] 音声入力対応に
 - [ ] iPhoneアプリ
 - [ ] Androidアプリ
