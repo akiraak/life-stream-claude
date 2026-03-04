@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import {
   getAllSavedRecipes,
+  getSharedRecipes,
   getSavedRecipe,
   createSavedRecipe,
   deleteSavedRecipe,
@@ -13,6 +14,16 @@ export const savedRecipesRouter = Router();
 savedRecipesRouter.get('/', (req: Request, res: Response) => {
   try {
     const recipes = getAllSavedRecipes(req.userId!);
+    res.json({ success: true, data: recipes, error: null });
+  } catch (err) {
+    res.status(500).json({ success: false, data: null, error: String(err) });
+  }
+});
+
+// GET /api/saved-recipes/shared — みんなのレシピ取得
+savedRecipesRouter.get('/shared', (req: Request, res: Response) => {
+  try {
+    const recipes = getSharedRecipes(req.userId!);
     res.json({ success: true, data: recipes, error: null });
   } catch (err) {
     res.status(500).json({ success: false, data: null, error: String(err) });

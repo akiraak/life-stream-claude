@@ -35,6 +35,18 @@ export function getAllSavedRecipes(userId: number): SavedRecipe[] {
   `).all(userId, userId) as SavedRecipe[];
 }
 
+export function getSharedRecipes(userId: number): SavedRecipe[] {
+  const db = getDatabase();
+  return db.prepare(`
+    SELECT sr.*,
+      (SELECT COUNT(*) FROM recipe_likes WHERE saved_recipe_id = sr.id) as like_count,
+      EXISTS(SELECT 1 FROM recipe_likes WHERE saved_recipe_id = sr.id AND user_id = ?) as liked
+    FROM saved_recipes sr
+    WHERE (SELECT COUNT(*) FROM recipe_likes WHERE saved_recipe_id = sr.id) > 0
+    ORDER BY like_count DESC, sr.dish_name ASC, sr.created_at DESC
+  `).all(userId) as SavedRecipe[];
+}
+
 export function getSavedRecipe(userId: number, id: number): SavedRecipe | null {
   const db = getDatabase();
   return (db.prepare(`

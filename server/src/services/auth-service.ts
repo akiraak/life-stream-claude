@@ -82,10 +82,14 @@ export function verifyJwt(token: string): JwtPayload | null {
   }
 }
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+let resend: InstanceType<typeof Resend> | null = null;
+function getResend(): InstanceType<typeof Resend> {
+  if (!resend) resend = new Resend(process.env.RESEND_API_KEY);
+  return resend;
+}
 
 export async function sendOtpEmail(email: string, code: string): Promise<void> {
-  await resend.emails.send({
+  await getResend().emails.send({
     from: process.env.EMAIL_FROM || 'noreply@chobi.me',
     to: email,
     subject: '料理買物List - ログインコード',
