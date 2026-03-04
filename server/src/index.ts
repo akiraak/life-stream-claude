@@ -35,6 +35,12 @@ app.get('/', (_req, res) => {
   res.type('html').send(indexHtml);
 });
 
+// /about ページ
+const aboutHtml = fs.readFileSync(path.join(webDir, 'about.html'), 'utf-8');
+app.get('/about', (_req, res) => {
+  res.type('html').send(aboutHtml);
+});
+
 // 静的ファイル配信 (Web クライアント)
 app.use(express.static(webDir));
 

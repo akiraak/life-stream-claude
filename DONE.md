@@ -72,3 +72,4 @@
 - 2026-03-03 アプリ名を「お料理バスケット」に変更（タイトル、manifest、PWAアイコン表示名など全箇所）
 - 2026-03-03 ドメインを life.chobi.me → basket.chobi.me に変更（コード・ドキュメント全箇所）
 - 2026-03-03 リポジトリ名を life-stream-claude → cooking-basket に変更（コード・ドキュメント全箇所）
+- 2026-03-03 アプリ紹介・インストール手順ページを /about に作成（docs/index.html から移行）

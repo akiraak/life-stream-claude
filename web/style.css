@@ -165,6 +165,16 @@ body {
 
 .login-retry-btn:active { opacity: 0.7; }
 
+.about-link {
+  display: block;
+  margin-top: 24px;
+  font-size: 13px;
+  color: #888;
+  text-decoration: none;
+  text-align: center;
+}
+.about-link:hover { color: #d4d4d4; }
+
 /* ヘッダーユーザー情報 */
 .header-right {
   display: flex;

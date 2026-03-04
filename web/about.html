@@ -8,7 +8,7 @@
   <meta property="og:title" content="お料理バスケット">
   <meta property="og:description" content="料理の買い物をスマートに管理">
   <meta property="og:image" content="icon-512.png">
-  <title>お料理バスケット</title>
+  <title>お料理バスケット - アプリについて</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -25,10 +25,35 @@
       padding: 0 20px;
     }
 
+    /* Top bar */
+    .top-bar {
+      display: flex;
+      justify-content: flex-end;
+      padding: 16px 20px;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+    .login-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #f97316;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 8px 18px;
+      border: 1px solid #f97316;
+      border-radius: 8px;
+      transition: background 0.2s;
+    }
+    .login-link:hover {
+      background: rgba(249, 115, 22, 0.1);
+    }
+
     /* Hero */
     .hero {
       text-align: center;
-      padding: 60px 0 40px;
+      padding: 20px 0 40px;
     }
     .app-icon {
       width: 100px;
@@ -169,7 +194,7 @@
       margin-top: 6px;
     }
 
-    /* Chrome mockup (Android - no screenshots) */
+    /* Chrome mockup (Android) */
     .phone-mockup {
       width: 200px;
       background: #1a1a1a;
@@ -287,20 +312,67 @@
       font-size: 13px;
       color: #555;
     }
-    .footer a {
-      color: #888;
-      text-decoration: none;
-    }
-    .footer a:hover { color: #d4d4d4; }
   </style>
 </head>
 <body>
+  <!-- Top bar -->
+  <div class="top-bar">
+    <a href="/" class="login-link">ログイン</a>
+  </div>
+
   <div class="container">
     <!-- Hero -->
     <section class="hero">
       <img src="icon-192.png" alt="お料理バスケット アイコン" class="app-icon">
       <h1 class="app-name">お料理バスケット</h1>
       <p class="app-tagline">料理の買い物をスマートに管理</p>
+    </section>
+
+    <!-- Features -->
+    <section class="features">
+      <h2 class="section-title">特徴</h2>
+      <div class="feature-list">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 11l3 3L22 4"/>
+              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+            </svg>
+          </div>
+          <div>
+            <div class="feature-name">買い物リスト管理</div>
+            <div class="feature-desc">ドラッグ＆ドロップで並び替え、チェックで購入済みに</div>
+          </div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 6h18M3 12h18M3 18h18"/>
+              <circle cx="7" cy="6" r="1" fill="#f97316"/>
+              <circle cx="7" cy="12" r="1" fill="#f97316"/>
+              <circle cx="7" cy="18" r="1" fill="#f97316"/>
+            </svg>
+          </div>
+          <div>
+            <div class="feature-name">料理ごとに食材を整理</div>
+            <div class="feature-desc">料理単位で買い物アイテムをグループ化</div>
+          </div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2a5 5 0 0 1 5 5c0 2.76-2.24 5-5 5s-5-2.24-5-5a5 5 0 0 1 5-5z"/>
+              <path d="M17 7h.01"/>
+              <path d="M12 12v10"/>
+              <path d="M8 18l4 4 4-4"/>
+            </svg>
+          </div>
+          <div>
+            <div class="feature-name">AI がレシピ・食材を提案</div>
+            <div class="feature-desc">料理名から食材やレシピを自動で取得</div>
+          </div>
+        </div>
+      </div>
     </section>
 
     <!-- Install Instructions -->
@@ -414,53 +486,6 @@
             <span class="step-text"><span class="highlight">「インストール」</span>をタップして完了</span>
           </li>
         </ol>
-      </div>
-    </section>
-
-    <!-- Features -->
-    <section class="features">
-      <h2 class="section-title">特徴</h2>
-      <div class="feature-list">
-        <div class="feature-card">
-          <div class="feature-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M9 11l3 3L22 4"/>
-              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
-            </svg>
-          </div>
-          <div>
-            <div class="feature-name">買い物リスト管理</div>
-            <div class="feature-desc">ドラッグ＆ドロップで並び替え、チェックで購入済みに</div>
-          </div>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M3 6h18M3 12h18M3 18h18"/>
-              <circle cx="7" cy="6" r="1" fill="#f97316"/>
-              <circle cx="7" cy="12" r="1" fill="#f97316"/>
-              <circle cx="7" cy="18" r="1" fill="#f97316"/>
-            </svg>
-          </div>
-          <div>
-            <div class="feature-name">料理ごとに食材を整理</div>
-            <div class="feature-desc">料理単位で買い物アイテムをグループ化</div>
-          </div>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 2a5 5 0 0 1 5 5c0 2.76-2.24 5-5 5s-5-2.24-5-5a5 5 0 0 1 5-5z"/>
-              <path d="M17 7h.01"/>
-              <path d="M12 12v10"/>
-              <path d="M8 18l4 4 4-4"/>
-            </svg>
-          </div>
-          <div>
-            <div class="feature-name">AI がレシピ・食材を提案</div>
-            <div class="feature-desc">料理名から食材やレシピを自動で取得</div>
-          </div>
-        </div>
       </div>
     </section>
 
