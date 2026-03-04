@@ -41,6 +41,15 @@ app.get('/about', (_req, res) => {
   res.type('html').send(aboutHtml);
 });
 
+// /about-b ページ（検証用）
+const aboutBPath = path.join(webDir, 'about-b.html');
+if (fs.existsSync(aboutBPath)) {
+  const aboutBHtml = fs.readFileSync(aboutBPath, 'utf-8');
+  app.get('/about-b', (_req, res) => {
+    res.type('html').send(aboutBHtml);
+  });
+}
+
 // 静的ファイル配信 (Web クライアント)
 app.use(express.static(webDir));
 
