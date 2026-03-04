@@ -5,6 +5,7 @@ import {
   verifyOtpCode,
   generateJwt,
   sendOtpEmail,
+  verifyGoogleToken,
 } from '../services/auth-service';
 import { requireAuth } from '../middleware/auth';
 
@@ -46,6 +47,33 @@ authRouter.post('/verify-code', (req: Request, res: Response) => {
 
   const jwt = generateJwt(user.id, user.email);
   res.json({ success: true, data: { token: jwt, email: user.email }, error: null });
+});
+
+// POST /api/auth/google - Google認証
+authRouter.post('/google', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { idToken } = req.body;
+    if (!idToken || typeof idToken !== 'string') {
+      res.status(400).json({ success: false, data: null, error: 'IDトークンが必要です' });
+      return;
+    }
+
+    const { email } = await verifyGoogleToken(idToken);
+    const user = findOrCreateUser(email.trim().toLowerCase());
+
+    const jwt = generateJwt(user.id, user.email);
+    res.json({ success: true, data: { token: jwt, email: user.email }, error: null });
+  } catch (err) {
+    console.error('Google認証エラー:', err);
+
+    res.status(401).json({ success: false, data: null, error: 'Google認証に失敗しました' });
+  }
+});
+
+// GET /api/auth/google-client-id - Google Client ID を返す
+authRouter.get('/google-client-id', (_req: Request, res: Response) => {
+  const clientId = process.env.GOOGLE_CLIENT_ID || '';
+  res.json({ success: true, data: { clientId }, error: null });
 });
 
 // GET /api/auth/me - 現在のユーザー情報

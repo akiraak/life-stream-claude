@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { Resend } from 'resend';
+import { OAuth2Client } from 'google-auth-library';
 import { getDatabase } from '../database';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-me';
@@ -103,6 +104,21 @@ export async function sendOtpEmail(email: string, code: string): Promise<void> {
       </div>
     `,
   });
+}
+
+// Google認証トークン検証
+export async function verifyGoogleToken(idToken: string): Promise<{ email: string; name: string | undefined }> {
+  const clientId = process.env.GOOGLE_CLIENT_ID || '';
+  const client = new OAuth2Client(clientId);
+  const ticket = await client.verifyIdToken({
+    idToken,
+    audience: clientId,
+  });
+  const payload = ticket.getPayload();
+  if (!payload || !payload.email) {
+    throw new Error('Google認証に失敗しました');
+  }
+  return { email: payload.email, name: payload.name };
 }
 
 export function cleanupExpiredTokens(): void {

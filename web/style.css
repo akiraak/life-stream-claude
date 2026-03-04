@@ -121,6 +121,36 @@ body {
 
 .otp-input:focus { outline: none; border-color: #fb923c; }
 
+.login-divider {
+  width: 100%;
+  max-width: 320px;
+  text-align: center;
+  margin: 20px 0;
+  position: relative;
+  color: #666;
+  font-size: 13px;
+}
+
+.login-divider::before,
+.login-divider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 40%;
+  height: 1px;
+  background: #444;
+}
+
+.login-divider::before { left: 0; }
+.login-divider::after { right: 0; }
+
+#google-signin-btn {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  max-width: 320px;
+}
+
 .login-retry-btn {
   display: block;
   margin: 0 auto;

@@ -10,6 +10,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
   <link rel="stylesheet" href="style.css?v=__CACHE_VERSION__">
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
   <!-- ログインページ -->
@@ -21,6 +22,9 @@
         <input type="email" class="login-input" id="login-email" placeholder="メールアドレス" autocomplete="email">
         <button class="login-btn" id="login-submit">ログインコードを送信</button>
         <div class="login-error" id="login-error" style="display:none"></div>
+        <div class="login-divider"><span>または</span></div>
+        <div id="google-signin-btn"></div>
+        <div class="login-error" id="google-error" style="display:none"></div>
       </div>
       <div id="login-sent" style="display:none">
         <p class="login-sent-message" id="login-sent-message"></p>

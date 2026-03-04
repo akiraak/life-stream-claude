@@ -43,7 +43,59 @@ const loginRetryBtn = document.getElementById('login-retry');
 const otpInput = document.getElementById('otp-input');
 const otpSubmitBtn = document.getElementById('otp-submit');
 const otpError = document.getElementById('otp-error');
+const googleError = document.getElementById('google-error');
 let loginEmail = ''; // OTPコード送信時に使うメールアドレス
+
+// Google Sign-In コールバック
+async function handleGoogleSignIn(response) {
+  googleError.style.display = 'none';
+  try {
+    const res = await fetch('/api/auth/google', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idToken: response.credential }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      localStorage.setItem('auth_token', data.data.token);
+      localStorage.setItem('auth_email', data.data.email);
+      showApp();
+    } else {
+      googleError.textContent = data.error || 'Google認証に失敗しました';
+      googleError.style.display = '';
+    }
+  } catch {
+    googleError.textContent = 'サーバーに接続できません';
+    googleError.style.display = '';
+  }
+}
+
+// Google Sign-In 初期化
+function initGoogleSignIn() {
+  if (typeof google === 'undefined' || !google.accounts) return;
+  google.accounts.id.initialize({
+    client_id: window.GOOGLE_CLIENT_ID,
+    callback: handleGoogleSignIn,
+  });
+  google.accounts.id.renderButton(
+    document.getElementById('google-signin-btn'),
+    { theme: 'filled_black', size: 'large', width: 320, text: 'signin_with' }
+  );
+}
+
+// GISライブラリ読み込み後に初期化
+window.addEventListener('load', () => {
+  // GOOGLE_CLIENT_IDをサーバーから取得
+  fetch('/api/auth/google-client-id')
+    .then(r => r.json())
+    .then(data => {
+      if (data.success && data.data.clientId) {
+        window.GOOGLE_CLIENT_ID = data.data.clientId;
+        initGoogleSignIn();
+      }
+    })
+    .catch(() => {}); // Google認証が使えなくてもMagic Linkで動く
+});
 
 loginSubmitBtn.addEventListener('click', async () => {
   const email = loginEmailInput.value.trim();
