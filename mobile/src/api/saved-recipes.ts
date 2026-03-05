@@ -1,0 +1,26 @@
+import client from './client';
+import type { ApiResponse } from '../types/api';
+import type { SavedRecipe } from '../types/models';
+
+export async function getSavedRecipes(): Promise<SavedRecipe[]> {
+  const res = await client.get<ApiResponse<SavedRecipe[]>>('/api/saved-recipes');
+  if (!res.data.success) throw new Error(res.data.error ?? '取得に失敗しました');
+  return res.data.data;
+}
+
+export async function getSharedRecipes(): Promise<SavedRecipe[]> {
+  const res = await client.get<ApiResponse<SavedRecipe[]>>('/api/saved-recipes/shared');
+  if (!res.data.success) throw new Error(res.data.error ?? '取得に失敗しました');
+  return res.data.data;
+}
+
+export async function toggleLike(id: number): Promise<{ liked: number; like_count: number }> {
+  const res = await client.put<ApiResponse<{ liked: number; like_count: number }>>(`/api/saved-recipes/${id}/like`);
+  if (!res.data.success) throw new Error(res.data.error ?? 'いいねに失敗しました');
+  return res.data.data;
+}
+
+export async function deleteSavedRecipe(id: number): Promise<void> {
+  const res = await client.delete<ApiResponse<null>>(`/api/saved-recipes/${id}`);
+  if (!res.data.success) throw new Error(res.data.error ?? '削除に失敗しました');
+}
