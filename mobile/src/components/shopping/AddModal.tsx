@@ -77,9 +77,14 @@ export function AddModal({
   }, [name, mode, selectedDishId, onSubmitItem, onSubmitDish]);
 
   const handleSelectSuggestion = useCallback((suggestion: string) => {
-    setName(suggestion);
+    // 候補を選択したら即送信
     setSuggestions([]);
-  }, []);
+    if (mode === 'item') {
+      onSubmitItem(suggestion, selectedDishId);
+    } else {
+      onSubmitDish(suggestion);
+    }
+  }, [mode, selectedDishId, onSubmitItem, onSubmitDish]);
 
   return (
     <Modal visible={visible} transparent animationType="slide">

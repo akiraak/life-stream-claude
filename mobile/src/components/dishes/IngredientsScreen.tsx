@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   StyleSheet,
   Alert,
+  SafeAreaView,
 } from 'react-native';
 import { useThemeColors } from '../../theme/theme-provider';
 import { useShoppingStore } from '../../stores/shopping-store';
@@ -30,19 +31,18 @@ export function IngredientsScreen({ dish, onClose }: IngredientsScreenProps) {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [recipeStates, setRecipeStates] = useState<RecipeState[]>([]);
   const [addedNames, setAddedNames] = useState<Set<string>>(new Set());
-  const [extraInput, setExtraInput] = useState('');
-  const [extras, setExtras] = useState<string[]>([]);
+  const [manuallyAdded, setManuallyAdded] = useState<string[]>([]);
   const [dishName, setDishName] = useState(dish.name);
   const [editingName, setEditingName] = useState(false);
 
   const existingItemNames = new Set(dish.items.map((i) => i.name));
 
-  const fetchSuggestions = useCallback(async (force = false) => {
+  const fetchSuggestions = useCallback(async (force = false, extraIngredients?: string[]) => {
     setLoading(true);
     try {
       const data: SuggestIngredientsResponse = await useShoppingStore.getState().suggestIngredients(
         dish.id,
-        extras.length > 0 ? extras : undefined,
+        extraIngredients && extraIngredients.length > 0 ? extraIngredients : undefined,
         force,
       );
       setIngredients(data.ingredients);
@@ -60,46 +60,49 @@ export function IngredientsScreen({ dish, onClose }: IngredientsScreenProps) {
     } finally {
       setLoading(false);
     }
-  }, [dish.id, extras, existingItemNames]);
+  }, [dish.id, existingItemNames]);
 
   useEffect(() => {
     fetchSuggestions();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleToggleIngredient = useCallback(async (name: string) => {
+    const isFromAI = ingredients.some((i) => i.name === name);
+
     if (addedNames.has(name)) {
       setAddedNames((prev) => {
         const next = new Set(prev);
         next.delete(name);
         return next;
       });
+      if (!isFromAI) {
+        setManuallyAdded((prev) => prev.filter((n) => n !== name));
+      }
     } else {
       setAddedNames((prev) => new Set(prev).add(name));
+      if (!isFromAI) {
+        setManuallyAdded((prev) => [...prev, name]);
+      }
       try {
         const ingredient = ingredients.find((i) => i.name === name);
         const item = await addItem(name, ingredient?.category);
         await linkItemToDish(dish.id, item.id);
       } catch {
-        // undo
         setAddedNames((prev) => {
           const next = new Set(prev);
           next.delete(name);
           return next;
         });
+        if (!isFromAI) {
+          setManuallyAdded((prev) => prev.filter((n) => n !== name));
+        }
       }
     }
   }, [addedNames, ingredients, addItem, linkItemToDish, dish.id]);
 
-  const handleAddExtra = useCallback(() => {
-    const trimmed = extraInput.trim();
-    if (!trimmed || extras.includes(trimmed)) return;
-    setExtras((prev) => [...prev, trimmed]);
-    setExtraInput('');
-  }, [extraInput, extras]);
-
-  const handleRefetch = useCallback(() => {
-    fetchSuggestions(true);
-  }, [fetchSuggestions]);
+  const handleRefetchWithExtras = useCallback(() => {
+    fetchSuggestions(true, manuallyAdded);
+  }, [fetchSuggestions, manuallyAdded]);
 
   const handleToggleLike = useCallback(async (recipeStateId: number) => {
     try {
@@ -197,34 +200,29 @@ export function IngredientsScreen({ dish, onClose }: IngredientsScreenProps) {
               })}
             </View>
 
-            {/* 追加素材 */}
-            <View style={styles.extraSection}>
-              {extras.length > 0 && (
+            {/* 追加した素材 */}
+            {manuallyAdded.length > 0 && (
+              <View style={styles.extraSection}>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>追加した素材</Text>
                 <View style={styles.chipContainer}>
-                  {extras.map((name) => (
-                    <View key={name} style={[styles.chip, styles.extraChip, { borderColor: colors.textMuted }]}>
-                      <Text style={[styles.chipText, { color: colors.textMuted }]}>{name}</Text>
-                    </View>
+                  {manuallyAdded.map((name) => (
+                    <TouchableOpacity
+                      key={name}
+                      style={[styles.chip, styles.extraChip, { borderColor: colors.primaryLight }]}
+                      onPress={() => handleToggleIngredient(name)}
+                    >
+                      <Text style={[styles.chipText, { color: colors.primaryLight }]}>{name}</Text>
+                    </TouchableOpacity>
                   ))}
                 </View>
-              )}
-              <View style={styles.extraInputRow}>
-                <TextInput
-                  style={[styles.extraInput, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]}
-                  placeholder="追加の素材..."
-                  placeholderTextColor={colors.textMuted}
-                  value={extraInput}
-                  onChangeText={setExtraInput}
-                  onSubmitEditing={handleAddExtra}
-                />
                 <TouchableOpacity
                   style={[styles.refetchBtn, { backgroundColor: colors.primary }]}
-                  onPress={handleRefetch}
+                  onPress={handleRefetchWithExtras}
                 >
-                  <Text style={styles.refetchBtnText}>レシピを再検索</Text>
+                  <Text style={styles.refetchBtnText}>追加素材を含めて再検索</Text>
                 </TouchableOpacity>
               </View>
-            </View>
+            )}
 
             {/* レシピ */}
             {recipes.length > 0 && (
@@ -319,21 +317,10 @@ const styles = StyleSheet.create({
   extraSection: {
     marginBottom: 16,
   },
-  extraInputRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  extraInput: {
-    flex: 1,
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 10,
-    fontSize: 14,
-  },
   refetchBtn: {
     borderRadius: 8,
-    paddingHorizontal: 12,
-    justifyContent: 'center',
+    paddingVertical: 10,
+    alignItems: 'center',
   },
   refetchBtnText: {
     color: '#fff',

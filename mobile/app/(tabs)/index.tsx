@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
+  Image,
   ScrollView,
   TouchableOpacity,
   RefreshControl,
@@ -30,6 +31,9 @@ export default function ShoppingListScreen() {
   const [confirmDish, setConfirmDish] = useState<Dish | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [activeDish, setActiveDish] = useState<Dish | null>(null);
+  const [checkedExpanded, setCheckedExpanded] = useState(false);
+  const [checkedLimit, setCheckedLimit] = useState(10);
+  const CHECKED_PAGE_SIZE = 10;
 
   useEffect(() => {
     loadAll();
@@ -163,32 +167,43 @@ export default function ShoppingListScreen() {
 
         {checkedItems.length > 0 && (
           <View style={styles.checkedSection}>
-            <View style={styles.checkedHeader}>
+            <TouchableOpacity style={styles.checkedHeader} onPress={() => setCheckedExpanded(!checkedExpanded)}>
               <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>
-                チェック済み ({checkedItems.length})
+                {checkedExpanded ? '▼' : '▶'} チェック済み ({checkedItems.length})
               </Text>
               <TouchableOpacity onPress={handleDeleteChecked}>
                 <Text style={[styles.clearBtn, { color: colors.danger }]}>すべて削除</Text>
               </TouchableOpacity>
-            </View>
-            {checkedItems.map((item) => (
-              <ShoppingItemRow
-                key={item.id}
-                id={item.id}
-                name={item.name}
-                checked={item.checked}
-                onToggleCheck={handleToggleCheck}
-                onDelete={handleDeleteItem}
-              />
-            ))}
+            </TouchableOpacity>
+            {checkedExpanded && (
+              <>
+                {checkedItems.slice(0, checkedLimit).map((item) => (
+                  <ShoppingItemRow
+                    key={item.id}
+                    id={item.id}
+                    name={item.name}
+                    checked={item.checked}
+                    onToggleCheck={handleToggleCheck}
+                    onDelete={handleDeleteItem}
+                  />
+                ))}
+                {checkedItems.length > checkedLimit && (
+                  <TouchableOpacity onPress={() => setCheckedLimit((l) => l + CHECKED_PAGE_SIZE)}>
+                    <Text style={[styles.showMoreBtn, { color: colors.primaryLight }]}>
+                      さらに {checkedItems.length - checkedLimit} 件を表示
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </>
+            )}
           </View>
         )}
       </ScrollView>
 
-      {/* FABs */}
+      {/* FABs - 横並び: 料理(左) アイテム(右) */}
       <View style={styles.fabContainer}>
-        <TouchableOpacity style={[styles.fab, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={openAddDish}>
-          <Text style={[styles.fabIcon, { color: colors.primaryLight }]}>🍳</Text>
+        <TouchableOpacity style={[styles.fab, { backgroundColor: colors.primaryLight }]} onPress={openAddDish}>
+          <Image source={require('../../assets/icon_dish.png')} style={styles.fabDishIcon} />
         </TouchableOpacity>
         <TouchableOpacity style={[styles.fab, { backgroundColor: colors.primary }]} onPress={() => openAddItem()}>
           <Text style={styles.fabIconWhite}>+</Text>
@@ -261,28 +276,34 @@ const styles = StyleSheet.create({
   clearBtn: {
     fontSize: 13,
   },
+  showMoreBtn: {
+    textAlign: 'center',
+    paddingVertical: 8,
+    fontSize: 14,
+  },
   fabContainer: {
     position: 'absolute',
     bottom: 24,
     right: 20,
+    flexDirection: 'row',
     gap: 12,
     alignItems: 'center',
   },
   fab: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 54,
+    height: 54,
+    borderRadius: 27,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
     elevation: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
   },
-  fabIcon: {
-    fontSize: 22,
+  fabDishIcon: {
+    width: 40,
+    height: 40,
   },
   fabIconWhite: {
     fontSize: 28,

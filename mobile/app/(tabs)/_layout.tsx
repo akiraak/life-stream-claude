@@ -26,7 +26,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="recipes"
         options={{
-          title: 'レシピ',
+          title: '自分のレシピ',
           tabBarIcon: ({ color, size }) => (
             <TabIcon name="book" color={color} size={size} />
           ),
@@ -35,7 +35,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="shared"
         options={{
-          title: 'みんなの',
+          title: 'みんなのレシピ',
           tabBarIcon: ({ color, size }) => (
             <TabIcon name="people" color={color} size={size} />
           ),
