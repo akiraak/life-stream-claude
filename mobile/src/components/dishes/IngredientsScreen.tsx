@@ -147,7 +147,7 @@ export function IngredientsScreen({ dish, onClose }: IngredientsScreenProps) {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* ヘッダー */}
       <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
-        <TouchableOpacity onPress={() => { loadAll(); onClose(); }}>
+        <TouchableOpacity onPress={() => { loadAll(); onClose(); }} style={styles.headerSide}>
           <Text style={[styles.backBtn, { color: colors.primaryLight }]}>← 戻る</Text>
         </TouchableOpacity>
         {editingName ? (
@@ -161,12 +161,16 @@ export function IngredientsScreen({ dish, onClose }: IngredientsScreenProps) {
           />
         ) : (
           <TouchableOpacity style={styles.dishTitleBtn} onPress={() => setEditingName(true)}>
-            <Text style={[styles.dishTitle, { color: colors.primaryLight, borderBottomColor: 'rgba(251,146,60,0.5)' }]}>
-              {dishName}
-            </Text>
-            <Text style={[styles.editIcon, { color: colors.textMuted }]}> ✎</Text>
+            <View style={[styles.dishTitleUnderline, { borderBottomColor: 'rgba(251,146,60,0.5)' }]}>
+              <Text style={[styles.dishTitle, { color: colors.primaryLight }]}>
+                {dishName}
+              </Text>
+              <Text style={[styles.editIcon, { color: colors.textMuted }]}> ✎</Text>
+            </View>
           </TouchableOpacity>
         )}
+        {/* 右側スペーサー（戻るボタンと同じ幅を確保して中央寄せ） */}
+        <View style={styles.headerSide} />
       </View>
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
@@ -267,21 +271,26 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     gap: 12,
   },
+  headerSide: {
+    width: 60,
+  },
   backBtn: {
     fontSize: 16,
   },
   dishTitleBtn: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dishTitleUnderline: {
     flexDirection: 'row',
     alignItems: 'center',
-    flex: 1,
-    justifyContent: 'center',
+    borderBottomWidth: 1,
+    paddingBottom: 2,
   },
   dishTitle: {
     fontSize: 18,
     fontWeight: '600',
-    borderBottomWidth: 1,
-    borderStyle: 'dashed',
-    paddingBottom: 2,
   },
   editIcon: {
     fontSize: 13,
