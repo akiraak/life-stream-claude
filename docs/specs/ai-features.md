@@ -98,7 +98,7 @@ title: AI 機能アイデア一覧
 - 同じ料理内の同名アイテム重複を防止
 
 **実装済み**:
-- Gemini API（`gemini-2.5-flash`）で具材+レシピ取得
+- Gemini API（`gemini-3.1-flash-lite-preview`）で具材+レシピ取得
 - `POST /api/dishes/:id/suggest-ingredients` API（DBキャッシュ付き）
 - Web: トグルチップ+レシピカードモーダル
 - dishes テーブルに `ingredients_json`/`recipes_json` カラム追加
