@@ -13,10 +13,19 @@
       "resizeMode": "contain",
       "backgroundColor": "#1c1c1c"
     },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/0ce74461-e119-48fa-b214-f8762159f3bb"
+    },
     "ios": {
       "bundleIdentifier": "me.chobi.basket",
       "supportsTablet": false,
-      "userInterfaceStyle": "automatic"
+      "userInterfaceStyle": "automatic",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "me.chobi.basket",
@@ -25,7 +34,8 @@
         "backgroundColor": "#1c1c1c"
       },
       "edgeToEdgeEnabled": true,
-      "userInterfaceStyle": "automatic"
+      "userInterfaceStyle": "automatic",
+      "permissions": []
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -33,6 +43,13 @@
     "plugins": [
       "expo-router",
       "expo-secure-store"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "0ce74461-e119-48fa-b214-f8762159f3bb"
+      }
+    },
+    "owner": "akiraak"
   }
 }
