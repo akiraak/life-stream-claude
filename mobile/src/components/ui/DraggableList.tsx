@@ -37,6 +37,7 @@ export function DraggableList<T>({ data, keyExtractor, renderItem, onReorder, on
   // ドラッグ終了直後のタップを無視するためのフラグ
   const justFinishedDragRef = useRef(false);
 
+  const containerRef = useRef<View>(null);
   const itemRefs = useRef<Map<string, View>>(new Map());
   const dragYAnim = useRef(new Animated.Value(0)).current;
   const currentIndexRef = useRef(-1);
@@ -44,6 +45,9 @@ export function DraggableList<T>({ data, keyExtractor, renderItem, onReorder, on
   const dragHeightRef = useRef(0);
   const orderedLayoutsRef = useRef<ItemLayout[]>([]);
   const dragActiveRef = useRef(false);
+  // ドラッグ開始時の指のY座標とアイテムの初期translateY
+  const startFingerYRef = useRef(0);
+  const startTranslateYRef = useRef(0);
   const renderItemRef = useRef(renderItem);
   renderItemRef.current = renderItem;
 
@@ -91,21 +95,23 @@ export function DraggableList<T>({ data, keyExtractor, renderItem, onReorder, on
   const moveDrag = useCallback((pageY: number) => {
     if (!dragActiveRef.current) return;
 
-    dragYAnim.setValue(pageY - dragHeightRef.current / 2);
+    const delta = pageY - startFingerYRef.current;
+    dragYAnim.setValue(startTranslateYRef.current + delta);
 
     const fromIdx = currentIndexRef.current;
     const layouts = orderedLayoutsRef.current;
 
+    // 隣接アイテムとのみ交換（中間点で判定）
     let targetIdx = fromIdx;
-    for (let i = 0; i < layouts.length; i++) {
-      const midY = layouts[i].pageY + layouts[i].height / 2;
-      if (pageY < midY) {
-        targetIdx = i;
-        break;
-      }
-      if (i === layouts.length - 1) {
-        targetIdx = layouts.length - 1;
-      }
+    if (fromIdx > 0) {
+      const prev = layouts[fromIdx - 1];
+      const midY = prev.pageY + prev.height / 2;
+      if (pageY < midY) targetIdx = fromIdx - 1;
+    }
+    if (fromIdx < layouts.length - 1) {
+      const next = layouts[fromIdx + 1];
+      const midY = next.pageY + next.height / 2;
+      if (pageY > midY) targetIdx = fromIdx + 1;
     }
 
     if (targetIdx !== fromIdx) {
@@ -141,6 +147,11 @@ export function DraggableList<T>({ data, keyExtractor, renderItem, onReorder, on
     setIsDragging(true);
     onDragStart?.();
 
+    // コンテナとアイテムの位置を計測
+    const containerPageY = await new Promise<number>((resolve) => {
+      containerRef.current?.measureInWindow((_x, y) => resolve(y));
+    });
+
     const layoutMap = await measureAllItems();
     const order = [...data];
     orderRef.current = order;
@@ -155,7 +166,12 @@ export function DraggableList<T>({ data, keyExtractor, renderItem, onReorder, on
       return l ?? { pageY: 0, height: 50 };
     });
 
-    dragYAnim.setValue(pageY - dragHeightRef.current / 2);
+    // アイテムの位置をコンテナ相対で計算し、そこにフローティングカードを配置
+    const itemPageY = layout?.pageY ?? pageY;
+    const initialTranslateY = itemPageY - containerPageY;
+    startFingerYRef.current = pageY;
+    startTranslateYRef.current = initialTranslateY;
+    dragYAnim.setValue(initialTranslateY);
 
     setActiveKey(key);
     setDisplayOrder(order);
@@ -181,7 +197,9 @@ export function DraggableList<T>({ data, keyExtractor, renderItem, onReorder, on
 
   return (
     <View
+      ref={containerRef}
       style={styles.container}
+      collapsable={false}
       // ドラッグ中はコンテナレベルでタッチイベントを捕捉
       onTouchMove={handleContainerTouchMove}
       onTouchEnd={handleContainerTouchEnd}
