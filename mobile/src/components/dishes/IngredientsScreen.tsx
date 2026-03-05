@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -8,7 +8,6 @@ import {
   ActivityIndicator,
   StyleSheet,
   Alert,
-  SafeAreaView,
 } from 'react-native';
 import { useThemeColors } from '../../theme/theme-provider';
 import { useShoppingStore } from '../../stores/shopping-store';
@@ -31,18 +30,24 @@ export function IngredientsScreen({ dish, onClose }: IngredientsScreenProps) {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [recipeStates, setRecipeStates] = useState<RecipeState[]>([]);
   const [addedNames, setAddedNames] = useState<Set<string>>(new Set());
-  const [manuallyAdded, setManuallyAdded] = useState<string[]>([]);
   const [dishName, setDishName] = useState(dish.name);
   const [editingName, setEditingName] = useState(false);
 
-  const existingItemNames = new Set(dish.items.map((i) => i.name));
+  // 料理に紐づくアイテム名（リアルタイム）
+  const dishItemNames = useMemo(() => new Set(dish.items.filter((i) => !i.checked).map((i) => i.name)), [dish.items]);
 
-  const fetchSuggestions = useCallback(async (force = false, extraIngredients?: string[]) => {
+  // 追加素材 = 料理のアイテムのうち、AI具材リストにないもの（Web版と同じロジック）
+  const extraIngredients = useMemo(() => {
+    const aiNames = new Set(ingredients.map((i) => i.name));
+    return dish.items.filter((item) => !item.checked && !aiNames.has(item.name)).map((item) => item.name);
+  }, [dish.items, ingredients]);
+
+  const fetchSuggestions = useCallback(async (force = false, extras?: string[]) => {
     setLoading(true);
     try {
       const data: SuggestIngredientsResponse = await useShoppingStore.getState().suggestIngredients(
         dish.id,
-        extraIngredients && extraIngredients.length > 0 ? extraIngredients : undefined,
+        extras && extras.length > 0 ? extras : undefined,
         force,
       );
       setIngredients(data.ingredients);
@@ -51,7 +56,7 @@ export function IngredientsScreen({ dish, onClose }: IngredientsScreenProps) {
       // 既にリストにある具材は選択済みに
       const existing = new Set<string>();
       for (const ing of data.ingredients) {
-        if (existingItemNames.has(ing.name)) existing.add(ing.name);
+        if (dishItemNames.has(ing.name)) existing.add(ing.name);
       }
       setAddedNames(existing);
     } catch (e: unknown) {
@@ -60,29 +65,21 @@ export function IngredientsScreen({ dish, onClose }: IngredientsScreenProps) {
     } finally {
       setLoading(false);
     }
-  }, [dish.id, existingItemNames]);
+  }, [dish.id, dishItemNames]);
 
   useEffect(() => {
     fetchSuggestions();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleToggleIngredient = useCallback(async (name: string) => {
-    const isFromAI = ingredients.some((i) => i.name === name);
-
     if (addedNames.has(name)) {
       setAddedNames((prev) => {
         const next = new Set(prev);
         next.delete(name);
         return next;
       });
-      if (!isFromAI) {
-        setManuallyAdded((prev) => prev.filter((n) => n !== name));
-      }
     } else {
       setAddedNames((prev) => new Set(prev).add(name));
-      if (!isFromAI) {
-        setManuallyAdded((prev) => [...prev, name]);
-      }
       try {
         const ingredient = ingredients.find((i) => i.name === name);
         const item = await addItem(name, ingredient?.category);
@@ -93,16 +90,17 @@ export function IngredientsScreen({ dish, onClose }: IngredientsScreenProps) {
           next.delete(name);
           return next;
         });
-        if (!isFromAI) {
-          setManuallyAdded((prev) => prev.filter((n) => n !== name));
-        }
       }
     }
   }, [addedNames, ingredients, addItem, linkItemToDish, dish.id]);
 
-  const handleRefetchWithExtras = useCallback(() => {
-    fetchSuggestions(true, manuallyAdded);
-  }, [fetchSuggestions, manuallyAdded]);
+  const handleRefresh = useCallback(() => {
+    fetchSuggestions(true);
+  }, [fetchSuggestions]);
+
+  const handleSearchWithExtras = useCallback(() => {
+    fetchSuggestions(true, extraIngredients);
+  }, [fetchSuggestions, extraIngredients]);
 
   const handleToggleLike = useCallback(async (recipeStateId: number) => {
     try {
@@ -154,7 +152,7 @@ export function IngredientsScreen({ dish, onClose }: IngredientsScreenProps) {
         </TouchableOpacity>
         {editingName ? (
           <TextInput
-            style={[styles.nameInput, { color: colors.text, borderBottomColor: colors.primaryLight }]}
+            style={[styles.nameInput, { color: colors.text, borderColor: colors.primaryLight, backgroundColor: colors.background }]}
             value={dishName}
             onChangeText={setDishName}
             onBlur={handleSaveName}
@@ -162,8 +160,11 @@ export function IngredientsScreen({ dish, onClose }: IngredientsScreenProps) {
             autoFocus
           />
         ) : (
-          <TouchableOpacity onPress={() => setEditingName(true)}>
-            <Text style={[styles.dishTitle, { color: colors.primaryLight }]}>{dishName}</Text>
+          <TouchableOpacity style={styles.dishTitleBtn} onPress={() => setEditingName(true)}>
+            <Text style={[styles.dishTitle, { color: colors.primaryLight, borderBottomColor: 'rgba(251,146,60,0.5)' }]}>
+              {dishName}
+            </Text>
+            <Text style={[styles.editIcon, { color: colors.textMuted }]}> ✎</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -200,26 +201,23 @@ export function IngredientsScreen({ dish, onClose }: IngredientsScreenProps) {
               })}
             </View>
 
-            {/* 追加した素材 */}
-            {manuallyAdded.length > 0 && (
-              <View style={styles.extraSection}>
-                <Text style={[styles.sectionTitle, { color: colors.text }]}>追加した素材</Text>
+            {/* 追加素材（買い物リストから） */}
+            {extraIngredients.length > 0 && (
+              <View style={[styles.extraSection, { borderTopColor: colors.border }]}>
+                <Text style={[styles.extraLabel, { color: colors.textMuted }]}>追加素材（買い物リストから）</Text>
                 <View style={styles.chipContainer}>
-                  {manuallyAdded.map((name) => (
-                    <TouchableOpacity
-                      key={name}
-                      style={[styles.chip, styles.extraChip, { borderColor: colors.primaryLight }]}
-                      onPress={() => handleToggleIngredient(name)}
-                    >
-                      <Text style={[styles.chipText, { color: colors.primaryLight }]}>{name}</Text>
-                    </TouchableOpacity>
+                  {extraIngredients.map((name) => (
+                    <View key={name} style={[styles.chip, styles.extraChip, { borderColor: colors.primaryLight }]}>
+                      <Text style={[styles.chipText, { color: colors.primaryLight }]}>+ {name}</Text>
+                    </View>
                   ))}
                 </View>
                 <TouchableOpacity
-                  style={[styles.refetchBtn, { backgroundColor: colors.primary }]}
-                  onPress={handleRefetchWithExtras}
+                  style={[styles.extraSearchBtn, { backgroundColor: colors.primaryLight }]}
+                  onPress={handleSearchWithExtras}
+                  disabled={loading}
                 >
-                  <Text style={styles.refetchBtnText}>追加素材を含めて再検索</Text>
+                  <Text style={styles.extraSearchBtnText}>この素材でレシピを再検索</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -242,6 +240,15 @@ export function IngredientsScreen({ dish, onClose }: IngredientsScreenProps) {
                 ))}
               </>
             )}
+
+            {/* レシピを再取得ボタン */}
+            <TouchableOpacity
+              style={[styles.refreshBtn, { borderColor: colors.border }]}
+              onPress={handleRefresh}
+              disabled={loading}
+            >
+              <Text style={[styles.refreshBtnText, { color: colors.primaryLight }]}>レシピを再取得</Text>
+            </TouchableOpacity>
           </>
         )}
       </ScrollView>
@@ -264,16 +271,30 @@ const styles = StyleSheet.create({
   backBtn: {
     fontSize: 16,
   },
+  dishTitleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
   dishTitle: {
     fontSize: 18,
     fontWeight: '600',
+    borderBottomWidth: 1,
+    borderStyle: 'dashed',
+    paddingBottom: 2,
+  },
+  editIcon: {
+    fontSize: 13,
   },
   nameInput: {
     fontSize: 18,
     fontWeight: '600',
-    borderBottomWidth: 2,
-    paddingVertical: 2,
+    borderWidth: 1,
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     flex: 1,
+    textAlign: 'center',
   },
   scroll: {
     flex: 1,
@@ -310,21 +331,39 @@ const styles = StyleSheet.create({
   chipText: {
     fontSize: 14,
   },
+  extraSection: {
+    borderTopWidth: 1,
+    borderStyle: 'dashed',
+    paddingTop: 16,
+    marginBottom: 16,
+  },
+  extraLabel: {
+    fontSize: 13,
+    marginBottom: 10,
+  },
   extraChip: {
     borderWidth: 1,
     borderStyle: 'dashed',
   },
-  extraSection: {
-    marginBottom: 16,
-  },
-  refetchBtn: {
+  extraSearchBtn: {
     borderRadius: 8,
-    paddingVertical: 10,
+    paddingVertical: 14,
     alignItems: 'center',
   },
-  refetchBtnText: {
-    color: '#fff',
-    fontSize: 13,
-    fontWeight: '500',
+  extraSearchBtnText: {
+    color: '#000',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  refreshBtn: {
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  refreshBtnText: {
+    fontSize: 15,
+    fontWeight: '600',
   },
 });
