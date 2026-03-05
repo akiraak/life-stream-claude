@@ -29,6 +29,8 @@ export function DraggableList<T>({ data, keyExtractor, renderItem, onReorder, on
   const [activeKey, setActiveKey] = useState<string | null>(null);
   const [displayOrder, setDisplayOrder] = useState<T[] | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  // ドラッグ終了直後のタップを無視するためのフラグ
+  const justFinishedDragRef = useRef(false);
 
   const itemRefs = useRef<Map<string, View>>(new Map());
   const dragYAnim = useRef(new Animated.Value(0)).current;
@@ -67,12 +69,15 @@ export function DraggableList<T>({ data, keyExtractor, renderItem, onReorder, on
   const endDrag = useCallback(() => {
     if (!dragActiveRef.current) return;
     dragActiveRef.current = false;
+    justFinishedDragRef.current = true;
     const finalOrder = orderRef.current;
     setActiveKey(null);
     setDisplayOrder(null);
     setIsDragging(false);
     onDragEnd?.();
     onReorder(finalOrder);
+    // 少し後にフラグをリセット（次のタップイベントが処理された後）
+    setTimeout(() => { justFinishedDragRef.current = false; }, 300);
   }, [onReorder, onDragEnd]);
 
   const moveDrag = useCallback((pageY: number) => {
@@ -179,12 +184,14 @@ export function DraggableList<T>({ data, keyExtractor, renderItem, onReorder, on
             key={key}
             ref={(ref) => { if (ref) itemRefs.current.set(key, ref); }}
             style={isBeingDragged ? styles.placeholder : undefined}
+            pointerEvents={isDragging ? 'none' : 'auto'}
             collapsable={false}
           >
             <DraggableItem
               index={index}
               onLongPress={startDrag}
               disabled={dragActiveRef.current}
+              justFinishedDragRef={justFinishedDragRef}
             >
               {renderItem(item, index)}
             </DraggableItem>
@@ -213,20 +220,21 @@ interface DraggableItemProps {
   children: ReactNode;
   onLongPress: (index: number, pageY: number) => void;
   disabled: boolean;
+  justFinishedDragRef: React.MutableRefObject<boolean>;
 }
 
-function DraggableItem({ index, children, onLongPress, disabled }: DraggableItemProps) {
+function DraggableItem({ index, children, onLongPress, disabled, justFinishedDragRef }: DraggableItemProps) {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const startYRef = useRef(0);
 
   const handleTouchStart = useCallback((e: GestureResponderEvent) => {
-    if (disabled) return;
+    if (disabled || justFinishedDragRef.current) return;
     startYRef.current = e.nativeEvent.pageY;
     timerRef.current = setTimeout(() => {
       timerRef.current = null;
       onLongPress(index, startYRef.current);
     }, 400);
-  }, [index, onLongPress, disabled]);
+  }, [index, onLongPress, disabled, justFinishedDragRef]);
 
   const handleTouchEnd = useCallback(() => {
     if (timerRef.current) {
