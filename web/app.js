@@ -264,6 +264,42 @@ const extraIngredientsSection = document.getElementById('extra-ingredients-secti
 const extraIngredientsChips = document.getElementById('extra-ingredients-chips');
 const extraSearchBtn = document.getElementById('extra-search-btn');
 
+// 音声入力
+const btnVoice = document.getElementById('btn-voice');
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+let speechRecognition = null;
+
+if (SpeechRecognition) {
+  btnVoice.style.display = '';
+  speechRecognition = new SpeechRecognition();
+  speechRecognition.lang = 'ja-JP';
+  speechRecognition.interimResults = false;
+  speechRecognition.continuous = false;
+
+  speechRecognition.addEventListener('result', (e) => {
+    const text = e.results[0][0].transcript;
+    modalInput.value = text;
+    modalInput.dispatchEvent(new Event('input'));
+  });
+
+  speechRecognition.addEventListener('end', () => {
+    btnVoice.classList.remove('listening');
+  });
+
+  speechRecognition.addEventListener('error', () => {
+    btnVoice.classList.remove('listening');
+  });
+
+  btnVoice.addEventListener('click', () => {
+    if (btnVoice.classList.contains('listening')) {
+      speechRecognition.stop();
+    } else {
+      btnVoice.classList.add('listening');
+      speechRecognition.start();
+    }
+  });
+}
+
 // 確認ダイアログ
 const confirmOverlay = document.getElementById('confirm-overlay');
 const confirmTitle = document.getElementById('confirm-title');
@@ -773,6 +809,10 @@ function closeModal() {
   updateBodyScroll();
   modalMode = null;
   hideSuggestions();
+  if (speechRecognition) {
+    speechRecognition.stop();
+    btnVoice.classList.remove('listening');
+  }
 }
 
 function submitModal() {

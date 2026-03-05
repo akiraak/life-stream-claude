@@ -3,16 +3,15 @@
 ## 仕様・設計
 
 ## 機能開発
-- [ ] 音声入力対応に
 - [ ] passkeys認証対応
 - [ ] ReactnativeでiPhone,Androidアプリ
         docs/plans/react-native-implementation.md
-        1	初期化 & 認証 ✅
-        2	API & State ✅
-        3	買い物リスト ✅
-        4	AI具材 & レシピ ✅
-        5	レシピブック ✅
-        6	ポリッシュ ✅
+        Phase1	初期化 & 認証 ✅
+        Phase2	API & State ✅
+        Phase3	買い物リスト ✅
+        Phase4	AI具材 & レシピ ✅
+        Phase5	レシピブック ✅
+        Phase6	ポリッシュ ✅
 - [ ] オフラインの時にローカルで変更を保存しておきオンラインになったときに更新
 
 
