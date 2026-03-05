@@ -7,19 +7,17 @@ import {
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 
-export interface DragOverlayState {
-  renderFloating: () => ReactNode;
-  dragYAnim: Animated.Value;
-  onMove: (pageY: number) => void;
-  onEnd: () => void;
+// 親コンポーネントに「ドラッグ中かどうか」を通知するためのコールバック
+export interface DragCallbacks {
+  onDragStart?: () => void;
+  onDragEnd?: () => void;
 }
 
-interface DraggableListProps<T> {
+interface DraggableListProps<T> extends DragCallbacks {
   data: T[];
   keyExtractor: (item: T) => string;
   renderItem: (item: T, index: number) => ReactNode;
   onReorder: (data: T[]) => void;
-  onDragStateChange?: (overlay: DragOverlayState | null) => void;
 }
 
 interface ItemLayout {
@@ -27,9 +25,10 @@ interface ItemLayout {
   height: number;
 }
 
-export function DraggableList<T>({ data, keyExtractor, renderItem, onReorder, onDragStateChange }: DraggableListProps<T>) {
+export function DraggableList<T>({ data, keyExtractor, renderItem, onReorder, onDragStart, onDragEnd }: DraggableListProps<T>) {
   const [activeKey, setActiveKey] = useState<string | null>(null);
   const [displayOrder, setDisplayOrder] = useState<T[] | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   const itemRefs = useRef<Map<string, View>>(new Map());
   const dragYAnim = useRef(new Animated.Value(0)).current;
@@ -38,6 +37,8 @@ export function DraggableList<T>({ data, keyExtractor, renderItem, onReorder, on
   const dragHeightRef = useRef(0);
   const orderedLayoutsRef = useRef<ItemLayout[]>([]);
   const dragActiveRef = useRef(false);
+  const renderItemRef = useRef(renderItem);
+  renderItemRef.current = renderItem;
 
   const measureAllItems = useCallback((): Promise<Map<string, ItemLayout>> => {
     return new Promise((resolve) => {
@@ -63,17 +64,18 @@ export function DraggableList<T>({ data, keyExtractor, renderItem, onReorder, on
     });
   }, [data, keyExtractor]);
 
-  const handleDragEnd = useCallback(() => {
+  const endDrag = useCallback(() => {
     if (!dragActiveRef.current) return;
     dragActiveRef.current = false;
     const finalOrder = orderRef.current;
     setActiveKey(null);
     setDisplayOrder(null);
-    onDragStateChange?.(null);
+    setIsDragging(false);
+    onDragEnd?.();
     onReorder(finalOrder);
-  }, [onReorder, onDragStateChange]);
+  }, [onReorder, onDragEnd]);
 
-  const handleDragMove = useCallback((pageY: number) => {
+  const moveDrag = useCallback((pageY: number) => {
     if (!dragActiveRef.current) return;
 
     dragYAnim.setValue(pageY - dragHeightRef.current / 2);
@@ -102,7 +104,6 @@ export function DraggableList<T>({ data, keyExtractor, renderItem, onReorder, on
       const [movedL] = newLayouts.splice(fromIdx, 1);
       newLayouts.splice(targetIdx, 0, movedL);
 
-      // pageYを再計算
       let accY = newLayouts[0]?.pageY ?? 0;
       for (let i = 0; i < newLayouts.length; i++) {
         newLayouts[i] = { ...newLayouts[i], pageY: accY };
@@ -118,11 +119,10 @@ export function DraggableList<T>({ data, keyExtractor, renderItem, onReorder, on
     }
   }, [dragYAnim, keyExtractor]);
 
-  const handleLongPress = useCallback(async (index: number, pageY: number) => {
+  const startDrag = useCallback(async (index: number, pageY: number) => {
     if (dragActiveRef.current) return;
 
     const layoutMap = await measureAllItems();
-
     const order = [...data];
     orderRef.current = order;
     currentIndexRef.current = index;
@@ -141,25 +141,39 @@ export function DraggableList<T>({ data, keyExtractor, renderItem, onReorder, on
 
     setActiveKey(key);
     setDisplayOrder(order);
-
-    // 親に「オーバーレイを出してくれ」と伝える
-    onDragStateChange?.({
-      renderFloating: () => renderItem(order[index], index),
-      dragYAnim,
-      onMove: handleDragMove,
-      onEnd: handleDragEnd,
-    });
+    setIsDragging(true);
+    onDragStart?.();
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-  }, [data, keyExtractor, measureAllItems, dragYAnim, renderItem, handleDragMove, handleDragEnd, onDragStateChange]);
+  }, [data, keyExtractor, measureAllItems, dragYAnim, onDragStart]);
+
+  // コンテナレベルでタッチムーブ・タッチエンドを処理
+  const handleContainerTouchMove = useCallback((e: GestureResponderEvent) => {
+    if (dragActiveRef.current) {
+      moveDrag(e.nativeEvent.pageY);
+    }
+  }, [moveDrag]);
+
+  const handleContainerTouchEnd = useCallback(() => {
+    if (dragActiveRef.current) {
+      endDrag();
+    }
+  }, [endDrag]);
 
   const items = displayOrder ?? data;
+  const activeIdx = currentIndexRef.current;
 
   return (
-    <View style={styles.container}>
+    <View
+      style={styles.container}
+      // ドラッグ中はコンテナレベルでタッチイベントを捕捉
+      onTouchMove={handleContainerTouchMove}
+      onTouchEnd={handleContainerTouchEnd}
+      onTouchCancel={handleContainerTouchEnd}
+    >
       {items.map((item, index) => {
         const key = keyExtractor(item);
-        const isBeingDragged = key === activeKey;
+        const isBeingDragged = isDragging && key === activeKey;
         return (
           <View
             key={key}
@@ -169,7 +183,7 @@ export function DraggableList<T>({ data, keyExtractor, renderItem, onReorder, on
           >
             <DraggableItem
               index={index}
-              onLongPress={handleLongPress}
+              onLongPress={startDrag}
               disabled={dragActiveRef.current}
             >
               {renderItem(item, index)}
@@ -177,32 +191,19 @@ export function DraggableList<T>({ data, keyExtractor, renderItem, onReorder, on
           </View>
         );
       })}
-    </View>
-  );
-}
 
-// 親コンポーネントが使うオーバーレイ描画ヘルパー
-export function DragOverlay({ state }: { state: DragOverlayState | null }) {
-  if (!state) return null;
-
-  return (
-    <View
-      style={styles.overlay}
-      onStartShouldSetResponder={() => true}
-      onMoveShouldSetResponder={() => true}
-      onResponderMove={(e) => state.onMove(e.nativeEvent.pageY)}
-      onResponderRelease={() => state.onEnd()}
-      onResponderTerminate={() => state.onEnd()}
-    >
-      <Animated.View
-        style={[
-          styles.floating,
-          { transform: [{ translateY: state.dragYAnim }] },
-        ]}
-        pointerEvents="none"
-      >
-        {state.renderFloating()}
-      </Animated.View>
+      {/* フローティングアイテム */}
+      {isDragging && activeKey && (
+        <Animated.View
+          style={[
+            styles.floating,
+            { transform: [{ translateY: dragYAnim }] },
+          ]}
+          pointerEvents="none"
+        >
+          {renderItemRef.current(items[activeIdx], activeIdx)}
+        </Animated.View>
+      )}
     </View>
   );
 }
@@ -256,6 +257,10 @@ function DraggableItem({ index, children, onLongPress, disabled }: DraggableItem
   );
 }
 
+// DragOverlay は不要になったが、互換性のためにエクスポート
+export type DragOverlayState = null;
+export function DragOverlay(_props: { state: DragOverlayState }) { return null; }
+
 const styles = StyleSheet.create({
   container: {
     position: 'relative',
@@ -263,13 +268,15 @@ const styles = StyleSheet.create({
   placeholder: {
     opacity: 0.3,
   },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    zIndex: 9999,
-  },
   floating: {
     position: 'absolute',
-    left: 16,
-    right: 16,
+    left: 0,
+    right: 0,
+    zIndex: 999,
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
   },
 });

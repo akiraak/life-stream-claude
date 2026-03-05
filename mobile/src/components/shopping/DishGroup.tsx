@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useThemeColors } from '../../theme/theme-provider';
 import { ShoppingItemRow } from './ShoppingItemRow';
-import { DraggableList, type DragOverlayState } from '../ui/DraggableList';
+import { DraggableList } from '../ui/DraggableList';
 import type { Dish, DishItem } from '../../types/models';
 
 interface DishGroupProps {
@@ -13,7 +13,8 @@ interface DishGroupProps {
   onAddItem: (dishId: number) => void;
   onPressDishName: (dish: Dish) => void;
   onReorderItems?: (dishId: number, data: DishItem[]) => void;
-  onDragStateChange?: (state: DragOverlayState | null) => void;
+  onDragStart?: () => void;
+  onDragEnd?: () => void;
 }
 
 export function DishGroup({
@@ -24,7 +25,8 @@ export function DishGroup({
   onAddItem,
   onPressDishName,
   onReorderItems,
-  onDragStateChange,
+  onDragStart,
+  onDragEnd,
 }: DishGroupProps) {
   const colors = useThemeColors();
 
@@ -71,7 +73,8 @@ export function DishGroup({
             keyExtractor={(item) => String(item.id)}
             renderItem={renderItem}
             onReorder={handleReorder}
-            onDragStateChange={onDragStateChange}
+            onDragStart={onDragStart}
+            onDragEnd={onDragEnd}
           />
         )}
 
