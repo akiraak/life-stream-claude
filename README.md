@@ -1,8 +1,10 @@
 # Cooking Basket
 
-スマホ向けの買い物リスト Web アプリ（PWA）。料理を登録すると AI が具材とレシピを提案してくれます。
+スマホ向けの買い物リストアプリ（iOS / Android / Web PWA）。料理を登録すると AI が具材とレシピを提案してくれます。
 
-**アプリ**: https://basket.chobi.me/
+**Web アプリ**: https://basket.chobi.me/
+**iOS**: App Store (審査中)
+**Android**: Google Play (クローズドテスト中)
 **インストールガイド**: https://akiraak.github.io/cooking-basket/
 
 ## 主な機能
@@ -23,15 +25,16 @@
 ## アーキテクチャ
 
 ```
-┌─────────────┐       HTTPS/REST        ┌──────────────────┐
+┌─────────────┐                         ┌──────────────────┐
 │  Web Client │  <──────────────────>    │  Server (Node.js) │
-│  (HTML/JS)  │       JSON + JWT        │  Express + SQLite  │
-│  PWA対応     │                        │                    │
+│  (HTML/JS)  │       HTTPS/REST        │  Express + SQLite  │
+│  PWA対応     │       JSON + JWT        │                    │
 └─────────────┘                         ├──────────────────┤
-                                        │  Gemini API       │ ← AI 具材・レシピ提案
-                                        │  Resend           │ ← Magic Link メール送信
-                                        │  Claude Code CLI  │ ← レシピ推薦
-                                        └──────────────────┘
+┌─────────────┐                         │  Gemini API       │ ← AI 具材・レシピ提案
+│ Mobile App  │  <──────────────────>    │  Resend           │ ← Magic Link メール送信
+│ (React      │       HTTPS/REST        │  Claude Code CLI  │ ← レシピ推薦
+│  Native)    │       JSON + JWT        └──────────────────┘
+└─────────────┘
 ```
 
 ## 技術スタック
@@ -44,6 +47,8 @@
 | メール | Resend |
 | AI | Google Gemini API (具材・レシピ), Claude Code CLI (レシピ推薦) |
 | Web | HTML / CSS / JavaScript (フレームワークなし, モバイルファースト, PWA) |
+| モバイル | React Native (Expo SDK 54), TypeScript, Zustand |
+| ビルド | EAS Build / EAS Submit |
 
 ## ディレクトリ構成
 
@@ -81,6 +86,17 @@ cooking-basket/
 │   ├── style.css
 │   ├── manifest.json       # PWA マニフェスト
 │   └── admin/              # 管理画面
+├── mobile/                 # モバイルアプリ (React Native / Expo)
+│   ├── app/                # Expo Router ページ
+│   ├── src/
+│   │   ├── components/     # UIコンポーネント
+│   │   ├── stores/         # Zustand ストア
+│   │   ├── services/       # API クライアント
+│   │   ├── theme/          # テーマ・カラー定義
+│   │   └── types/          # 型定義
+│   ├── assets/             # アイコン・スプラッシュ画像
+│   ├── app.json            # Expo 設定
+│   └── eas.json            # EAS Build/Submit 設定
 ├── docs/                   # 仕様書・設計ドキュメント
 ├── CLAUDE.md               # Claude Code 開発ガイド
 ├── TODO.md / DONE.md       # タスク管理

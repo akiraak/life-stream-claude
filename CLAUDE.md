@@ -2,7 +2,7 @@
 
 ## プロジェクト概要
 
-お料理バスケット — 料理買物リストの PWA（Progressive Web App）。
+お料理バスケット — 料理買物リストアプリ（iOS / Android / Web PWA）。
 料理を登録すると Gemini AI が具材とレシピを提案し、買い物リストに一括追加できる。
 Magic Link 認証で複数ユーザー対応。
 
@@ -13,6 +13,14 @@ Magic Link 認証で複数ユーザー対応。
 npm run dev          # 開発サーバ起動 (ts-node + nodemon)
 npm run build        # TypeScript ビルド
 npm start            # プロダクション起動
+```
+
+### モバイル (mobile/)
+```bash
+npx expo start       # 開発サーバ起動 (Expo Go で確認)
+eas build -p ios --profile production    # iOS 本番ビルド
+eas build -p android --profile production # Android 本番ビルド
+eas submit -p ios    # App Store 提出
 ```
 
 ## Git ルール
@@ -34,6 +42,12 @@ npm start            # プロダクション起動
 ### Web クライアント
 - フレームワークなしの Vanilla JS（モバイルファースト）
 - PWA 対応（manifest.json、Service Worker）
+
+### モバイル (React Native / Expo)
+- Expo SDK 54, React Native 0.81
+- TypeScript strict モード
+- 状態管理: Zustand
+- ファイル命名: kebab-case (コンポーネントは PascalCase.tsx)
 
 ## アーキテクチャ上の注意
 
@@ -57,4 +71,5 @@ npm start            # プロダクション起動
 
 - サーバのソースは `server/src/` 配下に置く
 - Web クライアントは `web/` 配下に置く
-- 設定ファイルは `server/` に置く
+- モバイルアプリは `mobile/` 配下に置く (Expo Router, `mobile/src/` にソース)
+- 設定ファイルは各プロジェクトルートに置く

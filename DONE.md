@@ -102,3 +102,13 @@
 - 2026-03-05 モバイル版: 食材行の右側×削除ボタンを削除
 - 2026-03-05 Web版: 音声入力対応（食材/料理追加モーダルにマイクボタン、Web Speech API）
 - 2026-03-05 React Native アプリ Phase 1-6 全完了（初期化・認証・買い物リスト・AI具材&レシピ・レシピブック・ポリッシュ）
+- 2026-03-05 EAS セットアップ完了 (eas-cli, eas login, eas init, eas.json作成)
+- 2026-03-05 app.json 公開向け設定 (permissions, infoPlist, platforms)
+- 2026-03-05 アイコン・スクリーンショット準備（iOS/Android両対応、adaptive-icon修正）
+- 2026-03-05 プライバシーポリシーページ作成・公開 (basket.chobi.me/privacy)
+- 2026-03-05 Apple Developer Program 登録 ($99/年)
+- 2026-03-05 iOS App Store 審査提出（TestFlight動作確認済み）
+- 2026-03-05 Google Play Console 登録 ($25)
+- 2026-03-05 レシピステップのテキストはみ出し修正（RecipeCard.tsx）
+- 2026-03-05 Android adaptive-icon 白背景で再生成
+- 2026-03-06 Google Play クローズドテスト トラック作成・AABアップロード・審査提出
