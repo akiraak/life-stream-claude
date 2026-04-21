@@ -30,6 +30,16 @@
 - [ ] basket@chobi.me を使えるようにする
 - [ ] サービスの状況をメールで定期報告
 
+## 開発用管理サーバ dev-admin
+        docs/plans/dev-admin.md
+- [ ] Step1: dev-admin/ ディレクトリ作成、package.json / tsconfig.json 作成
+- [ ] Step2: dev-admin/src/index.ts で Express サーバ実装（API + 静的配信、ポート 3010）
+- [ ] Step3: dev-admin/src/web/ に HTML / CSS / JS を作成
+- [ ] Step4: ルートに dev-admin.sh 起動スクリプトを追加
+- [ ] Step5: 動作確認（plans / specs / design が閲覧できる）
+- [ ] Step6: 既存 admin からドキュメント関連機能を削除
+- [ ] Step7: CLAUDE.md に dev-admin の起動方法を追記
+
 ## 小修整
 - [ ] 料理レシピページの料理名をページの「買い物リスト」の表示の場所を差し替えて
 - [ ] 買い物リスト画面でレシピ料理を生成中は読み込みのアニメーションを表示して
