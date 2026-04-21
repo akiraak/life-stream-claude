@@ -99,7 +99,7 @@ dev-admin 公開後、以下を削除する:
 - [x] Step2: `dev-admin/src/index.ts` で Express サーバ実装（API 3エンドポイント + 静的配信）
 - [ ] Step3: `dev-admin/src/web/` に HTML / CSS / JS を作成
 - [x] Step4: ルートに `dev-admin.sh` 起動スクリプトを追加
-- [ ] Step5: 動作確認（`http://localhost:3010` で plans / specs / design が閲覧できる）
+- [x] Step5: 動作確認（`http://localhost:3010` で plans / specs / design が閲覧できる）
 - [ ] Step6: 既存 admin からドキュメント関連機能を削除（server / web / HTML）
 - [ ] Step7: CLAUDE.md に dev-admin の起動方法を追記
 

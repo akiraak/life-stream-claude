@@ -119,3 +119,4 @@
 - 2026-04-21 dev-admin Step2: Express サーバ実装（/api/docs, /api/docs/:category/:file, /api/design/:file、ポート 3010、127.0.0.1 バインド）
 - 2026-04-21 dev-admin Step3: dev-admin/src/web/ に index.html / style.css / app.js を作成（サイドバー + markdown 表示 + design iframe プレビュー）
 - 2026-04-21 dev-admin Step4: ルートに dev-admin.sh 起動スクリプトを追加
+- 2026-04-21 dev-admin Step5: 動作確認（/api/docs で plans / specs / design 一覧、/api/docs/:category/:file の markdown→HTML 変換、/api/design/:file の HTML 配信、静的 Web UI、path traversal / 拡張子チェックが正しく動作）
