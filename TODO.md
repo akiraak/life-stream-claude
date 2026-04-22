@@ -139,13 +139,6 @@
 - [ ] TODO.md を表示と編集できるようにする。Claude Code や外部で変更を加えたときもリアルタイム反映されるようにする
         docs/plans/dev-admin-todo-editor.md
 
-### Phase 2: SSE 変更通知
-- [ ] 4. `GET /api/files/watch` を SSE で実装
-- [ ] 5. `fs.watch` + `stat` による変更検知 → `event: change` 送信
-- [ ] 6. 2 秒ポーリングのフォールバックと 30 秒 keep-alive ping
-- [ ] 7. 接続切断時の watcher 解除
-- [ ] (動作確認) `curl -N /api/files/watch` で外部変更の通知が届くこと
-
 ### Phase 3: クライアント UI（閲覧）
 - [ ] 8. topbar に「TODO」タブ追加、`CATEGORIES` 拡張
 - [ ] 9. `renderTodoView()` 追加（左: TODO/DONE リンク、右: プレビュー）

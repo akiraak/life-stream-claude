@@ -131,3 +131,4 @@
 - 2026-04-21 dev-admin を GitHub 風ライトテーマに再配色（サイドバーを角丸ピル化、アクティブタブをオレンジ下線に、インデントを margin ベースに変更）
 - 2026-04-21 plans の md ドキュメントに「アーカイブする」ボタンを追加（`docs/plans/<file>.md` → `docs/plans/archive/<file>.md` に移動する `POST /api/docs/plans/:file/archive` エンドポイントを追加、`docs/plans/archive/` ディレクトリを用意）
 - 2026-04-22 dev-admin TODO エディタ Phase 1: サーバ側 API（`EDITABLE_FILES` ホワイトリスト追加、`GET /api/files/:name` / `GET /api/files/:name/render` / `PUT /api/files/:name` 実装、mtime 楽観ロックで 409、tmp→rename のアトミック書き込み、curl で 200/409/400/404 動作確認）
+- 2026-04-22 dev-admin TODO エディタ Phase 2: SSE 変更通知（`GET /api/files/watch` を `text/event-stream` で実装、`fs.watch` + `stat` による mtime 比較重複排除、2 秒ポーリングのフォールバック・30 秒 keep-alive ping・切断時 watcher 解除、`/api/files/:name` より前にマウントしてルート衝突を回避。curl -N と `echo >>` で TODO.md / DONE.md の変更通知を確認）

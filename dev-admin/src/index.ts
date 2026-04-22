@@ -260,6 +260,67 @@ app.get('/api/design/:file', (req: Request, res: Response) => {
   res.type('html').sendFile(filePath);
 });
 
+// SSE: ルート直下の編集可能ファイルの外部変更を通知
+// 注: `/api/files/:name` より先にマウントすること（:name にマッチしてしまうため）
+app.get('/api/files/watch', (req: Request, res: Response) => {
+  res.status(200);
+  res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-cache, no-transform');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+  res.flushHeaders?.();
+
+  const lastMtime: Record<string, number> = {};
+  for (const [name, abs] of Object.entries(EDITABLE_FILES)) {
+    if (fs.existsSync(abs)) lastMtime[name] = fs.statSync(abs).mtimeMs;
+  }
+
+  const sendChange = (name: string) => {
+    const abs = EDITABLE_FILES[name];
+    if (!abs || !fs.existsSync(abs)) return;
+    let mtime: number;
+    try {
+      mtime = fs.statSync(abs).mtimeMs;
+    } catch {
+      return;
+    }
+    if (lastMtime[name] === mtime) return;
+    lastMtime[name] = mtime;
+    res.write(`event: change\ndata: ${JSON.stringify({ name, mtime })}\n\n`);
+  };
+
+  // fs.watch はエディタの atomic rename で発火しないことがあるため、個別監視 + 下のポーリングで保険
+  const watchers: fs.FSWatcher[] = [];
+  for (const [name, abs] of Object.entries(EDITABLE_FILES)) {
+    try {
+      const watcher = fs.watch(abs, () => sendChange(name));
+      watcher.on('error', () => { /* ignore: poll で拾う */ });
+      watchers.push(watcher);
+    } catch {
+      // ファイルが無い場合などは黙って無視（ポーリングで拾う）
+    }
+  }
+
+  // ポーリング保険（WSL2 で fs.watch が不安定な事例があるため）
+  const pollInterval = setInterval(() => {
+    for (const name of Object.keys(EDITABLE_FILES)) sendChange(name);
+  }, 2000);
+
+  // keep-alive ping
+  const pingInterval = setInterval(() => {
+    res.write(`: ping\n\n`);
+  }, 30000);
+
+  const cleanup = () => {
+    clearInterval(pollInterval);
+    clearInterval(pingInterval);
+    for (const w of watchers) {
+      try { w.close(); } catch { /* ignore */ }
+    }
+  };
+  req.on('close', cleanup);
+});
+
 // ルート直下の編集可能ファイル: 生 Markdown + mtime
 app.get('/api/files/:name', (req: Request, res: Response) => {
   const name = req.params.name as string;
