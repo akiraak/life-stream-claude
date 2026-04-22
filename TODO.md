@@ -25,18 +25,18 @@
 - [x] 変更プランを作成する
 
 ### Phase 1: サーバ側基盤
-- [ ] 1. `ai_quota` テーブル追加（`server/src/database.ts`）
-- [ ] 2. `.env` に `DEVICE_ID_SECRET` / `AI_LIMIT_USER=20` / `AI_LIMIT_GUEST=3` を追加
-- [ ] 3. `optionalAuth` ミドルウェア追加（`server/src/middleware/auth.ts`）
-- [ ] 4. `rateLimitAi` ミドルウェア新規作成（`server/src/middleware/rate-limit-ai.ts`、端末 ID ハッシュ化・日次カウント・`X-AI-Remaining` 付与）
-- [ ] 5. `POST /api/ai/suggest` 新規作成（`server/src/routes/ai.ts`、プロンプト/パース処理を `dishes.ts` から分離）
-- [ ] 6. `GET /api/saved-recipes/shared` を `optionalAuth` 化（`getSharedRecipes` の userId optional 対応）
-- [ ] 7. `POST /api/saved-recipes/bulk` 新規追加（一括保存）
-- [ ] 8. `PUT /api/dishes/:id/ai-cache` 新規追加（AI 結果キャッシュ保存）
-- [ ] 9. `POST /api/migrate` 新規作成（`server/src/routes/migrate.ts`、ローカル→サーバ一括取り込み）
-- [ ] 10. `POST /api/dishes/:id/suggest-ingredients` ハンドラ削除（`autoSaveRecipes` 呼出も除去）
-- [ ] 10. `server/src/routes/claude.ts` / `recipes.ts` / `services/claude-service.ts` 削除、`index.ts` のマウント整理
-- [ ] 10. `docs/specs/shopping-list.md` の廃止節に注記
+- [x] 1. `ai_quota` テーブル追加（`server/src/database.ts`）
+- [x] 2. `.env` に `DEVICE_ID_SECRET` / `AI_LIMIT_USER=20` / `AI_LIMIT_GUEST=3` を追加
+- [x] 3. `optionalAuth` ミドルウェア追加（`server/src/middleware/auth.ts`）
+- [x] 4. `rateLimitAi` ミドルウェア新規作成（`server/src/middleware/rate-limit-ai.ts`、端末 ID ハッシュ化・日次カウント・`X-AI-Remaining` 付与）
+- [x] 5. `POST /api/ai/suggest` 新規作成（`server/src/routes/ai.ts`、プロンプト/パース処理を `dishes.ts` から分離）
+- [x] 6. `GET /api/saved-recipes/shared` を `optionalAuth` 化（`getSharedRecipes` の userId optional 対応）
+- [x] 7. `POST /api/saved-recipes/bulk` 新規追加（一括保存）
+- [x] 8. `PUT /api/dishes/:id/ai-cache` 新規追加（AI 結果キャッシュ保存）
+- [x] 9. `POST /api/migrate` 新規作成（`server/src/routes/migrate.ts`、ローカル→サーバ一括取り込み）
+- [x] 10. `POST /api/dishes/:id/suggest-ingredients` ハンドラ削除（`autoSaveRecipes` 呼出も除去）
+- [x] 10. `server/src/routes/claude.ts` / `recipes.ts` / `services/claude-service.ts` 削除、`index.ts` のマウント整理
+- [x] 10. `docs/specs/shopping-list.md` の廃止節に注記
 - [ ] (動作確認) curl でサーバ単体動作確認（未ログイン `/api/ai/suggest`、`shared`、`migrate`、上限エラー）
 
 ### Phase 2: モバイル側認証 UI 差し替え

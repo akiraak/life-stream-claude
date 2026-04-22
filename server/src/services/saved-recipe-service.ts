@@ -35,16 +35,27 @@ export function getAllSavedRecipes(userId: number): SavedRecipe[] {
   `).all(userId, userId) as SavedRecipe[];
 }
 
-export function getSharedRecipes(userId: number): SavedRecipe[] {
+export function getSharedRecipes(userId?: number): SavedRecipe[] {
   const db = getDatabase();
+  if (typeof userId === 'number') {
+    return db.prepare(`
+      SELECT sr.*,
+        (SELECT COUNT(*) FROM recipe_likes WHERE saved_recipe_id = sr.id) as like_count,
+        EXISTS(SELECT 1 FROM recipe_likes WHERE saved_recipe_id = sr.id AND user_id = ?) as liked
+      FROM saved_recipes sr
+      WHERE (SELECT COUNT(*) FROM recipe_likes WHERE saved_recipe_id = sr.id) > 0
+      ORDER BY like_count DESC, sr.dish_name ASC, sr.created_at DESC
+    `).all(userId) as SavedRecipe[];
+  }
+  // 未ログイン: liked は常に 0
   return db.prepare(`
     SELECT sr.*,
       (SELECT COUNT(*) FROM recipe_likes WHERE saved_recipe_id = sr.id) as like_count,
-      EXISTS(SELECT 1 FROM recipe_likes WHERE saved_recipe_id = sr.id AND user_id = ?) as liked
+      0 as liked
     FROM saved_recipes sr
     WHERE (SELECT COUNT(*) FROM recipe_likes WHERE saved_recipe_id = sr.id) > 0
     ORDER BY like_count DESC, sr.dish_name ASC, sr.created_at DESC
-  `).all(userId) as SavedRecipe[];
+  `).all() as SavedRecipe[];
 }
 
 export function getSavedRecipe(userId: number, id: number): SavedRecipe | null {
@@ -78,6 +89,35 @@ export function createSavedRecipe(userId: number, input: SavedRecipeInput): Save
       0 as liked
     FROM saved_recipes sr WHERE sr.id = ?
   `).get(result.lastInsertRowid) as SavedRecipe;
+}
+
+export function createSavedRecipesBulk(userId: number, inputs: SavedRecipeInput[]): SavedRecipe[] {
+  const db = getDatabase();
+  const insert = db.prepare(
+    `INSERT INTO saved_recipes (user_id, dish_name, title, summary, steps_json, ingredients_json, source_dish_id)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+  );
+  const selectOne = db.prepare(`
+    SELECT sr.*, 0 as like_count, 0 as liked
+    FROM saved_recipes sr WHERE sr.id = ?
+  `);
+  const created: SavedRecipe[] = [];
+  const runAll = db.transaction((items: SavedRecipeInput[]) => {
+    for (const input of items) {
+      const result = insert.run(
+        userId,
+        input.dishName,
+        input.title,
+        input.summary,
+        JSON.stringify(input.steps),
+        JSON.stringify(input.ingredients),
+        input.sourceDishId ?? null,
+      );
+      created.push(selectOne.get(result.lastInsertRowid) as SavedRecipe);
+    }
+  });
+  runAll(inputs);
+  return created;
 }
 
 export function deleteSavedRecipe(userId: number, id: number): boolean {

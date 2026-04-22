@@ -124,22 +124,21 @@ Web ブラウザおよび iOS アプリから利用可能。
 
 ### AI 機能
 
-#### `GET /api/recipes/recommend`
-未チェックの買い物食材をもとに AI がレシピを推薦する。
+#### `POST /api/ai/suggest`
+料理名をもとに AI（Gemini）が具材リスト+レシピを生成する（ステートレス）。
+未ログインでも利用可能（`X-Device-Id` ヘッダ必須、JST 日次 3 回まで）。ログイン時は 20 回/日。
+レスポンスヘッダ `X-AI-Remaining` に当日残回数を返す。
 
-#### `POST /api/dishes/:id/suggest-ingredients`
-料理名をもとに AI（Gemini）が具材リスト+レシピを生成する。
-DBにキャッシュがあればGemini呼び出しをスキップし即返却。
-
-**リクエスト**: なし（料理名は `:id` から取得）
+**リクエスト**:
+```json
+{ "dishName": "カレーライス", "extraIngredients": ["じゃがいも"] }
+```
 
 **レスポンス例**:
 ```json
 {
   "success": true,
   "data": {
-    "dishId": 1,
-    "dishName": "カレーライス",
     "ingredients": [
       { "name": "じゃがいも", "category": "野菜" },
       { "name": "にんじん", "category": "野菜" }
@@ -148,12 +147,21 @@ DBにキャッシュがあればGemini呼び出しをスキップし即返却。
       {
         "title": "基本のカレー",
         "summary": "玉ねぎをじっくり炒めて作る定番カレー",
-        "steps": ["野菜を切る", "肉を炒める", "水を加えて煮込む"]
+        "steps": ["野菜を切る", "肉を炒める", "水を加えて煮込む"],
+        "ingredients": [...]
       }
     ]
   }
 }
 ```
+
+#### `PUT /api/dishes/:id/ai-cache`
+サーバモード時、AI 結果を料理行にキャッシュ保存する。body: `{ ingredients, recipes }`。
+
+#### 廃止 API
+- `GET /api/recipes/recommend` — 未使用のため廃止（`/api/ai/suggest` に統合）
+- `POST /api/dishes/:id/suggest-ingredients` — 廃止（`/api/ai/suggest` + `/api/dishes/:id/ai-cache` に分離）
+- `POST /api/claude` — 廃止（未使用）
 
 ## レスポンス形式
 

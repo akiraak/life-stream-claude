@@ -1,5 +1,4 @@
-import { Router, Request, Response, NextFunction } from 'express';
-import { jsonrepair } from 'jsonrepair';
+import { Router, Request, Response } from 'express';
 import {
   getAllDishes,
   getDish,
@@ -13,94 +12,6 @@ import {
   reorderDishes,
   reorderDishItems,
 } from '../services/dish-service';
-import { askGemini } from '../services/gemini-service';
-import { autoSaveRecipes, getSavedRecipeStates } from '../services/saved-recipe-service';
-
-interface Ingredient {
-  name: string;
-  category: string;
-}
-
-interface Recipe {
-  title: string;
-  summary: string;
-  steps: string[];
-  ingredients: Ingredient[];
-}
-
-interface DishInfo {
-  ingredients: Ingredient[];
-  recipes: Recipe[];
-}
-
-function buildDishInfoPrompt(dishName: string, extraIngredients?: string[]): string {
-  const extraSection = extraIngredients && extraIngredients.length > 0
-    ? `\nユーザーが以下の食材を必ず使いたいと指定しています：${extraIngredients.join('、')}
-上記の食材は必ずレシピに含めてください。ただし上記以外の食材も自由に追加してください。上記の食材だけに限定せず、料理に必要な食材をすべて含めた本格的なレシピを提案してください。\n`
-    : '';
-
-  return `あなたは料理の専門家です。「${dishName}」について以下の情報をJSON形式で返してください。
-${extraSection}
-おすすめレシピを3つ提案してください。各レシピにはそのレシピで必要な具材リスト（一般的な調味料は含めない、主要な食材のみ）を含めてください。
-
-回答は以下のJSON形式のみで返してください。JSON以外のテキストは含めないでください:
-
-{
-  "recipes": [
-    {
-      "title": "レシピ名",
-      "summary": "一行の概要説明",
-      "steps": ["手順1", "手順2", "手順3"],
-      "ingredients": [
-        { "name": "具材名", "category": "野菜|肉類|魚介類|乳製品|穀類|その他" }
-      ]
-    }
-  ]
-}`;
-}
-
-function parseDishInfo(raw: string): DishInfo {
-  try {
-    const cleaned = raw.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
-    const repaired = jsonrepair(cleaned);
-    const parsed = JSON.parse(repaired);
-
-    if (parsed && !Array.isArray(parsed) && Array.isArray(parsed.recipes)) {
-      const recipes = (parsed.recipes as Recipe[]).map(r => ({
-        ...r,
-        ingredients: Array.isArray(r.ingredients) ? r.ingredients : [],
-      }));
-      // レシピごとの食材をマージして全体の食材リストを生成
-      const ingredientMap = new Map<string, Ingredient>();
-      for (const r of recipes) {
-        for (const ing of r.ingredients) {
-          if (ing.name && !ingredientMap.has(ing.name)) {
-            ingredientMap.set(ing.name, ing);
-          }
-        }
-      }
-      // 旧形式の ingredients がトップレベルにある場合もマージ
-      if (Array.isArray(parsed.ingredients)) {
-        for (const ing of parsed.ingredients as Ingredient[]) {
-          if (ing.name && !ingredientMap.has(ing.name)) {
-            ingredientMap.set(ing.name, ing);
-          }
-        }
-      }
-      return {
-        ingredients: Array.from(ingredientMap.values()),
-        recipes,
-      };
-    }
-    // 旧形式: 配列のみ（後方互換）
-    if (Array.isArray(parsed)) {
-      return { ingredients: parsed as Ingredient[], recipes: [] };
-    }
-    return { ingredients: [], recipes: [] };
-  } catch {
-    return { ingredients: [], recipes: [] };
-  }
-}
 
 export const dishesRouter = Router();
 
@@ -188,8 +99,8 @@ dishesRouter.delete('/:id', (req: Request, res: Response) => {
   }
 });
 
-// AI 具材提案
-dishesRouter.post('/:id/suggest-ingredients', async (req: Request, res: Response, next: NextFunction) => {
+// AI 結果キャッシュ保存（クライアントから {ingredients, recipes} を書き戻す）
+dishesRouter.put('/:id/ai-cache', (req: Request, res: Response) => {
   try {
     const id = Number(req.params.id);
     const dish = getDish(req.userId!, id);
@@ -197,54 +108,15 @@ dishesRouter.post('/:id/suggest-ingredients', async (req: Request, res: Response
       res.status(404).json({ success: false, data: null, error: '料理が見つかりません' });
       return;
     }
-
-    // extraIngredients がある場合は強制再取得
-    const extraIngredients: string[] = Array.isArray(req.body.extraIngredients) ? req.body.extraIngredients : [];
-    const force = req.body.force === true || extraIngredients.length > 0;
-
-    // DBにキャッシュがあればそれを返す（forceで再取得可能）
-    if (!force && dish.ingredients_json) {
-      const ingredients = JSON.parse(dish.ingredients_json);
-      const recipes = dish.recipes_json ? JSON.parse(dish.recipes_json) : [];
-      let recipeStates = getSavedRecipeStates(req.userId!, dish.id);
-      // saved_recipes 未登録のレシピがあれば自動保存
-      if (recipeStates.length === 0 && recipes.length > 0) {
-        autoSaveRecipes(req.userId!, dish.name, dish.id, recipes, ingredients);
-        recipeStates = getSavedRecipeStates(req.userId!, dish.id);
-      }
-      res.json({
-        success: true,
-        data: { dishId: dish.id, dishName: dish.name, ingredients, recipes, recipeStates },
-        error: null,
-      });
+    const { ingredients, recipes } = req.body;
+    if (!Array.isArray(ingredients) || !Array.isArray(recipes)) {
+      res.status(400).json({ success: false, data: null, error: 'ingredients と recipes は配列で指定してください' });
       return;
     }
-
-    // Gemini呼び出し → DB保存
-    const prompt = buildDishInfoPrompt(dish.name, extraIngredients.length > 0 ? extraIngredients : undefined);
-    const raw = await askGemini(prompt);
-    const info = parseDishInfo(raw);
-    updateDishInfo(req.userId!, dish.id, info.ingredients, info.recipes);
-
-    // レシピを自動保存
-    if (info.recipes.length > 0) {
-      autoSaveRecipes(req.userId!, dish.name, dish.id, info.recipes, info.ingredients);
-    }
-
-    const recipeStates = getSavedRecipeStates(req.userId!, dish.id);
-    res.json({
-      success: true,
-      data: {
-        dishId: dish.id,
-        dishName: dish.name,
-        ingredients: info.ingredients,
-        recipes: info.recipes,
-        recipeStates,
-      },
-      error: null,
-    });
+    updateDishInfo(req.userId!, id, ingredients, recipes);
+    res.json({ success: true, data: null, error: null });
   } catch (err) {
-    next(err);
+    res.status(500).json({ success: false, data: null, error: String(err) });
   }
 });
 

@@ -3,14 +3,15 @@ import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
 import { errorHandler } from './middleware/error-handler';
-import { requireAuth, requireAdmin } from './middleware/auth';
+import { requireAuth, requireAdmin, optionalAuth } from './middleware/auth';
+import { rateLimitAi } from './middleware/rate-limit-ai';
 import { authRouter } from './routes/auth';
 import { shoppingRouter } from './routes/shopping';
 import { adminRouter } from './routes/admin';
-import { claudeRouter } from './routes/claude';
-import { recipesRouter } from './routes/recipes';
+import { aiRouter } from './routes/ai';
 import { dishesRouter } from './routes/dishes';
-import { savedRecipesRouter } from './routes/saved-recipes';
+import { savedRecipesRouter, savedRecipesSharedRouter } from './routes/saved-recipes';
+import { migrateRouter } from './routes/migrate';
 import { docsRouter } from './routes/docs';
 import { initDatabase } from './database';
 
@@ -63,13 +64,18 @@ export function createApp(options: CreateAppOptions = {}): Express {
   // 認証ルート（認証不要）
   app.use('/api/auth', authRouter);
 
+  // AI（未ログイン可、端末 ID or ユーザー ID でレート制限）
+  app.use('/api/ai', optionalAuth, rateLimitAi, aiRouter);
+
+  // みんなのレシピは未ログイン可（/api/saved-recipes より先にマウント）
+  app.use('/api/saved-recipes/shared', savedRecipesSharedRouter);
+
   // 保護された API ルート
   app.use('/api/shopping', requireAuth, shoppingRouter);
   app.use('/api/admin', requireAuth, requireAdmin, adminRouter);
-  app.use('/api/claude', requireAuth, claudeRouter);
-  app.use('/api/recipes', requireAuth, recipesRouter);
   app.use('/api/dishes', requireAuth, dishesRouter);
   app.use('/api/saved-recipes', requireAuth, savedRecipesRouter);
+  app.use('/api/migrate', requireAuth, migrateRouter);
   app.use('/docs', docsRouter);
 
   // エラーハンドリング

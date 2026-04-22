@@ -166,7 +166,61 @@ describe('saved-recipes routes', () => {
     });
   });
 
+  describe('POST /api/saved-recipes/bulk', () => {
+    it('bulk-inserts multiple recipes and returns the created rows', async () => {
+      const { headers } = createAuthedUser('sr-bulk@example.com');
+      const res = await request(app)
+        .post('/api/saved-recipes/bulk')
+        .set(headers)
+        .send({
+          recipes: [
+            { ...samplePayload, title: 'bulk-1' },
+            { ...samplePayload, title: 'bulk-2' },
+          ],
+        });
+      expect(res.status).toBe(201);
+      expect(res.body.data).toHaveLength(2);
+      expect(res.body.data.map((r: { title: string }) => r.title)).toEqual(['bulk-1', 'bulk-2']);
+
+      const list = await request(app).get('/api/saved-recipes').set(headers);
+      expect(list.body.data.map((r: { title: string }) => r.title).sort()).toEqual(['bulk-1', 'bulk-2']);
+    });
+
+    it('returns 400 when recipes is not an array', async () => {
+      const { headers } = createAuthedUser('sr-bulk-bad@example.com');
+      const res = await request(app)
+        .post('/api/saved-recipes/bulk')
+        .set(headers)
+        .send({ recipes: 'nope' });
+      expect(res.status).toBe(400);
+    });
+
+    it('returns 400 when any item is missing dishName/title', async () => {
+      const { headers } = createAuthedUser('sr-bulk-bad2@example.com');
+      const res = await request(app)
+        .post('/api/saved-recipes/bulk')
+        .set(headers)
+        .send({ recipes: [{ ...samplePayload }, { ...samplePayload, title: '' }] });
+      expect(res.status).toBe(400);
+    });
+  });
+
   describe('GET /api/saved-recipes/shared', () => {
+    it('is accessible without authentication and returns liked=0 for guests', async () => {
+      const alice = createAuthedUser('sr-shared-guest-a@example.com');
+      const bob = createAuthedUser('sr-shared-guest-b@example.com');
+      const recipe = await request(app)
+        .post('/api/saved-recipes')
+        .set(alice.headers)
+        .send({ ...samplePayload, title: 'for-guest' });
+      await request(app).put(`/api/saved-recipes/${recipe.body.data.id}/like`).set(bob.headers);
+
+      const res = await request(app).get('/api/saved-recipes/shared');
+      expect(res.status).toBe(200);
+      expect(res.body.data).toHaveLength(1);
+      expect(res.body.data[0]).toMatchObject({ title: 'for-guest', like_count: 1, liked: 0 });
+    });
+
     it('returns recipes that have at least one like, across users, with liked reflecting the caller', async () => {
       const alice = createAuthedUser('sr-shared-a@example.com');
       const bob = createAuthedUser('sr-shared-b@example.com');

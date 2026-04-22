@@ -16,6 +16,9 @@ process.env.EMAIL_FROM = 'noreply@test.local';
 process.env.GOOGLE_CLIENT_ID = 'test-dummy-google-client-id';
 process.env.GEMINI_API_KEY = 'test-dummy-gemini-key';
 process.env.ADMIN_EMAILS = 'admin@test.local';
+process.env.DEVICE_ID_SECRET = 'test-device-id-secret';
+process.env.AI_LIMIT_USER = '20';
+process.env.AI_LIMIT_GUEST = '3';
 
 // テスト DB を per-process で /tmp に作る（並列実行時の WAL 競合を避ける）
 const TEST_DB_PATH = path.join('/tmp', `cb-test-${process.pid}.db`);

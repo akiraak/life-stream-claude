@@ -221,5 +221,15 @@ export function initDatabase(): void {
   // マイグレーション: dish_history テーブル削除（dishes テーブルで代替）
   database.exec('DROP TABLE IF EXISTS dish_history');
 
+  // マイグレーション: ai_quota テーブル追加（未ログイン / ログインの AI 利用回数を日次で管理）
+  database.exec(`
+    CREATE TABLE IF NOT EXISTS ai_quota (
+      key TEXT NOT NULL,
+      date TEXT NOT NULL,
+      count INTEGER NOT NULL DEFAULT 0,
+      PRIMARY KEY (key, date)
+    )
+  `);
+
   console.log('Database initialized');
 }

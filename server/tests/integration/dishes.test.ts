@@ -6,8 +6,8 @@ import { createAuthedUser } from '../helpers/auth';
 
 setupTestDatabase();
 
-// Gemini 呼び出しを含む /:id/suggest-ingredients は Phase 3 対象外（no-login 移行で廃止予定）。
-// ここでは CRUD / 食材リンク / reorder のみカバーする。
+// /:id/suggest-ingredients は廃止済み（`/api/ai/suggest` に移行）。
+// ここでは CRUD / 食材リンク / reorder / ai-cache をカバーする。
 
 describe('dishes routes', () => {
   const app = createApp();
@@ -260,6 +260,46 @@ describe('dishes routes', () => {
         .set(headers)
         .send({ orderedItemIds: 'nope' });
       expect(res.status).toBe(400);
+    });
+  });
+
+  describe('PUT /api/dishes/:id/ai-cache', () => {
+    it('persists ingredients/recipes as JSON on the dish row', async () => {
+      const { headers } = createAuthedUser('dish-ai-cache@example.com');
+      const created = await request(app).post('/api/dishes').set(headers).send({ name: 'カレー' });
+      const id = created.body.data.id;
+
+      const ingredients = [{ name: '玉ねぎ', category: '野菜' }];
+      const recipes = [{ title: '基本のカレー', summary: '王道', steps: ['切る'], ingredients }];
+      const res = await request(app)
+        .put(`/api/dishes/${id}/ai-cache`)
+        .set(headers)
+        .send({ ingredients, recipes });
+      expect(res.status).toBe(200);
+
+      const list = await request(app).get('/api/dishes').set(headers);
+      const target = list.body.data.find((d: { id: number }) => d.id === id);
+      expect(JSON.parse(target.ingredients_json)).toEqual(ingredients);
+      expect(JSON.parse(target.recipes_json)).toEqual(recipes);
+    });
+
+    it('returns 400 when body is malformed', async () => {
+      const { headers } = createAuthedUser('dish-ai-cache-bad@example.com');
+      const created = await request(app).post('/api/dishes').set(headers).send({ name: 'x' });
+      const res = await request(app)
+        .put(`/api/dishes/${created.body.data.id}/ai-cache`)
+        .set(headers)
+        .send({ ingredients: 'nope', recipes: [] });
+      expect(res.status).toBe(400);
+    });
+
+    it('returns 404 for a non-existent dish', async () => {
+      const { headers } = createAuthedUser('dish-ai-cache-404@example.com');
+      const res = await request(app)
+        .put('/api/dishes/999999/ai-cache')
+        .set(headers)
+        .send({ ingredients: [], recipes: [] });
+      expect(res.status).toBe(404);
     });
   });
 

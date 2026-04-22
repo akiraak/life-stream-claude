@@ -38,3 +38,16 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
   req.userEmail = payload.email;
   next();
 }
+
+// Authorization ヘッダがあれば検証して userId/userEmail をセット、無ければそのまま通す
+export function optionalAuth(req: Request, _res: Response, next: NextFunction): void {
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const payload = verifyJwt(authHeader.slice(7));
+    if (payload) {
+      req.userId = payload.userId;
+      req.userEmail = payload.email;
+    }
+  }
+  next();
+}
