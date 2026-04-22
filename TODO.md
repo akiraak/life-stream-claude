@@ -36,7 +36,7 @@
 - [x] Step1: サーバ `/api/docs` をツリー構造レスポンスに変更
 - [x] Step2: トップタブ DOM を `index.html` に追加
 - [x] Step3: `app.js` にタブ切替・ツリー描画・折りたたみ・localStorage 連携を実装
-- [ ] Step4: `style.css` にタブ・ツリーのスタイルを追加
+- [x] Step4: `style.css` にタブ・ツリーのスタイルを追加
 - [ ] Step5: 動作確認（タブ切替 / 折りたたみ / 状態復元 / 既存 URL 互換）
 
 ## 小修整
