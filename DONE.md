@@ -127,3 +127,4 @@
 - 2026-04-21 dev-admin レイアウト変更 Step3: `app.js` にタブ切替・ツリー描画（再帰）・折りたたみ・localStorage 連携・旧 `#design/` ハッシュの `#specs/design/` リダイレクトを実装
 - 2026-04-21 dev-admin レイアウト変更 Step4: `style.css` にトップタブ・ツリーのインデント・トグルアイコンのスタイルを追加
 - 2026-04-21 dev-admin レイアウト変更 Step5: 動作確認（タブ切替でサイドバー差し替え / `specs/design/` の折りたたみ / タブ・折りたたみ状態の localStorage 復元 / 既存 `#plans/xxx.md` 等のハッシュ互換 / 旧 `#design/xxx.html` → `#specs/design/xxx.html` リダイレクト / サーバ側 API レスポンス・エラーハンドリング）
+- 2026-04-21 dev-admin 画面全体を上下2段レイアウトに変更（上段: `dev-admin` ブランド + Plans/Specs タブ + ページタイトル + パス、下段: サイドバーのファイルツリー + コンテンツ。トップバーをフル幅に昇格、サイドバーは固定配置から flex レイアウト内のスクロール領域に変更）

@@ -3,31 +3,36 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>dev-admin - お料理バスケット</title>
+  <title>Cooking Basket: dev-admin</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="dev-admin-layout">
-    <aside class="sidebar">
-      <div class="sidebar-logo">dev-admin</div>
-      <nav class="sidebar-nav" id="sidebar-nav">
-        <div class="loading-text">読み込み中...</div>
-      </nav>
-    </aside>
-
-    <main class="main-content">
-      <header class="topbar">
+    <header class="topbar">
+      <div class="topbar-left">
+        <h1 class="topbar-brand">Cooking Basket: dev-admin</h1>
         <nav class="topbar-tabs" id="topbar-tabs" role="tablist">
           <button type="button" class="topbar-tab" role="tab" data-category="plans" aria-selected="false">Plans</button>
           <button type="button" class="topbar-tab" role="tab" data-category="specs" aria-selected="false">Specs</button>
         </nav>
+      </div>
+      <div class="topbar-right">
         <h2 class="topbar-title" id="page-title">ドキュメント</h2>
         <div class="topbar-sub" id="topbar-sub"></div>
-      </header>
-      <div class="content-area" id="content-area">
-        <div class="empty-state">サイドバーからドキュメントを選択してください。</div>
       </div>
-    </main>
+    </header>
+    <div class="main-body">
+      <aside class="sidebar">
+        <nav class="sidebar-nav" id="sidebar-nav">
+          <div class="loading-text">読み込み中...</div>
+        </nav>
+      </aside>
+      <main class="main-content">
+        <div class="content-area" id="content-area">
+          <div class="empty-state">サイドバーからドキュメントを選択してください。</div>
+        </div>
+      </main>
+    </div>
   </div>
   <script src="app.js"></script>
 </body>
