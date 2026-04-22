@@ -89,15 +89,6 @@
 ## テストの導入
         docs/plans/testing.md
 
-### Phase 4: モバイル側テスト基盤
-- [ ] 17. `mobile/` に Jest / jest-expo / `@types/jest` / ts-jest を導入
-- [ ] 18. `mobile/jest.config.js`（`preset: 'jest-expo'`、`testMatch`、`transformIgnorePatterns`）
-- [ ] 19. `mobile/package.json` に `test` スクリプト追加、`jest.setup.ts` 作成
-- [ ] 20. `__tests__/stores/shopping-store.test.ts`（api モック / addItem / toggleCheck / reorder の state 検証）
-- [ ] 21. `__tests__/stores/auth-store.test.ts`（`expo-secure-store` モック / login / logout / token 永続化）
-- [ ] 22. `__tests__/api/client.test.ts`（axios interceptor が JWT を Authorization ヘッダに付与）
-- [ ] (動作確認) `cd mobile && npm test` が通る
-
 ### Phase 5: CI 連携
 - [ ] 23. `.github/workflows/test.yml` 作成（push / PR トリガ、matrix で server/mobile 並列、Node 20、npm ci + npm test）
 - [ ] 24. 初回 PR で全テスト緑を確認
