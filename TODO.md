@@ -89,13 +89,6 @@
 ## テストの導入
         docs/plans/testing.md
 
-### Phase 3: サーバ route 層統合テスト
-- [ ] 13. `integration/auth.test.ts`（`/api/auth/login` → `/api/auth/verify-code`、メール送信モック）
-- [ ] 14. `integration/shopping.test.ts`（401 / CRUD / reorder / checked 一括削除）
-- [ ] 15. `integration/dishes.test.ts`（料理 CRUD / 食材リンク / reorder）
-- [ ] 16. `integration/saved-recipes.test.ts`（保存 / 一覧 / いいね / shared）
-- [ ] (動作確認) 全 route テストが通り、カバレッジで抜けを可視化
-
 ### Phase 4: モバイル側テスト基盤
 - [ ] 17. `mobile/` に Jest / jest-expo / `@types/jest` / ts-jest を導入
 - [ ] 18. `mobile/jest.config.js`（`preset: 'jest-expo'`、`testMatch`、`transformIgnorePatterns`）
