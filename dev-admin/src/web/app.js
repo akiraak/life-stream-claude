@@ -49,6 +49,16 @@ function decodePath(p) {
   return p.split('/').map(decodeURIComponent).join('/');
 }
 
+// ディレクトリとファイルを mtime 降順（新しい順）で 1 列に並べる
+function mergeByMtime(dirs, files) {
+  const items = [
+    ...dirs.map(d => ({ kind: 'dir', data: d, mtime: d.mtime || 0 })),
+    ...files.map(f => ({ kind: 'file', data: f, mtime: f.mtime || 0 })),
+  ];
+  items.sort((a, b) => b.mtime - a.mtime);
+  return items;
+}
+
 function renderTabs() {
   topbarTabs.querySelectorAll('.topbar-tab').forEach(tab => {
     const isActive = tab.dataset.category === activeCategory;
@@ -100,6 +110,21 @@ function renderDir(category, dir, parentPath, depth) {
   name.textContent = dir.name;
   header.appendChild(name);
 
+  // plans 直下のディレクトリ（archive 本体は除く）にアーカイブボタンを付ける
+  if (category === 'plans' && depth === 0 && dir.name !== 'archive') {
+    const archiveBtn = document.createElement('button');
+    archiveBtn.type = 'button';
+    archiveBtn.className = 'nav-dir-archive';
+    archiveBtn.title = 'アーカイブする';
+    archiveBtn.setAttribute('aria-label', `${dir.name} をアーカイブ`);
+    archiveBtn.textContent = '📦';
+    archiveBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      archiveDirectory(dir.name);
+    });
+    header.appendChild(archiveBtn);
+  }
+
   header.addEventListener('click', () => {
     expanded[expandKey] = !expanded[expandKey];
     saveExpanded();
@@ -111,11 +136,12 @@ function renderDir(category, dir, parentPath, depth) {
   if (isExpanded) {
     const children = document.createElement('div');
     children.className = 'nav-dir-children';
-    for (const sub of dir.dirs) {
-      children.appendChild(renderDir(category, sub, dirPath, depth + 1));
-    }
-    for (const f of dir.files) {
-      children.appendChild(renderFileItem(category, f, depth + 1));
+    for (const item of mergeByMtime(dir.dirs, dir.files)) {
+      if (item.kind === 'dir') {
+        children.appendChild(renderDir(category, item.data, dirPath, depth + 1));
+      } else {
+        children.appendChild(renderFileItem(category, item.data, depth + 1));
+      }
     }
     block.appendChild(children);
   }
@@ -135,12 +161,20 @@ function renderSidebar() {
     return;
   }
 
+  // archive ディレクトリはツリーの一番下に出す（それ以外は mtime 降順で混ぜて並べる）
+  const regularDirs = tree.dirs.filter(d => d.name !== 'archive');
+  const archiveDirs = tree.dirs.filter(d => d.name === 'archive');
+
   const frag = document.createDocumentFragment();
-  for (const dir of tree.dirs) {
-    frag.appendChild(renderDir(activeCategory, dir, '', 0));
+  for (const item of mergeByMtime(regularDirs, tree.files)) {
+    if (item.kind === 'dir') {
+      frag.appendChild(renderDir(activeCategory, item.data, '', 0));
+    } else {
+      frag.appendChild(renderFileItem(activeCategory, item.data, 0));
+    }
   }
-  for (const file of tree.files) {
-    frag.appendChild(renderFileItem(activeCategory, file, 0));
+  for (const dir of archiveDirs) {
+    frag.appendChild(renderDir(activeCategory, dir, '', 0));
   }
   sidebarNav.appendChild(frag);
 
@@ -178,13 +212,74 @@ async function renderMarkdown(category, filePath) {
     const data = await fetchJson(`/api/docs/${category}/${encodeURIComponent(filename)}`);
     pageTitle.textContent = data.title;
     topbarSub.textContent = `${category}/${filePath}`;
+    contentArea.innerHTML = '';
+
+    // plans の直下にある md のみアーカイブ可能
+    if (category === 'plans' && !filePath.includes('/')) {
+      const toolbar = document.createElement('div');
+      toolbar.className = 'doc-toolbar';
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'doc-action';
+      btn.textContent = 'アーカイブする';
+      btn.addEventListener('click', () => archivePlan(filename));
+      toolbar.appendChild(btn);
+      contentArea.appendChild(toolbar);
+    }
+
     const div = document.createElement('div');
     div.className = 'md-content';
     div.innerHTML = data.html;
-    contentArea.innerHTML = '';
     contentArea.appendChild(div);
   } catch (err) {
     showError(err.message);
+  }
+}
+
+async function archiveDirectory(dirName) {
+  if (!confirm(`ディレクトリ ${dirName}/ を archive に移動します。よろしいですか？`)) return;
+  try {
+    const res = await fetch(`/api/docs/plans/${encodeURIComponent(dirName)}/archive-dir`, { method: 'POST' });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || 'アーカイブに失敗しました');
+    docsTree = await fetchJson('/api/docs');
+
+    const parsed = parseHash();
+    const inArchivedDir = parsed
+      && parsed.category === 'plans'
+      && parsed.filePath.startsWith(`${dirName}/`);
+    if (inArchivedDir) {
+      const newHash = `plans/${encodePath(`archive/${parsed.filePath}`)}`;
+      if (location.hash === `#${newHash}`) {
+        renderSidebar();
+        handleRoute();
+      } else {
+        location.hash = newHash;
+      }
+    } else {
+      renderSidebar();
+    }
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+async function archivePlan(filename) {
+  if (!confirm(`${filename} を archive に移動します。よろしいですか？`)) return;
+  try {
+    const res = await fetch(`/api/docs/plans/${encodeURIComponent(filename)}/archive`, { method: 'POST' });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || 'アーカイブに失敗しました');
+    docsTree = await fetchJson('/api/docs');
+    const newHash = `plans/archive/${encodeURIComponent(filename)}`;
+    if (location.hash === `#${newHash}`) {
+      renderSidebar();
+      handleRoute();
+    } else {
+      location.hash = newHash;
+    }
+  } catch (err) {
+    alert(err.message);
   }
 }
 

@@ -15,12 +15,14 @@ interface TreeFile {
   name: string;
   path: string;
   title: string;
+  mtime: number;
 }
 
 interface TreeDir {
   name: string;
   files: TreeFile[];
   dirs: TreeDir[];
+  mtime: number;
 }
 
 interface Tree {
@@ -52,11 +54,10 @@ function extractTitle(absPath: string, fallback: string): string {
   return fallback;
 }
 
-// カテゴリ配下を再帰的にツリー化する
+// カテゴリ配下を再帰的にツリー化する（mtime 降順で並べる）
 function listTree(absDir: string, exts: string[], relPrefix: string = ''): Tree {
   if (!fs.existsSync(absDir)) return { files: [], dirs: [] };
-  const entries = fs.readdirSync(absDir, { withFileTypes: true })
-    .sort((a, b) => a.name.localeCompare(b.name));
+  const entries = fs.readdirSync(absDir, { withFileTypes: true });
 
   const files: TreeFile[] = [];
   const dirs: TreeDir[] = [];
@@ -69,15 +70,26 @@ function listTree(absDir: string, exts: string[], relPrefix: string = ''): Tree 
     if (entry.isDirectory()) {
       const sub = listTree(abs, exts, rel);
       if (sub.files.length > 0 || sub.dirs.length > 0) {
-        dirs.push({ name: entry.name, files: sub.files, dirs: sub.dirs });
+        // ディレクトリ自身と配下の最新 mtime を採用（中身の更新が dir mtime に反映されない Linux 仕様の回避）
+        const selfMtime = fs.statSync(abs).mtimeMs;
+        const childMtimes = [
+          ...sub.files.map(f => f.mtime),
+          ...sub.dirs.map(d => d.mtime),
+        ];
+        const mtime = Math.max(selfMtime, ...childMtimes);
+        dirs.push({ name: entry.name, files: sub.files, dirs: sub.dirs, mtime });
       }
     } else if (entry.isFile()) {
       const ext = path.extname(entry.name);
       if (!exts.includes(ext)) continue;
       const fallback = entry.name.replace(/\.[^.]+$/, '');
-      files.push({ name: entry.name, path: rel, title: extractTitle(abs, fallback) });
+      const mtime = fs.statSync(abs).mtimeMs;
+      files.push({ name: entry.name, path: rel, title: extractTitle(abs, fallback), mtime });
     }
   }
+
+  files.sort((a, b) => b.mtime - a.mtime);
+  dirs.sort((a, b) => b.mtime - a.mtime);
 
   return { files, dirs };
 }
@@ -168,6 +180,61 @@ app.get('/api/design/:category/:file', (req: Request, res: Response) => {
     return;
   }
   res.type('html').sendFile(filePath);
+});
+
+// plans 直下のディレクトリをアーカイブ（docs/plans/<dir>/ → docs/plans/archive/<dir>/）
+app.post('/api/docs/plans/:dir/archive-dir', (req: Request, res: Response) => {
+  const dirName = req.params.dir as string;
+  if (
+    !dirName
+    || dirName.includes('..')
+    || dirName.includes('/')
+    || dirName.includes('\\')
+    || dirName.startsWith('.')
+    || dirName === 'archive'
+  ) {
+    res.status(400).json({ success: false, data: null, error: '不正なディレクトリ名です' });
+    return;
+  }
+  const plansDir = path.join(DOCS_DIR, 'plans');
+  const src = path.join(plansDir, dirName);
+  if (!fs.existsSync(src) || !fs.statSync(src).isDirectory()) {
+    res.status(404).json({ success: false, data: null, error: 'ディレクトリが見つかりません' });
+    return;
+  }
+  const archiveDir = path.join(plansDir, 'archive');
+  if (!fs.existsSync(archiveDir)) fs.mkdirSync(archiveDir, { recursive: true });
+  const dst = path.join(archiveDir, dirName);
+  if (fs.existsSync(dst)) {
+    res.status(409).json({ success: false, data: null, error: 'archive 側に同名ディレクトリが既に存在します' });
+    return;
+  }
+  fs.renameSync(src, dst);
+  res.json({ success: true, data: { path: `archive/${dirName}` }, error: null });
+});
+
+// plans の md をアーカイブ（docs/plans/<file> → docs/plans/archive/<file>）
+app.post('/api/docs/plans/:file/archive', (req: Request, res: Response) => {
+  const file = req.params.file as string;
+  if (!isSafeName(file, '.md')) {
+    res.status(400).json({ success: false, data: null, error: '不正なファイル名です' });
+    return;
+  }
+  const plansDir = path.join(DOCS_DIR, 'plans');
+  const src = path.join(plansDir, file);
+  if (!fs.existsSync(src) || !fs.statSync(src).isFile()) {
+    res.status(404).json({ success: false, data: null, error: 'ファイルが見つかりません' });
+    return;
+  }
+  const archiveDir = path.join(plansDir, 'archive');
+  if (!fs.existsSync(archiveDir)) fs.mkdirSync(archiveDir, { recursive: true });
+  const dst = path.join(archiveDir, file);
+  if (fs.existsSync(dst)) {
+    res.status(409).json({ success: false, data: null, error: 'archive 側に同名ファイルが既に存在します' });
+    return;
+  }
+  fs.renameSync(src, dst);
+  res.json({ success: true, data: { path: `archive/${file}` }, error: null });
 });
 
 // 旧: design 専用エンドポイント（specs/design/ 限定、後方互換）

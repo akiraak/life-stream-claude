@@ -210,6 +210,34 @@ a { color: inherit; text-decoration: none; }
   font-weight: 600;
 }
 
+.nav-dir-archive {
+  margin-left: auto;
+  background: none;
+  border: none;
+  padding: 2px 6px;
+  font-size: 13px;
+  line-height: 1;
+  color: var(--text-sub);
+  cursor: pointer;
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s;
+}
+
+.nav-dir:hover .nav-dir-archive,
+.nav-dir-archive:focus-visible {
+  opacity: 1;
+}
+
+.nav-dir-archive:hover {
+  background: var(--panel);
+}
+
+.nav-dir-archive:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
 .nav-dir-children {
   display: block;
 }
@@ -228,6 +256,35 @@ a { color: inherit; text-decoration: none; }
   flex: 1;
   display: flex;
   flex-direction: column;
+}
+
+.doc-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.doc-action {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 6px 14px;
+  font-size: 13px;
+  font-family: inherit;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.doc-action:hover {
+  background: var(--hover);
+  border-color: var(--text-sub);
+}
+
+.doc-action:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
 }
 
 .empty-state {

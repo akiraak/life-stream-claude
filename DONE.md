@@ -128,3 +128,5 @@
 - 2026-04-21 dev-admin レイアウト変更 Step4: `style.css` にトップタブ・ツリーのインデント・トグルアイコンのスタイルを追加
 - 2026-04-21 dev-admin レイアウト変更 Step5: 動作確認（タブ切替でサイドバー差し替え / `specs/design/` の折りたたみ / タブ・折りたたみ状態の localStorage 復元 / 既存 `#plans/xxx.md` 等のハッシュ互換 / 旧 `#design/xxx.html` → `#specs/design/xxx.html` リダイレクト / サーバ側 API レスポンス・エラーハンドリング）
 - 2026-04-21 dev-admin 画面全体を上下2段レイアウトに変更（上段: `dev-admin` ブランド + Plans/Specs タブ + ページタイトル + パス、下段: サイドバーのファイルツリー + コンテンツ。トップバーをフル幅に昇格、サイドバーは固定配置から flex レイアウト内のスクロール領域に変更）
+- 2026-04-21 dev-admin を GitHub 風ライトテーマに再配色（サイドバーを角丸ピル化、アクティブタブをオレンジ下線に、インデントを margin ベースに変更）
+- 2026-04-21 plans の md ドキュメントに「アーカイブする」ボタンを追加（`docs/plans/<file>.md` → `docs/plans/archive/<file>.md` に移動する `POST /api/docs/plans/:file/archive` エンドポイントを追加、`docs/plans/archive/` ディレクトリを用意）
