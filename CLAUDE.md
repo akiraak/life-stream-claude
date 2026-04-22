@@ -13,11 +13,14 @@ Magic Link 認証で複数ユーザー対応。
 npm run dev          # 開発サーバ起動 (ts-node + nodemon)
 npm run build        # TypeScript ビルド
 npm start            # プロダクション起動
+npm test             # Vitest 実行 (tests/unit + tests/integration)
+npm run test:watch   # watch モード
 ```
 
 ### モバイル (mobile/)
 ```bash
 npx expo start       # 開発サーバ起動 (Expo Go で確認)
+npm test             # Jest 実行 (__tests__/ 配下)
 eas build -p ios --profile production    # iOS 本番ビルド
 eas build -p android --profile production # Android 本番ビルド
 eas submit -p ios    # App Store 提出
@@ -40,12 +43,26 @@ cd dev-admin && npm run dev
 ## Git ルール
 
 - `git push` はユーザーから明示的に指示があった場合のみ実行する（勝手に push しない）
+- clone 直後に `git config core.hooksPath .husky` を実行して pre-push フックを有効化する（`.husky/pre-push` が server/mobile のテストを流す）
+- `--no-verify` / `--no-gpg-sign` 等のフックスキップは、ユーザーからの明示指示があった時のみ使う
 
 ## コーディング規約
 
 ### 共通
 - コミットメッセージは英語で記述
 - 変数名・関数名は英語、コメントは日本語可
+
+### テスト
+- サーバ: Vitest + supertest (`server/tests/unit/`, `server/tests/integration/`)
+  - service 層の関数を追加・変更したら対応する `*-service.test.ts` を更新する
+  - ルートを追加・変更したら `integration/` に supertest ベースのテストを追加する
+  - 外部 API (Gemini / Resend / Google OAuth) は必ずモジュール境界でモックする
+  - テスト DB は `tests/setup.ts` が `/tmp/cb-test-<pid>.db` を強制するので本体 `shopping.db` は触らない
+- モバイル: Jest + jest-expo (`mobile/__tests__/`)
+  - `stores/` を変更したら `__tests__/stores/` の対応テストを更新する
+  - API クライアント層の変更は `__tests__/api/` でカバーする
+  - RN コンポーネント描画テストは未導入（no-login 移行後に検討）
+- 詳細は `docs/plans/testing.md` を参照
 
 ### TypeScript (サーバ)
 - strict モードを使用
