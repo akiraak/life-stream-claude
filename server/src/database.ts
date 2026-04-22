@@ -4,7 +4,7 @@ import path from 'path';
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, '../../shopping.db');
 const SCHEMA_VERSION = 2; // バージョン1→2: マルチユーザー対応
 
-let db: Database.Database;
+let db: Database.Database | undefined;
 
 export function getDatabase(): Database.Database {
   if (!db) {
@@ -13,6 +13,19 @@ export function getDatabase(): Database.Database {
     db.pragma('foreign_keys = ON');
   }
   return db;
+}
+
+// テスト用: DB ハンドルを閉じてモジュールキャッシュをリセットする。
+// 次回 getDatabase() 呼出で再度開き直される。
+export function closeDatabase(): void {
+  if (db) {
+    try {
+      db.close();
+    } catch {
+      // 既に閉じている等は無視
+    }
+    db = undefined;
+  }
 }
 
 export function initDatabase(): void {

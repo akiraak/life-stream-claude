@@ -89,17 +89,6 @@
 ## テストの導入
         docs/plans/testing.md
 
-### Phase 1: サーバ側テスト基盤
-- [ ] 1. `server/` に Vitest / supertest / `@vitest/coverage-v8` / `@types/supertest` を導入
-- [ ] 2. `server/vitest.config.ts` 作成（`environment: 'node'`、`setupFiles`、`pool: 'forks'`）
-- [ ] 3. `server/package.json` に `test` / `test:watch` / `test:coverage` スクリプト追加
-- [ ] 4. `tests/helpers/db.ts` 作成（`/tmp/cb-test-<pid>.db` 生成・`initDatabase()`・cleanup）
-- [ ] 5. `tests/helpers/auth.ts` 作成（`createTestUser` / `createAuthHeader`）
-- [ ] 6. `server/src/index.ts` から `createApp()` を切り出して `tests/helpers/app.ts` から利用可能化
-- [ ] 7. `tests/setup.ts` で `JWT_SECRET` / 外部 API キーの test 値を固定、`shopping.db` 保護ガード追加
-- [ ] 8. スモークテスト（`GET /api/health` 200）を追加し 1 本緑にする
-- [ ] (動作確認) `npm test` が通り、本体 `shopping.db` が変化しないことを確認
-
 ### Phase 2: サーバ service 層ユニットテスト
 - [ ] 9. `shopping-service.test.ts`（userId スコープ / `purchase_history` 記録 / `deleteCheckedItems` / `getSuggestions` 除外）
 - [ ] 10. `dish-service.test.ts`（CRUD / 食材リンク / リンク解除 / reorder / cascade 削除）
