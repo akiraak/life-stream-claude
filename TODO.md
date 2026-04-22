@@ -85,7 +85,48 @@
 - [ ] アイテム編集ダイアログから削除を削除
 - [ ] basket@chobi.me を使えるようにする
 - [ ] サービスの状況をメールで定期報告
-- [ ] テストの導入
+
+## テストの導入
+        docs/plans/testing.md
+
+### Phase 1: サーバ側テスト基盤
+- [ ] 1. `server/` に Vitest / supertest / `@vitest/coverage-v8` / `@types/supertest` を導入
+- [ ] 2. `server/vitest.config.ts` 作成（`environment: 'node'`、`setupFiles`、`pool: 'forks'`）
+- [ ] 3. `server/package.json` に `test` / `test:watch` / `test:coverage` スクリプト追加
+- [ ] 4. `tests/helpers/db.ts` 作成（`/tmp/cb-test-<pid>.db` 生成・`initDatabase()`・cleanup）
+- [ ] 5. `tests/helpers/auth.ts` 作成（`createTestUser` / `createAuthHeader`）
+- [ ] 6. `server/src/index.ts` から `createApp()` を切り出して `tests/helpers/app.ts` から利用可能化
+- [ ] 7. `tests/setup.ts` で `JWT_SECRET` / 外部 API キーの test 値を固定、`shopping.db` 保護ガード追加
+- [ ] 8. スモークテスト（`GET /api/health` 200）を追加し 1 本緑にする
+- [ ] (動作確認) `npm test` が通り、本体 `shopping.db` が変化しないことを確認
+
+### Phase 2: サーバ service 層ユニットテスト
+- [ ] 9. `shopping-service.test.ts`（userId スコープ / `purchase_history` 記録 / `deleteCheckedItems` / `getSuggestions` 除外）
+- [ ] 10. `dish-service.test.ts`（CRUD / 食材リンク / リンク解除 / reorder / cascade 削除）
+- [ ] 11. `saved-recipe-service.test.ts`（保存・一覧・削除 / like トグル / shared）
+- [ ] 12. `auth-service.test.ts`（マジックコード発行→検証→JWT / 期限切れクリーンアップ / Resend モック）
+- [ ] (動作確認) `npm test` で全 service テストが通る
+
+### Phase 3: サーバ route 層統合テスト
+- [ ] 13. `integration/auth.test.ts`（`/api/auth/login` → `/api/auth/verify-code`、メール送信モック）
+- [ ] 14. `integration/shopping.test.ts`（401 / CRUD / reorder / checked 一括削除）
+- [ ] 15. `integration/dishes.test.ts`（料理 CRUD / 食材リンク / reorder）
+- [ ] 16. `integration/saved-recipes.test.ts`（保存 / 一覧 / いいね / shared）
+- [ ] (動作確認) 全 route テストが通り、カバレッジで抜けを可視化
+
+### Phase 4: モバイル側テスト基盤
+- [ ] 17. `mobile/` に Jest / jest-expo / `@types/jest` / ts-jest を導入
+- [ ] 18. `mobile/jest.config.js`（`preset: 'jest-expo'`、`testMatch`、`transformIgnorePatterns`）
+- [ ] 19. `mobile/package.json` に `test` スクリプト追加、`jest.setup.ts` 作成
+- [ ] 20. `__tests__/stores/shopping-store.test.ts`（api モック / addItem / toggleCheck / reorder の state 検証）
+- [ ] 21. `__tests__/stores/auth-store.test.ts`（`expo-secure-store` モック / login / logout / token 永続化）
+- [ ] 22. `__tests__/api/client.test.ts`（axios interceptor が JWT を Authorization ヘッダに付与）
+- [ ] (動作確認) `cd mobile && npm test` が通る
+
+### Phase 5: CI 連携
+- [ ] 23. `.github/workflows/test.yml` 作成（push / PR トリガ、matrix で server/mobile 並列、Node 20、npm ci + npm test）
+- [ ] 24. 初回 PR で全テスト緑を確認
+- [ ] 25. README にテスト実行方法と CI バッジを追記（任意）
 
 ## 小修整
 - [ ] 料理レシピページの料理名をページの「買い物リスト」の表示の場所を差し替えて
