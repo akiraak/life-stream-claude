@@ -22,7 +22,20 @@ const todoState = {
   content: '',         // textarea 上の現在値
   savedContent: '',    // 直近に取得/保存した内容（isDirty 判定用）
   mtime: 0,            // 楽観ロック用 baseMtime
+  conflict: null,      // { mtime: number, barVisible: boolean } | null
 };
+
+// SSE 接続状態
+const sseState = {
+  source: null,
+  connected: false,
+};
+
+// 自分の保存による mtime を一時記録（SSE で戻ってきたとき外部変更として扱わないため）
+const selfWrittenMtimes = new Set();
+let saveInFlight = false;
+
+const TITLE_BASE = 'Cooking Basket: dev-admin';
 
 function isTodoDirty() {
   return todoState.content !== todoState.savedContent;
@@ -186,6 +199,7 @@ function renderTodoSidebar() {
   }
   sidebarNav.appendChild(frag);
   refreshActiveHighlight();
+  refreshSidebarConflictBadge();
 }
 
 function renderSidebar() {
@@ -336,6 +350,7 @@ async function renderTodoView(name) {
     todoState.content = data.content;
     todoState.savedContent = data.content;
     todoState.mtime = data.mtime;
+    todoState.conflict = null;
     // 前回の mode を維持（初回は preview）
     if (todoState.mode !== 'preview' && todoState.mode !== 'edit') {
       todoState.mode = 'preview';
@@ -351,6 +366,7 @@ async function renderTodoView(name) {
     } else {
       renderTodoEditBody();
     }
+    updateConflictIndicators();
   } catch (err) {
     showError(err.message);
   }
@@ -415,6 +431,7 @@ async function switchTodoMode(mode) {
     if (!confirm('未保存の変更があります。破棄してプレビューに切り替えますか？')) return;
     // 破棄してから切り替え
     todoState.content = todoState.savedContent;
+    todoState.conflict = null;
   }
   todoState.mode = mode;
   // レイアウト全体を描き直してサブタブと保存ボタンの表示を切り替える
@@ -425,6 +442,7 @@ async function switchTodoMode(mode) {
   } else {
     renderTodoEditBody();
   }
+  updateConflictIndicators();
 }
 
 async function renderTodoPreviewBody() {
@@ -474,7 +492,9 @@ function discardTodoChanges() {
   if (!isTodoDirty()) return;
   if (!confirm('未保存の変更を破棄します。よろしいですか？')) return;
   todoState.content = todoState.savedContent;
+  todoState.conflict = null;
   renderTodoEditBody();
+  updateConflictIndicators();
 }
 
 async function saveTodoFile(options = {}) {
@@ -484,6 +504,7 @@ async function saveTodoFile(options = {}) {
     showToast('変更はありません');
     return;
   }
+  saveInFlight = true;
   try {
     const res = await fetch(`/api/files/${encodeURIComponent(todoState.name)}`, {
       method: 'PUT',
@@ -502,9 +523,17 @@ async function saveTodoFile(options = {}) {
     if (!json.success) throw new Error(json.error || '保存に失敗しました');
     todoState.mtime = json.data.mtime;
     todoState.savedContent = todoState.content;
+    todoState.conflict = null;
+    // 自分の書き込みによる SSE 通知を外部変更として扱わないための記録
+    const savedMtime = json.data.mtime;
+    selfWrittenMtimes.add(savedMtime);
+    setTimeout(() => selfWrittenMtimes.delete(savedMtime), 5000);
+    updateConflictIndicators();
     showToast('保存しました');
   } catch (err) {
     alert(`保存に失敗しました: ${err.message}`);
+  } finally {
+    saveInFlight = false;
   }
 }
 
@@ -518,8 +547,10 @@ function handleSaveConflict(currentMtime) {
           todoState.content = data.content;
           todoState.savedContent = data.content;
           todoState.mtime = data.mtime;
+          todoState.conflict = null;
           if (todoState.mode === 'edit') renderTodoEditBody();
           else await renderTodoPreviewBody();
+          updateConflictIndicators();
           showToast('最新内容を読み込みました');
         } catch (err) {
           alert(`再取得に失敗しました: ${err.message}`);
@@ -732,6 +763,7 @@ function handleRoute() {
       }
       // 破棄する（savedContent に戻すことで以降の isDirty を false にする）
       todoState.content = todoState.savedContent;
+      todoState.conflict = null;
     }
     if (needSidebarRerender) renderSidebar();
     else refreshActiveHighlight();
@@ -765,6 +797,8 @@ function setupTabs() {
       if (activeCategory === 'todo' && isTodoDirty()) {
         if (!confirm('未保存の変更があります。破棄して他のタブに移動しますか？')) return;
         todoState.content = todoState.savedContent;
+        todoState.conflict = null;
+        updateConflictIndicators();
       }
       activeCategory = cat;
       saveActiveCategory();
@@ -791,11 +825,300 @@ function setupBeforeUnload() {
   });
 }
 
+// === SSE: 外部変更のリアルタイム反映 ===
+
+function connectEventSource() {
+  if (typeof EventSource === 'undefined') return;
+  try {
+    const es = new EventSource('/api/files/watch');
+    sseState.source = es;
+    es.addEventListener('open', () => {
+      sseState.connected = true;
+      updateSseIndicator();
+    });
+    es.addEventListener('error', () => {
+      // EventSource は自動で再接続を試みる
+      sseState.connected = false;
+      updateSseIndicator();
+    });
+    es.addEventListener('change', (e) => {
+      try {
+        const payload = JSON.parse(e.data);
+        if (typeof payload.name !== 'string' || typeof payload.mtime !== 'number') return;
+        handleExternalChange(payload.name, payload.mtime);
+      } catch {
+        // ignore malformed
+      }
+    });
+  } catch {
+    // ignore
+  }
+}
+
+function updateSseIndicator() {
+  const el = document.getElementById('sse-indicator');
+  if (!el) return;
+  el.hidden = sseState.connected;
+}
+
+async function handleExternalChange(name, mtime) {
+  // 自分の保存中の書き込みは無視
+  if (saveInFlight) return;
+  // 自分が書いた mtime は無視（SSE が PUT 応答より先に届いたケースも含む）
+  if (selfWrittenMtimes.has(mtime)) return;
+  // 現在開いていないファイルは何もしない（次に開くときに最新を取りに行く）
+  if (activeCategory !== 'todo' || todoState.name !== name) return;
+  // 既知の mtime と一致するなら無視（自分の保存直後に想定）
+  if (todoState.mtime === mtime) return;
+  // 同じ競合 mtime を再通知された場合は UI 再構築を避ける
+  if (todoState.conflict && todoState.conflict.mtime === mtime) return;
+
+  if (todoState.mode === 'preview') {
+    await refetchPreviewForExternalChange();
+    return;
+  }
+
+  if (!isTodoDirty()) {
+    // clean 編集: 内容と mtime を差し替え + 情報バー
+    await reloadEditFromExternal({ notify: true });
+    return;
+  }
+
+  // dirty 編集: 競合状態に遷移
+  todoState.conflict = { mtime, barVisible: true };
+  updateConflictIndicators();
+}
+
+async function refetchPreviewForExternalChange() {
+  try {
+    const data = await fetchJson(`/api/files/${encodeURIComponent(todoState.name)}/render`);
+    const body = document.getElementById('todo-body');
+    if (!body) return;
+    if (typeof data.mtime === 'number') todoState.mtime = data.mtime;
+    body.innerHTML = '';
+    const div = document.createElement('div');
+    div.className = 'md-content';
+    div.innerHTML = data.html;
+    body.appendChild(div);
+    flashExternalUpdateBadge();
+  } catch {
+    // ignore
+  }
+}
+
+async function reloadEditFromExternal({ notify }) {
+  try {
+    const data = await fetchJson(`/api/files/${encodeURIComponent(todoState.name)}`);
+    todoState.content = data.content;
+    todoState.savedContent = data.content;
+    todoState.mtime = data.mtime;
+    todoState.conflict = null;
+    if (todoState.mode === 'edit') renderTodoEditBody();
+    else await renderTodoPreviewBody();
+    updateConflictIndicators();
+    if (notify) showCleanUpdateInfoBar();
+  } catch {
+    // ignore
+  }
+}
+
+function flashExternalUpdateBadge() {
+  const view = document.querySelector('.todo-view');
+  if (!view) return;
+  // 既存バッジがあれば取り替え
+  const existing = view.querySelector('.todo-update-badge');
+  if (existing) {
+    clearTimeout(existing._timer);
+    existing.remove();
+  }
+  const badge = document.createElement('div');
+  badge.className = 'todo-update-badge';
+  badge.textContent = '外部で更新されました';
+  view.appendChild(badge);
+  requestAnimationFrame(() => badge.classList.add('visible'));
+  badge._timer = setTimeout(() => {
+    badge.classList.remove('visible');
+    setTimeout(() => badge.remove(), 300);
+  }, 1500);
+}
+
+function showCleanUpdateInfoBar() {
+  const view = document.querySelector('.todo-view');
+  if (!view) return;
+  const existing = view.querySelector('.todo-info-bar');
+  if (existing) {
+    clearTimeout(existing._timer);
+    existing.remove();
+  }
+  const bar = document.createElement('div');
+  bar.className = 'todo-info-bar';
+  bar.textContent = '外部で更新されたため、最新内容に差し替えました';
+  const toolbar = view.querySelector('.todo-toolbar');
+  if (toolbar && toolbar.nextSibling) {
+    view.insertBefore(bar, toolbar.nextSibling);
+  } else if (toolbar) {
+    view.appendChild(bar);
+  } else {
+    view.insertBefore(bar, view.firstChild);
+  }
+  bar._timer = setTimeout(() => {
+    bar.classList.add('fade-out');
+    setTimeout(() => bar.remove(), 300);
+  }, 4000);
+}
+
+function updateConflictIndicators() {
+  const active = !!todoState.conflict;
+  // タブタイトルの prepend
+  document.title = active ? `(!) ${TITLE_BASE}` : TITLE_BASE;
+  // 警告バー
+  renderConflictBar();
+  // サイドバー赤●バッジ
+  refreshSidebarConflictBadge();
+}
+
+function renderConflictBar() {
+  const view = document.querySelector('.todo-view');
+  if (!view) return;
+  const existing = view.querySelector('.todo-conflict-bar');
+  if (!todoState.conflict || !todoState.conflict.barVisible) {
+    if (existing) existing.remove();
+    return;
+  }
+  if (existing) existing.remove();
+
+  const bar = document.createElement('div');
+  bar.className = 'todo-conflict-bar';
+
+  const msg = document.createElement('div');
+  msg.className = 'todo-conflict-message';
+  const dt = new Date(todoState.conflict.mtime);
+  const y = dt.getFullYear();
+  const m = String(dt.getMonth() + 1).padStart(2, '0');
+  const d = String(dt.getDate()).padStart(2, '0');
+  const hh = String(dt.getHours()).padStart(2, '0');
+  const mm = String(dt.getMinutes()).padStart(2, '0');
+  const ss = String(dt.getSeconds()).padStart(2, '0');
+  const fmt = `${y}-${m}-${d} ${hh}:${mm}:${ss}`;
+  msg.textContent = `⚠ 競合: 外部で ${todoState.name} が更新されています（${fmt}）。保存すると外部の変更を上書きします`;
+  bar.appendChild(msg);
+
+  const actions = document.createElement('div');
+  actions.className = 'todo-conflict-actions';
+  const makeBtn = (label, handler, cls) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'todo-conflict-btn' + (cls ? ' ' + cls : '');
+    b.textContent = label;
+    b.addEventListener('click', handler);
+    return b;
+  };
+  actions.appendChild(makeBtn('差分を見る', () => showDiffModal()));
+  actions.appendChild(makeBtn('外部版を読み込む（手元の変更を破棄）', async () => {
+    if (!confirm('手元の未保存変更を破棄して外部版を読み込みます。よろしいですか？')) return;
+    await reloadEditFromExternal({ notify: false });
+    showToast('外部版を読み込みました');
+  }));
+  actions.appendChild(makeBtn('このまま編集を続ける', () => {
+    if (todoState.conflict) todoState.conflict.barVisible = false;
+    updateConflictIndicators();
+  }));
+  bar.appendChild(actions);
+
+  // toolbar の直下に挿入
+  const toolbar = view.querySelector('.todo-toolbar');
+  if (toolbar && toolbar.nextSibling) {
+    view.insertBefore(bar, toolbar.nextSibling);
+  } else if (toolbar) {
+    view.appendChild(bar);
+  } else {
+    view.insertBefore(bar, view.firstChild);
+  }
+}
+
+async function showDiffModal() {
+  try {
+    const data = await fetchJson(`/api/files/${encodeURIComponent(todoState.name)}`);
+    openDiffModal(todoState.content, data.content);
+  } catch (err) {
+    alert(`外部内容の取得に失敗しました: ${err.message}`);
+  }
+}
+
+function openDiffModal(local, remote) {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+
+  const modal = document.createElement('div');
+  modal.className = 'modal modal-wide';
+
+  const title = document.createElement('div');
+  title.className = 'modal-title';
+  title.textContent = `差分: ${todoState.name}（手元 vs 外部）`;
+  modal.appendChild(title);
+
+  const grid = document.createElement('div');
+  grid.className = 'diff-grid';
+
+  const makeCol = (heading, text, cls) => {
+    const col = document.createElement('div');
+    col.className = 'diff-col' + (cls ? ' ' + cls : '');
+    const h = document.createElement('div');
+    h.className = 'diff-col-header';
+    h.textContent = heading;
+    col.appendChild(h);
+    const pre = document.createElement('pre');
+    pre.className = 'diff-pre';
+    pre.textContent = text;
+    col.appendChild(pre);
+    return col;
+  };
+  grid.appendChild(makeCol('手元（未保存）', local, 'diff-col-local'));
+  grid.appendChild(makeCol('外部（最新）', remote, 'diff-col-remote'));
+  modal.appendChild(grid);
+
+  const actions = document.createElement('div');
+  actions.className = 'modal-actions';
+  const closeBtn = document.createElement('button');
+  closeBtn.type = 'button';
+  closeBtn.className = 'modal-btn';
+  closeBtn.textContent = '閉じる';
+  closeBtn.addEventListener('click', () => overlay.remove());
+  actions.appendChild(closeBtn);
+  modal.appendChild(actions);
+
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+}
+
+function refreshSidebarConflictBadge() {
+  if (!sidebarNav) return;
+  const conflictName = (activeCategory === 'todo' && todoState.conflict) ? todoState.name : null;
+  sidebarNav.querySelectorAll('.nav-item').forEach(el => {
+    // TODO カテゴリ以外のアイテムは触らない
+    if (el.dataset.category !== 'todo') return;
+    let badge = el.querySelector('.nav-item-badge');
+    if (el.dataset.path === conflictName) {
+      if (!badge) {
+        badge = document.createElement('span');
+        badge.className = 'nav-item-badge';
+        badge.title = '外部で更新されました（競合中）';
+        badge.textContent = '●';
+        el.appendChild(badge);
+      }
+    } else if (badge) {
+      badge.remove();
+    }
+  });
+}
+
 async function init() {
   loadPersisted();
   setupTabs();
   setupBeforeUnload();
   renderTabs();
+  updateSseIndicator();
+  connectEventSource();
 
   try {
     docsTree = await fetchJson('/api/docs');
