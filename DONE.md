@@ -122,3 +122,4 @@
 - 2026-04-21 dev-admin Step5: 動作確認（/api/docs で plans / specs / design 一覧、/api/docs/:category/:file の markdown→HTML 変換、/api/design/:file の HTML 配信、静的 Web UI、path traversal / 拡張子チェックが正しく動作）
 - 2026-04-21 dev-admin Step6: 既存 admin からドキュメント関連機能を削除（server/src/routes/admin.ts の /docs-files エンドポイント・関連コード・未使用 import、web/admin/app.js の renderDocs / renderDocFile / DOC_CATEGORY_LABELS / doc-file ルーター、web/admin/index.html のサイドバー「企画ドキュメント」項目）
 - 2026-04-21 dev-admin Step7: CLAUDE.md に dev-admin の起動方法を追記（./dev-admin.sh、ポート 3010、DEV_ADMIN_PORT での上書き）
+- 2026-04-21 dev-admin レイアウト変更 Step1: サーバ `/api/docs` をツリー構造レスポンス（`{files, dirs}`）に変更、`listTree` 再帰実装、md ファイル取得をカテゴリ配下のサブディレクトリまで再帰探索に対応

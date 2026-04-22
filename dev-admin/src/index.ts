@@ -10,8 +10,23 @@ const HOST = '127.0.0.1';
 const DOCS_DIR = path.join(__dirname, '../../docs');
 const MD_CATEGORIES = ['plans', 'specs'] as const;
 type MdCategory = typeof MD_CATEGORIES[number];
-const ALL_CATEGORIES = ['plans', 'specs', 'design'] as const;
-type Category = typeof ALL_CATEGORIES[number];
+
+interface TreeFile {
+  name: string;
+  path: string;
+  title: string;
+}
+
+interface TreeDir {
+  name: string;
+  files: TreeFile[];
+  dirs: TreeDir[];
+}
+
+interface Tree {
+  files: TreeFile[];
+  dirs: TreeDir[];
+}
 
 function extractMdTitle(raw: string, fallback: string): string {
   const fm = raw.match(/^---[\s\S]*?title:\s*(.+?)\s*\n[\s\S]*?---/);
@@ -30,42 +45,74 @@ function extractHtmlTitle(raw: string, fallback: string): string {
   return fallback;
 }
 
-function listMdFiles(category: MdCategory): { file: string; title: string }[] {
-  const dir = path.join(DOCS_DIR, category);
-  if (!fs.existsSync(dir)) return [];
-  return fs.readdirSync(dir)
-    .filter(f => f.endsWith('.md'))
-    .sort()
-    .map(file => {
-      const raw = fs.readFileSync(path.join(dir, file), 'utf-8');
-      return { file, title: extractMdTitle(raw, file.replace(/\.md$/, '')) };
-    });
+function extractTitle(absPath: string, fallback: string): string {
+  const raw = fs.readFileSync(absPath, 'utf-8');
+  if (absPath.endsWith('.md')) return extractMdTitle(raw, fallback);
+  if (absPath.endsWith('.html')) return extractHtmlTitle(raw, fallback);
+  return fallback;
 }
 
-function listDesignFiles(): { file: string; title: string }[] {
-  const dir = path.join(DOCS_DIR, 'specs', 'design');
-  if (!fs.existsSync(dir)) return [];
-  return fs.readdirSync(dir)
-    .filter(f => f.endsWith('.html'))
-    .sort()
-    .map(file => {
-      const raw = fs.readFileSync(path.join(dir, file), 'utf-8');
-      return { file, title: extractHtmlTitle(raw, file.replace(/\.html$/, '')) };
-    });
+// カテゴリ配下を再帰的にツリー化する
+function listTree(absDir: string, exts: string[], relPrefix: string = ''): Tree {
+  if (!fs.existsSync(absDir)) return { files: [], dirs: [] };
+  const entries = fs.readdirSync(absDir, { withFileTypes: true })
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  const files: TreeFile[] = [];
+  const dirs: TreeDir[] = [];
+
+  for (const entry of entries) {
+    if (entry.name.startsWith('.')) continue;
+    const abs = path.join(absDir, entry.name);
+    const rel = relPrefix ? `${relPrefix}/${entry.name}` : entry.name;
+
+    if (entry.isDirectory()) {
+      const sub = listTree(abs, exts, rel);
+      if (sub.files.length > 0 || sub.dirs.length > 0) {
+        dirs.push({ name: entry.name, files: sub.files, dirs: sub.dirs });
+      }
+    } else if (entry.isFile()) {
+      const ext = path.extname(entry.name);
+      if (!exts.includes(ext)) continue;
+      const fallback = entry.name.replace(/\.[^.]+$/, '');
+      files.push({ name: entry.name, path: rel, title: extractTitle(abs, fallback) });
+    }
+  }
+
+  return { files, dirs };
 }
 
 function isSafeName(file: string, ext: string): boolean {
   return !file.includes('..') && !file.includes('/') && !file.includes('\\') && file.endsWith(ext);
 }
 
-// ドキュメント一覧
+// カテゴリルートから md ファイルを再帰的に探す（サブディレクトリ対応）
+function findMdFile(category: MdCategory, file: string): string | null {
+  const root = path.join(DOCS_DIR, category);
+  if (!fs.existsSync(root)) return null;
+  const stack: string[] = [root];
+  while (stack.length > 0) {
+    const dir = stack.pop() as string;
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (entry.name.startsWith('.')) continue;
+      const abs = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        stack.push(abs);
+      } else if (entry.isFile() && entry.name === file) {
+        return abs;
+      }
+    }
+  }
+  return null;
+}
+
+// ドキュメント一覧（ツリー構造）
 app.get('/api/docs', (_req: Request, res: Response) => {
   res.json({
     success: true,
     data: {
-      plans: listMdFiles('plans'),
-      specs: listMdFiles('specs'),
-      design: listDesignFiles(),
+      plans: listTree(path.join(DOCS_DIR, 'plans'), ['.md']),
+      specs: listTree(path.join(DOCS_DIR, 'specs'), ['.md', '.html']),
     },
     error: null,
   });
@@ -85,8 +132,8 @@ app.get('/api/docs/:category/:file', (req: Request, res: Response) => {
     return;
   }
 
-  const filePath = path.join(DOCS_DIR, category, file);
-  if (!fs.existsSync(filePath)) {
+  const filePath = findMdFile(category as MdCategory, file);
+  if (!filePath) {
     res.status(404).json({ success: false, data: null, error: 'ファイルが見つかりません' });
     return;
   }
