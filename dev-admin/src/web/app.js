@@ -201,9 +201,10 @@ function renderDesign(category, filePath) {
   toolbar.className = 'design-frame-toolbar';
   const left = document.createElement('span');
   left.textContent = filePath;
+  const designUrl = `/api/design/${encodeURIComponent(category)}/${encodeURIComponent(filename)}`;
   const right = document.createElement('a');
   right.className = 'design-frame-open';
-  right.href = `/api/design/${encodeURIComponent(filename)}`;
+  right.href = designUrl;
   right.target = '_blank';
   right.rel = 'noopener';
   right.textContent = '別タブで開く ↗';
@@ -212,7 +213,7 @@ function renderDesign(category, filePath) {
 
   const iframe = document.createElement('iframe');
   iframe.className = 'design-frame';
-  iframe.src = `/api/design/${encodeURIComponent(filename)}`;
+  iframe.src = designUrl;
   iframe.title = filename;
 
   wrap.appendChild(toolbar);

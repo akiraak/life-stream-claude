@@ -86,9 +86,8 @@ function isSafeName(file: string, ext: string): boolean {
   return !file.includes('..') && !file.includes('/') && !file.includes('\\') && file.endsWith(ext);
 }
 
-// カテゴリルートから md ファイルを再帰的に探す（サブディレクトリ対応）
-function findMdFile(category: MdCategory, file: string): string | null {
-  const root = path.join(DOCS_DIR, category);
+// カテゴリルートからファイルを再帰的に探す（サブディレクトリ対応）
+function findFileUnder(root: string, file: string): string | null {
   if (!fs.existsSync(root)) return null;
   const stack: string[] = [root];
   while (stack.length > 0) {
@@ -106,12 +105,16 @@ function findMdFile(category: MdCategory, file: string): string | null {
   return null;
 }
 
+function findMdFile(category: MdCategory, file: string): string | null {
+  return findFileUnder(path.join(DOCS_DIR, category), file);
+}
+
 // ドキュメント一覧（ツリー構造）
 app.get('/api/docs', (_req: Request, res: Response) => {
   res.json({
     success: true,
     data: {
-      plans: listTree(path.join(DOCS_DIR, 'plans'), ['.md']),
+      plans: listTree(path.join(DOCS_DIR, 'plans'), ['.md', '.html']),
       specs: listTree(path.join(DOCS_DIR, 'specs'), ['.md', '.html']),
     },
     error: null,
@@ -145,7 +148,29 @@ app.get('/api/docs/:category/:file', (req: Request, res: Response) => {
   res.json({ success: true, data: { title, html }, error: null });
 });
 
-// design HTML をそのまま返す（iframe 用）
+// design HTML をそのまま返す（iframe 用・カテゴリ指定）
+app.get('/api/design/:category/:file', (req: Request, res: Response) => {
+  const category = req.params.category as string;
+  const file = req.params.file as string;
+
+  if (!MD_CATEGORIES.includes(category as MdCategory)) {
+    res.status(400).send('不正なカテゴリです');
+    return;
+  }
+  if (!isSafeName(file, '.html')) {
+    res.status(400).send('不正なファイル名です');
+    return;
+  }
+
+  const filePath = findFileUnder(path.join(DOCS_DIR, category), file);
+  if (!filePath) {
+    res.status(404).send('ファイルが見つかりません');
+    return;
+  }
+  res.type('html').sendFile(filePath);
+});
+
+// 旧: design 専用エンドポイント（specs/design/ 限定、後方互換）
 app.get('/api/design/:file', (req: Request, res: Response) => {
   const file = req.params.file as string;
   if (!isSafeName(file, '.html')) {
