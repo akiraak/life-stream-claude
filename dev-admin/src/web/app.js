@@ -1,17 +1,38 @@
 'use strict';
 
-const CATEGORY_LABELS = {
-  plans: 'Plans',
-  specs: 'Specs',
-  design: 'Design',
-};
+const CATEGORIES = ['plans', 'specs'];
+const STORAGE_CATEGORY = 'dev-admin.activeCategory';
+const STORAGE_EXPANDED = 'dev-admin.expanded';
 
 const sidebarNav = document.getElementById('sidebar-nav');
 const contentArea = document.getElementById('content-area');
 const pageTitle = document.getElementById('page-title');
 const topbarSub = document.getElementById('topbar-sub');
+const topbarTabs = document.getElementById('topbar-tabs');
 
-let docsIndex = { plans: [], specs: [], design: [] };
+let docsTree = { plans: { files: [], dirs: [] }, specs: { files: [], dirs: [] } };
+let activeCategory = 'plans';
+let expanded = {};
+
+function loadPersisted() {
+  const cat = localStorage.getItem(STORAGE_CATEGORY);
+  if (cat && CATEGORIES.includes(cat)) activeCategory = cat;
+  try {
+    const raw = localStorage.getItem(STORAGE_EXPANDED);
+    const parsed = raw ? JSON.parse(raw) : null;
+    if (parsed && typeof parsed === 'object') expanded = parsed;
+  } catch {
+    expanded = {};
+  }
+}
+
+function saveActiveCategory() {
+  localStorage.setItem(STORAGE_CATEGORY, activeCategory);
+}
+
+function saveExpanded() {
+  localStorage.setItem(STORAGE_EXPANDED, JSON.stringify(expanded));
+}
 
 async function fetchJson(url) {
   const res = await fetch(url);
@@ -20,58 +41,143 @@ async function fetchJson(url) {
   return json.data;
 }
 
-function renderSidebar() {
-  const frag = document.createDocumentFragment();
-  for (const category of ['plans', 'specs', 'design']) {
-    const items = docsIndex[category] || [];
-    if (items.length === 0) continue;
-
-    const label = document.createElement('div');
-    label.className = 'nav-group-label';
-    label.textContent = `${CATEGORY_LABELS[category]} (${items.length})`;
-    frag.appendChild(label);
-
-    for (const item of items) {
-      const a = document.createElement('a');
-      a.className = 'nav-item';
-      a.href = `#${category}/${encodeURIComponent(item.file)}`;
-      a.dataset.category = category;
-      a.dataset.file = item.file;
-
-      const title = document.createElement('div');
-      title.textContent = item.title;
-      a.appendChild(title);
-
-      const file = document.createElement('div');
-      file.className = 'nav-item-file';
-      file.textContent = item.file;
-      a.appendChild(file);
-
-      frag.appendChild(a);
-    }
-  }
-
-  sidebarNav.innerHTML = '';
-  sidebarNav.appendChild(frag);
+function encodePath(p) {
+  return p.split('/').map(encodeURIComponent).join('/');
 }
 
-function updateActive(category, file) {
-  const items = sidebarNav.querySelectorAll('.nav-item');
-  items.forEach(el => {
-    if (el.dataset.category === category && el.dataset.file === file) {
-      el.classList.add('active');
-    } else {
-      el.classList.remove('active');
-    }
+function decodePath(p) {
+  return p.split('/').map(decodeURIComponent).join('/');
+}
+
+function renderTabs() {
+  topbarTabs.querySelectorAll('.topbar-tab').forEach(tab => {
+    const isActive = tab.dataset.category === activeCategory;
+    tab.classList.toggle('active', isActive);
+    tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
   });
 }
 
-async function renderMarkdown(category, file) {
+function renderFileItem(category, file, depth) {
+  const a = document.createElement('a');
+  a.className = 'nav-item';
+  a.href = `#${category}/${encodePath(file.path)}`;
+  a.dataset.category = category;
+  a.dataset.path = file.path;
+  a.style.paddingLeft = `${20 + depth * 16}px`;
+
+  const title = document.createElement('div');
+  title.textContent = file.title;
+  a.appendChild(title);
+
+  const fileName = document.createElement('div');
+  fileName.className = 'nav-item-file';
+  fileName.textContent = file.name;
+  a.appendChild(fileName);
+
+  return a;
+}
+
+function renderDir(category, dir, parentPath, depth) {
+  const dirPath = parentPath ? `${parentPath}/${dir.name}` : dir.name;
+  const expandKey = `${category}/${dirPath}`;
+  const isExpanded = !!expanded[expandKey];
+
+  const block = document.createElement('div');
+  block.className = 'nav-dir-block';
+
+  const header = document.createElement('div');
+  header.className = 'nav-dir' + (isExpanded ? ' expanded' : '');
+  header.style.paddingLeft = `${20 + depth * 16}px`;
+  header.dataset.expandKey = expandKey;
+
+  const toggle = document.createElement('span');
+  toggle.className = 'nav-dir-toggle';
+  toggle.textContent = isExpanded ? '▼' : '▶';
+  header.appendChild(toggle);
+
+  const name = document.createElement('span');
+  name.className = 'nav-dir-name';
+  name.textContent = dir.name;
+  header.appendChild(name);
+
+  header.addEventListener('click', () => {
+    expanded[expandKey] = !expanded[expandKey];
+    saveExpanded();
+    renderSidebar();
+  });
+
+  block.appendChild(header);
+
+  if (isExpanded) {
+    const children = document.createElement('div');
+    children.className = 'nav-dir-children';
+    for (const sub of dir.dirs) {
+      children.appendChild(renderDir(category, sub, dirPath, depth + 1));
+    }
+    for (const f of dir.files) {
+      children.appendChild(renderFileItem(category, f, depth + 1));
+    }
+    block.appendChild(children);
+  }
+
+  return block;
+}
+
+function renderSidebar() {
+  const tree = docsTree[activeCategory] || { files: [], dirs: [] };
+  sidebarNav.innerHTML = '';
+
+  if (tree.files.length === 0 && tree.dirs.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'loading-text';
+    empty.textContent = 'ドキュメントがありません';
+    sidebarNav.appendChild(empty);
+    return;
+  }
+
+  const frag = document.createDocumentFragment();
+  for (const dir of tree.dirs) {
+    frag.appendChild(renderDir(activeCategory, dir, '', 0));
+  }
+  for (const file of tree.files) {
+    frag.appendChild(renderFileItem(activeCategory, file, 0));
+  }
+  sidebarNav.appendChild(frag);
+
+  refreshActiveHighlight();
+}
+
+function refreshActiveHighlight() {
+  const parsed = parseHash();
+  sidebarNav.querySelectorAll('.nav-item').forEach(el => {
+    const match = parsed
+      && el.dataset.category === parsed.category
+      && el.dataset.path === parsed.filePath;
+    el.classList.toggle('active', !!match);
+  });
+}
+
+function findFileMeta(category, filePath) {
+  function walk(node) {
+    for (const f of node.files) if (f.path === filePath) return f;
+    for (const d of node.dirs) {
+      const found = walk(d);
+      if (found) return found;
+    }
+    return null;
+  }
+  const tree = docsTree[category];
+  if (!tree) return null;
+  return walk(tree);
+}
+
+async function renderMarkdown(category, filePath) {
   contentArea.innerHTML = '<div class="loading-text">読み込み中...</div>';
+  const filename = filePath.split('/').pop();
   try {
-    const data = await fetchJson(`/api/docs/${category}/${encodeURIComponent(file)}`);
+    const data = await fetchJson(`/api/docs/${category}/${encodeURIComponent(filename)}`);
     pageTitle.textContent = data.title;
-    topbarSub.textContent = `${category}/${file}`;
+    topbarSub.textContent = `${category}/${filePath}`;
     const div = document.createElement('div');
     div.className = 'md-content';
     div.innerHTML = data.html;
@@ -82,10 +188,11 @@ async function renderMarkdown(category, file) {
   }
 }
 
-function renderDesign(file) {
-  const meta = (docsIndex.design || []).find(d => d.file === file);
-  pageTitle.textContent = meta ? meta.title : file;
-  topbarSub.textContent = `design/${file}`;
+function renderDesign(category, filePath) {
+  const filename = filePath.split('/').pop();
+  const meta = findFileMeta(category, filePath);
+  pageTitle.textContent = meta ? meta.title : filename;
+  topbarSub.textContent = `${category}/${filePath}`;
 
   const wrap = document.createElement('div');
   wrap.className = 'design-frame-wrap';
@@ -93,10 +200,10 @@ function renderDesign(file) {
   const toolbar = document.createElement('div');
   toolbar.className = 'design-frame-toolbar';
   const left = document.createElement('span');
-  left.textContent = file;
+  left.textContent = filePath;
   const right = document.createElement('a');
   right.className = 'design-frame-open';
-  right.href = `/api/design/${encodeURIComponent(file)}`;
+  right.href = `/api/design/${encodeURIComponent(filename)}`;
   right.target = '_blank';
   right.rel = 'noopener';
   right.textContent = '別タブで開く ↗';
@@ -105,8 +212,8 @@ function renderDesign(file) {
 
   const iframe = document.createElement('iframe');
   iframe.className = 'design-frame';
-  iframe.src = `/api/design/${encodeURIComponent(file)}`;
-  iframe.title = file;
+  iframe.src = `/api/design/${encodeURIComponent(filename)}`;
+  iframe.title = filename;
 
   wrap.appendChild(toolbar);
   wrap.appendChild(iframe);
@@ -129,38 +236,105 @@ function showEmpty() {
   contentArea.innerHTML = '<div class="empty-state">サイドバーからドキュメントを選択してください。</div>';
 }
 
-function handleRoute() {
+function parseHash() {
   const hash = location.hash.replace(/^#/, '');
-  if (!hash) {
-    updateActive('', '');
-    showEmpty();
-    return;
-  }
+  if (!hash) return null;
   const slash = hash.indexOf('/');
-  if (slash < 0) {
+  if (slash < 0) return null;
+  const category = hash.slice(0, slash);
+  const filePath = decodePath(hash.slice(slash + 1));
+  return { category, filePath };
+}
+
+function expandAncestors(category, filePath) {
+  const parts = filePath.split('/');
+  if (parts.length <= 1) return false;
+  let changed = false;
+  let prefix = '';
+  for (let i = 0; i < parts.length - 1; i++) {
+    prefix = prefix ? `${prefix}/${parts[i]}` : parts[i];
+    const key = `${category}/${prefix}`;
+    if (!expanded[key]) {
+      expanded[key] = true;
+      changed = true;
+    }
+  }
+  if (changed) saveExpanded();
+  return changed;
+}
+
+function handleRoute() {
+  const rawHash = location.hash.replace(/^#/, '');
+
+  // 旧 #design/xxx.html → #specs/design/xxx.html
+  if (rawHash.startsWith('design/')) {
+    location.replace(`#specs/${rawHash}`);
+    return;
+  }
+
+  const parsed = parseHash();
+  if (!parsed) {
+    refreshActiveHighlight();
     showEmpty();
     return;
   }
-  const category = hash.slice(0, slash);
-  const file = decodeURIComponent(hash.slice(slash + 1));
 
-  if (!['plans', 'specs', 'design'].includes(category)) {
+  const { category, filePath } = parsed;
+  if (!CATEGORIES.includes(category)) {
     showError('不正なカテゴリです');
     return;
   }
 
-  updateActive(category, file);
+  let needSidebarRerender = false;
+  if (activeCategory !== category) {
+    activeCategory = category;
+    saveActiveCategory();
+    renderTabs();
+    needSidebarRerender = true;
+  }
+  if (expandAncestors(category, filePath)) {
+    needSidebarRerender = true;
+  }
+  if (needSidebarRerender) renderSidebar();
+  else refreshActiveHighlight();
 
-  if (category === 'design') {
-    renderDesign(file);
+  const lastDot = filePath.lastIndexOf('.');
+  const ext = lastDot >= 0 ? filePath.slice(lastDot).toLowerCase() : '';
+  if (ext === '.html') {
+    renderDesign(category, filePath);
+  } else if (ext === '.md') {
+    renderMarkdown(category, filePath);
   } else {
-    renderMarkdown(category, file);
+    showError('対応していないファイル形式です');
   }
 }
 
+function setupTabs() {
+  topbarTabs.querySelectorAll('.topbar-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      const cat = tab.dataset.category;
+      if (!CATEGORIES.includes(cat) || activeCategory === cat) return;
+      activeCategory = cat;
+      saveActiveCategory();
+      renderTabs();
+      renderSidebar();
+
+      if (location.hash) {
+        history.pushState(null, '', location.pathname + location.search);
+      }
+      refreshActiveHighlight();
+      showEmpty();
+    });
+  });
+}
+
 async function init() {
+  loadPersisted();
+  setupTabs();
+  renderTabs();
+
   try {
-    docsIndex = await fetchJson('/api/docs');
+    docsTree = await fetchJson('/api/docs');
     renderSidebar();
     handleRoute();
   } catch (err) {
