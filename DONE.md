@@ -123,3 +123,7 @@
 - 2026-04-21 dev-admin Step6: 既存 admin からドキュメント関連機能を削除（server/src/routes/admin.ts の /docs-files エンドポイント・関連コード・未使用 import、web/admin/app.js の renderDocs / renderDocFile / DOC_CATEGORY_LABELS / doc-file ルーター、web/admin/index.html のサイドバー「企画ドキュメント」項目）
 - 2026-04-21 dev-admin Step7: CLAUDE.md に dev-admin の起動方法を追記（./dev-admin.sh、ポート 3010、DEV_ADMIN_PORT での上書き）
 - 2026-04-21 dev-admin レイアウト変更 Step1: サーバ `/api/docs` をツリー構造レスポンス（`{files, dirs}`）に変更、`listTree` 再帰実装、md ファイル取得をカテゴリ配下のサブディレクトリまで再帰探索に対応
+- 2026-04-21 dev-admin レイアウト変更 Step2: `dev-admin/src/web/index.html` にトップタブ DOM（Plans / Specs）を追加
+- 2026-04-21 dev-admin レイアウト変更 Step3: `app.js` にタブ切替・ツリー描画（再帰）・折りたたみ・localStorage 連携・旧 `#design/` ハッシュの `#specs/design/` リダイレクトを実装
+- 2026-04-21 dev-admin レイアウト変更 Step4: `style.css` にトップタブ・ツリーのインデント・トグルアイコンのスタイルを追加
+- 2026-04-21 dev-admin レイアウト変更 Step5: 動作確認（タブ切替でサイドバー差し替え / `specs/design/` の折りたたみ / タブ・折りたたみ状態の localStorage 復元 / 既存 `#plans/xxx.md` 等のハッシュ互換 / 旧 `#design/xxx.html` → `#specs/design/xxx.html` リダイレクト / サーバ側 API レスポンス・エラーハンドリング）
