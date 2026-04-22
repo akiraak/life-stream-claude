@@ -89,13 +89,6 @@
 ## テストの導入
         docs/plans/testing.md
 
-### Phase 2: サーバ service 層ユニットテスト
-- [ ] 9. `shopping-service.test.ts`（userId スコープ / `purchase_history` 記録 / `deleteCheckedItems` / `getSuggestions` 除外）
-- [ ] 10. `dish-service.test.ts`（CRUD / 食材リンク / リンク解除 / reorder / cascade 削除）
-- [ ] 11. `saved-recipe-service.test.ts`（保存・一覧・削除 / like トグル / shared）
-- [ ] 12. `auth-service.test.ts`（マジックコード発行→検証→JWT / 期限切れクリーンアップ / Resend モック）
-- [ ] (動作確認) `npm test` で全 service テストが通る
-
 ### Phase 3: サーバ route 層統合テスト
 - [ ] 13. `integration/auth.test.ts`（`/api/auth/login` → `/api/auth/verify-code`、メール送信モック）
 - [ ] 14. `integration/shopping.test.ts`（401 / CRUD / reorder / checked 一括削除）
