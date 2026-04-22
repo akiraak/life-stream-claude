@@ -30,6 +30,10 @@ eas submit -p ios    # App Store 提出
 cd dev-admin && npm run dev
 ```
 - `http://localhost:3010` で `docs/plans`, `docs/specs`, `docs/specs/design` を閲覧できる
+- `TODO` タブで `TODO.md` / `DONE.md` をプレビュー表示・編集できる
+  - 編集は楽観ロック（mtime チェック）付き。外部で先に更新されていた場合は保存時に 409 を返し、リロード / 手元維持 / 強制上書き を選べる
+  - `fs.watch` + 2 秒ポーリングで外部変更を検知し、SSE (`/api/files/watch`) でクライアントへ即時反映する（プレビュー自動更新／clean 編集は差し替え＋情報バー／dirty 編集は競合警告バー＋差分モーダル）
+  - ツールバーの `↻ 再取得` ボタンまたは `R` 単独キーで手動再取得できる
 - ローカル開発専用（本番 admin とは独立）
 - ポート変更は `DEV_ADMIN_PORT` 環境変数で指定可能
 

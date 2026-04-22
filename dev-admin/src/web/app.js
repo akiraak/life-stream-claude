@@ -1,6 +1,6 @@
 'use strict';
 
-const CATEGORIES = ['plans', 'specs', 'todo'];
+const CATEGORIES = ['todo', 'plans', 'specs'];
 const TODO_FILES = ['TODO.md', 'DONE.md'];
 const STORAGE_CATEGORY = 'dev-admin.activeCategory';
 const STORAGE_EXPANDED = 'dev-admin.expanded';
