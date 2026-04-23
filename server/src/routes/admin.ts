@@ -11,6 +11,7 @@ import {
   getAllPurchaseHistory,
   getAllSavedRecipesAdmin,
   deleteSavedRecipeAdmin,
+  getAiQuotaStats,
   getSystemInfo,
 } from '../services/admin-service';
 
@@ -106,6 +107,12 @@ adminRouter.delete('/saved-recipes/:id', (req: Request, res: Response) => {
     return;
   }
   res.json({ success: true, data: null, error: null });
+});
+
+// AI 利用状況
+adminRouter.get('/ai-quota', (_req: Request, res: Response) => {
+  const stats = getAiQuotaStats();
+  res.json({ success: true, data: stats, error: null });
 });
 
 // システム情報

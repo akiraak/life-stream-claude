@@ -199,6 +199,7 @@ const Pages = {
   'saved-recipes':    { title: '料理レシピ',       render: renderSavedRecipes },
   shopping:           { title: '買い物食材',   render: renderShopping },
   'purchase-history': { title: '購入履歴',         render: renderPurchaseHistory },
+  'ai-quota':         { title: 'AI 利用状況',      render: renderAiQuota },
   system:             { title: 'システム情報',     render: renderSystem },
   'icon-preview':     { title: 'アイコン候補',     render: renderIconPreview },
   'app-name':         { title: 'アプリ名候補',     render: renderAppName },
@@ -450,6 +451,94 @@ async function renderSavedRecipes() {
         }
       }}
     ]
+  });
+}
+
+// ============================================================
+// AI Quota
+// ============================================================
+async function renderAiQuota() {
+  const area = document.getElementById('content-area');
+  area.innerHTML = '<div class="loading-text">読み込み中...</div>';
+
+  const res = await api('GET', `${API}/ai-quota`);
+  if (!res.success) return;
+  const { today, todaySummary, daily, recent } = res.data;
+
+  const dailyRows = daily.map(r => `
+    <tr>
+      <td>${escapeHtml(r.date)}${r.date === today ? ' <span class="badge badge-success">今日</span>' : ''}</td>
+      <td style="text-align:right">${r.total_calls}</td>
+      <td style="text-align:right">${r.user_calls} (${r.user_keys}人)</td>
+      <td style="text-align:right">${r.guest_calls} (${r.guest_keys}台)</td>
+    </tr>
+  `).join('');
+
+  area.innerHTML = `
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">今日の呼出数 (${escapeHtml(today)} JST)</div>
+        <div class="stat-value">${todaySummary.total_calls}</div>
+        <div class="stat-sub">ユニーク ${todaySummary.unique_keys} キー</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">今日のログイン利用</div>
+        <div class="stat-value">${todaySummary.user_calls}</div>
+        <div class="stat-sub">${todaySummary.user_keys} ユーザー</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">今日のゲスト利用</div>
+        <div class="stat-value">${todaySummary.guest_calls}</div>
+        <div class="stat-sub">${todaySummary.guest_keys} 端末</div>
+      </div>
+    </div>
+
+    <div class="info-section" style="margin-top:16px">
+      <div class="info-section-title">日次推移（直近14日）</div>
+      <table class="data-table" style="width:100%">
+        <thead>
+          <tr>
+            <th>日付 (JST)</th>
+            <th style="text-align:right">合計</th>
+            <th style="text-align:right">ログイン</th>
+            <th style="text-align:right">ゲスト</th>
+          </tr>
+        </thead>
+        <tbody>${dailyRows || '<tr><td colspan="4">データなし</td></tr>'}</tbody>
+      </table>
+    </div>
+
+    <div style="margin-top:16px">
+      <button class="btn btn-primary" onclick="renderAiQuota()">更新</button>
+    </div>
+  `;
+
+  // キー単位の直近利用
+  const recentArea = document.createElement('div');
+  recentArea.className = 'info-section';
+  recentArea.style.marginTop = '16px';
+  area.appendChild(recentArea);
+
+  renderDataTable(recentArea, {
+    columns: [
+      { key: 'date', label: '日付', width: '120px' },
+      { key: 'type', label: '種別', width: '90px', render: r =>
+        r.key.startsWith('user:')
+          ? '<span class="badge badge-success">ユーザー</span>'
+          : '<span class="badge badge-warning">ゲスト</span>'
+      },
+      { key: 'identifier', label: '識別子', render: r => {
+        if (r.key.startsWith('user:')) {
+          return r.email ? escapeHtml(r.email) : `<span class="badge badge-neutral">削除済</span> ${escapeHtml(r.key)}`;
+        }
+        // device:<64桁ハッシュ> → 先頭 10 桁だけ見せる
+        const hash = r.key.slice('device:'.length);
+        return `<code>${escapeHtml(hash.slice(0, 10))}…</code>`;
+      }},
+      { key: 'count', label: '回数', width: '80px' },
+    ],
+    data: recent.map((r, i) => ({ ...r, id: `${r.key}|${r.date}|${i}` })),
+    searchFields: ['key', 'email', 'date'],
   });
 }
 

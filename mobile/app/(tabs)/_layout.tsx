@@ -3,11 +3,13 @@ import { TouchableOpacity, View, Text, StyleSheet, Modal } from 'react-native';
 import { Tabs } from 'expo-router';
 import { useThemeColors } from '../../src/theme/theme-provider';
 import { useAuthStore } from '../../src/stores/auth-store';
+import { useAiStore } from '../../src/stores/ai-store';
 
 export default function TabsLayout() {
   const colors = useThemeColors();
   const [menuVisible, setMenuVisible] = useState(false);
   const { isAuthenticated, email, logout, requestLogin } = useAuthStore();
+  const aiRemaining = useAiStore((s) => s.remaining);
 
   const handleLogout = () => {
     setMenuVisible(false);
@@ -77,14 +79,26 @@ export default function TabsLayout() {
                     {email}
                   </Text>
                 )}
+                {aiRemaining !== null && (
+                  <Text style={[styles.menuAiRemaining, { color: colors.textMuted }]}>
+                    AI 残り {aiRemaining} 回
+                  </Text>
+                )}
                 <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
                   <Text style={[styles.menuItemText, { color: colors.danger }]}>ログアウト</Text>
                 </TouchableOpacity>
               </>
             ) : (
-              <TouchableOpacity style={styles.menuItem} onPress={handleLogin}>
-                <Text style={[styles.menuItemText, { color: colors.primaryLight }]}>ログイン</Text>
-              </TouchableOpacity>
+              <>
+                {aiRemaining !== null && (
+                  <Text style={[styles.menuAiRemaining, { color: colors.textMuted, borderBottomColor: colors.border, borderBottomWidth: 1, paddingBottom: 10, marginBottom: 8 }]}>
+                    AI 残り {aiRemaining} 回
+                  </Text>
+                )}
+                <TouchableOpacity style={styles.menuItem} onPress={handleLogin}>
+                  <Text style={[styles.menuItemText, { color: colors.primaryLight }]}>ログイン</Text>
+                </TouchableOpacity>
+              </>
             )}
           </View>
         </TouchableOpacity>
@@ -134,6 +148,11 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
     marginBottom: 8,
     borderBottomWidth: 1,
+  },
+  menuAiRemaining: {
+    fontSize: 12,
+    paddingVertical: 4,
+    marginBottom: 4,
   },
   menuItem: {
     paddingVertical: 8,

@@ -146,6 +146,68 @@ export function deleteSavedRecipeAdmin(id: number): boolean {
   return result.changes > 0;
 }
 
+// --- AI Quota ---
+
+function getJstDate(now: Date = new Date()): string {
+  const jstMs = now.getTime() + 9 * 60 * 60 * 1000;
+  return new Date(jstMs).toISOString().slice(0, 10);
+}
+
+export function getAiQuotaStats() {
+  const db = getDatabase();
+  const today = getJstDate();
+
+  const todaySummary = db.prepare(`
+    SELECT
+      COALESCE(SUM(count), 0) as total_calls,
+      COUNT(*) as unique_keys,
+      COALESCE(SUM(CASE WHEN key LIKE 'user:%' THEN count ELSE 0 END), 0) as user_calls,
+      COALESCE(SUM(CASE WHEN key LIKE 'device:%' THEN count ELSE 0 END), 0) as guest_calls,
+      COALESCE(SUM(CASE WHEN key LIKE 'user:%' THEN 1 ELSE 0 END), 0) as user_keys,
+      COALESCE(SUM(CASE WHEN key LIKE 'device:%' THEN 1 ELSE 0 END), 0) as guest_keys
+    FROM ai_quota
+    WHERE date = ?
+  `).get(today) as any;
+
+  const daily = db.prepare(`
+    SELECT
+      date,
+      SUM(count) as total_calls,
+      SUM(CASE WHEN key LIKE 'user:%' THEN count ELSE 0 END) as user_calls,
+      SUM(CASE WHEN key LIKE 'device:%' THEN count ELSE 0 END) as guest_calls,
+      SUM(CASE WHEN key LIKE 'user:%' THEN 1 ELSE 0 END) as user_keys,
+      SUM(CASE WHEN key LIKE 'device:%' THEN 1 ELSE 0 END) as guest_keys
+    FROM ai_quota
+    GROUP BY date
+    ORDER BY date DESC
+    LIMIT 14
+  `).all();
+
+  const recent = db.prepare(`
+    SELECT
+      q.key,
+      q.date,
+      q.count,
+      CASE
+        WHEN q.key LIKE 'user:%' THEN u.email
+        ELSE NULL
+      END as email
+    FROM ai_quota q
+    LEFT JOIN users u
+      ON q.key LIKE 'user:%'
+      AND CAST(SUBSTR(q.key, 6) AS INTEGER) = u.id
+    ORDER BY q.date DESC, q.count DESC
+    LIMIT 200
+  `).all();
+
+  return {
+    today,
+    todaySummary,
+    daily,
+    recent,
+  };
+}
+
 // --- System Info ---
 
 export function getSystemInfo() {
@@ -158,7 +220,7 @@ export function getSystemInfo() {
     dbSizeBytes = stat.size;
   } catch {}
 
-  const tables = ['users', 'shopping_items', 'dishes', 'magic_link_tokens', 'purchase_history', 'saved_recipes', 'recipe_likes'];
+  const tables = ['users', 'shopping_items', 'dishes', 'magic_link_tokens', 'purchase_history', 'saved_recipes', 'recipe_likes', 'ai_quota'];
   const tableCounts: Record<string, number> = {};
   for (const table of tables) {
     tableCounts[table] = (db.prepare(`SELECT COUNT(*) as c FROM ${table}`).get() as any).c;
