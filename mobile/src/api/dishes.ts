@@ -1,6 +1,6 @@
 import client from './client';
 import type { ApiResponse } from '../types/api';
-import type { Dish, SuggestIngredientsResponse } from '../types/models';
+import type { Dish } from '../types/models';
 
 export async function getAllDishes(): Promise<Dish[]> {
   const res = await client.get<ApiResponse<Dish[]>>('/api/dishes');
@@ -25,17 +25,16 @@ export async function deleteDish(id: number): Promise<void> {
   if (!res.data.success) throw new Error(res.data.error ?? '削除に失敗しました');
 }
 
-export async function suggestIngredients(
+export async function updateDishAiCache(
   dishId: number,
-  extraIngredients?: string[],
-  force?: boolean,
-): Promise<SuggestIngredientsResponse> {
-  const res = await client.post<ApiResponse<SuggestIngredientsResponse>>(
-    `/api/dishes/${dishId}/suggest-ingredients`,
-    { extraIngredients, force },
+  ingredients: unknown[],
+  recipes: unknown[],
+): Promise<void> {
+  const res = await client.put<ApiResponse<null>>(
+    `/api/dishes/${dishId}/ai-cache`,
+    { ingredients, recipes },
   );
-  if (!res.data.success) throw new Error(res.data.error ?? 'AI提案に失敗しました');
-  return res.data.data;
+  if (!res.data.success) throw new Error(res.data.error ?? 'AIキャッシュ保存に失敗しました');
 }
 
 export async function linkItemToDish(dishId: number, itemId: number): Promise<Dish> {

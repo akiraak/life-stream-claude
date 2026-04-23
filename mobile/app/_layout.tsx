@@ -4,15 +4,29 @@ import { Slot } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ThemeProvider, useThemeColors } from '../src/theme/theme-provider';
 import { useAuthStore } from '../src/stores/auth-store';
+import { useShoppingStore } from '../src/stores/shopping-store';
+import { useRecipeStore } from '../src/stores/recipe-store';
 import { AuthModal } from '../src/components/auth/AuthModal';
 
 function RootNavigator() {
-  const { isLoading, checkAuth } = useAuthStore();
+  const { isLoading, isAuthenticated, checkAuth } = useAuthStore();
   const colors = useThemeColors();
 
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
+
+  // 認証状態とストアの mode を同期
+  useEffect(() => {
+    if (isLoading) return;
+    const mode = isAuthenticated ? 'server' : 'local';
+    useShoppingStore.getState().setMode(mode);
+    useRecipeStore.getState().setMode(mode);
+    if (isAuthenticated) {
+      useShoppingStore.getState().loadAll();
+      useRecipeStore.getState().loadSavedRecipes();
+    }
+  }, [isAuthenticated, isLoading]);
 
   if (isLoading) {
     return (

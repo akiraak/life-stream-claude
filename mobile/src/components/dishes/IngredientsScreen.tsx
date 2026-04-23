@@ -13,7 +13,11 @@ import { useThemeColors } from '../../theme/theme-provider';
 import { useShoppingStore } from '../../stores/shopping-store';
 import { RecipeCard } from './RecipeCard';
 import { useRecipeStore } from '../../stores/recipe-store';
-import type { Dish, Ingredient, Recipe, RecipeState, SuggestIngredientsResponse } from '../../types/models';
+import { useAiStore } from '../../stores/ai-store';
+import { useAuthStore } from '../../stores/auth-store';
+import { AiQuotaError } from '../../api/ai';
+import type { Dish, Ingredient, Recipe, RecipeState } from '../../types/models';
+import type { SuggestIngredientsResult } from '../../stores/shopping-store';
 
 interface IngredientsScreenProps {
   dish: Dish;
@@ -24,8 +28,10 @@ export function IngredientsScreen({ dish, onClose }: IngredientsScreenProps) {
   const colors = useThemeColors();
   const { addItem, linkItemToDish, loadAll, updateDish } = useShoppingStore();
   const { toggleLike } = useRecipeStore();
+  const { remaining } = useAiStore();
+  const { isAuthenticated, requestLogin } = useAuthStore();
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [recipeStates, setRecipeStates] = useState<RecipeState[]>([]);
@@ -33,99 +39,154 @@ export function IngredientsScreen({ dish, onClose }: IngredientsScreenProps) {
   const [dishName, setDishName] = useState(dish.name);
   const [editingName, setEditingName] = useState(false);
 
-  // 料理に紐づく食材名（リアルタイム）
-  const dishItemNames = useMemo(() => new Set(dish.items.filter((i) => !i.checked).map((i) => i.name)), [dish.items]);
+  const dishItemNames = useMemo(
+    () => new Set(dish.items.filter((i) => !i.checked).map((i) => i.name)),
+    [dish.items],
+  );
 
-  // 追加素材 = 料理の食材のうち、AI具材リストにないもの（Web版と同じロジック）
   const extraIngredients = useMemo(() => {
     const aiNames = new Set(ingredients.map((i) => i.name));
-    return dish.items.filter((item) => !item.checked && !aiNames.has(item.name)).map((item) => item.name);
+    return dish.items
+      .filter((item) => !item.checked && !aiNames.has(item.name))
+      .map((item) => item.name);
   }, [dish.items, ingredients]);
 
-  const fetchSuggestions = useCallback(async (force = false, extras?: string[]) => {
-    setLoading(true);
+  // dish.ingredients_json / recipes_json に前回のキャッシュがあれば初期表示に使う
+  useEffect(() => {
+    if (!dish.ingredients_json && !dish.recipes_json) return;
     try {
-      const data: SuggestIngredientsResponse = await useShoppingStore.getState().suggestIngredients(
-        dish.id,
-        extras && extras.length > 0 ? extras : undefined,
-        force,
-      );
-      setIngredients(data.ingredients);
-      setRecipes(data.recipes);
-      setRecipeStates(data.recipeStates);
-      // 既にリストにある具材は選択済みに
+      const cachedIngredients: Ingredient[] = dish.ingredients_json
+        ? JSON.parse(dish.ingredients_json)
+        : [];
+      const cachedRecipes: Recipe[] = dish.recipes_json ? JSON.parse(dish.recipes_json) : [];
+      setIngredients(cachedIngredients);
+      setRecipes(cachedRecipes);
       const existing = new Set<string>();
-      for (const ing of data.ingredients) {
+      for (const ing of cachedIngredients) {
         if (dishItemNames.has(ing.name)) existing.add(ing.name);
       }
       setAddedNames(existing);
-    } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : 'AI提案に失敗しました';
-      Alert.alert('エラー', message);
-    } finally {
-      setLoading(false);
+    } catch {
+      /* 破損したキャッシュは無視 */
     }
-  }, [dish.id, dishItemNames]);
+    // 初回のみ参照（dish.id で dep 判定）
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dish.id]);
 
-  useEffect(() => {
-    fetchSuggestions();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const handleToggleIngredient = useCallback(async (name: string) => {
-    if (addedNames.has(name)) {
-      setAddedNames((prev) => {
-        const next = new Set(prev);
-        next.delete(name);
-        return next;
-      });
-    } else {
-      setAddedNames((prev) => new Set(prev).add(name));
+  const fetchSuggestions = useCallback(
+    async (extras?: string[]) => {
+      setLoading(true);
       try {
-        const ingredient = ingredients.find((i) => i.name === name);
-        const item = await addItem(name, ingredient?.category);
-        await linkItemToDish(dish.id, item.id);
-      } catch {
+        const data: SuggestIngredientsResult = await useShoppingStore.getState().suggestIngredients(
+          dish.id,
+          extras && extras.length > 0 ? extras : undefined,
+        );
+        setIngredients(data.ingredients);
+        setRecipes(data.recipes);
+        setRecipeStates(data.recipeStates);
+        const existing = new Set<string>();
+        for (const ing of data.ingredients) {
+          if (dishItemNames.has(ing.name)) existing.add(ing.name);
+        }
+        setAddedNames(existing);
+      } catch (e: unknown) {
+        if (e instanceof AiQuotaError) {
+          if (!isAuthenticated) {
+            requestLogin({
+              reason: 'AI 提案の残り回数を増やすにはログインしてください',
+              onSuccess: () => fetchSuggestions(extras),
+            });
+          } else {
+            Alert.alert('本日の上限に達しました', '明日また使えます');
+          }
+        } else {
+          const message = e instanceof Error ? e.message : 'AI提案に失敗しました';
+          Alert.alert('エラー', message);
+        }
+      } finally {
+        setLoading(false);
+      }
+    },
+    [dish.id, dishItemNames, isAuthenticated, requestLogin],
+  );
+
+  // 初回読み込み: キャッシュが無ければ AI 呼出
+  useEffect(() => {
+    if (!dish.ingredients_json && !dish.recipes_json) {
+      fetchSuggestions();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleToggleIngredient = useCallback(
+    async (name: string) => {
+      if (addedNames.has(name)) {
         setAddedNames((prev) => {
           const next = new Set(prev);
           next.delete(name);
           return next;
         });
+      } else {
+        setAddedNames((prev) => new Set(prev).add(name));
+        try {
+          const ingredient = ingredients.find((i) => i.name === name);
+          const item = await addItem(name, ingredient?.category);
+          await linkItemToDish(dish.id, item.id);
+        } catch {
+          setAddedNames((prev) => {
+            const next = new Set(prev);
+            next.delete(name);
+            return next;
+          });
+        }
       }
-    }
-  }, [addedNames, ingredients, addItem, linkItemToDish, dish.id]);
+    },
+    [addedNames, ingredients, addItem, linkItemToDish, dish.id],
+  );
 
   const handleRefresh = useCallback(() => {
-    fetchSuggestions(true);
+    fetchSuggestions();
   }, [fetchSuggestions]);
 
   const handleSearchWithExtras = useCallback(() => {
-    fetchSuggestions(true, extraIngredients);
+    fetchSuggestions(extraIngredients);
   }, [fetchSuggestions, extraIngredients]);
 
-  const handleToggleLike = useCallback(async (recipeStateId: number) => {
-    try {
-      await toggleLike(recipeStateId);
-      setRecipeStates((prev) =>
-        prev.map((rs) =>
-          rs.id === recipeStateId ? { ...rs, liked: rs.liked ? 0 : 1 } : rs,
-        ),
-      );
-    } catch {
-      Alert.alert('エラー', 'いいねに失敗しました');
-    }
-  }, [toggleLike]);
-
-  const handleAddRecipeToList = useCallback(async (recipe: Recipe) => {
-    for (const ing of recipe.ingredients) {
-      if (!addedNames.has(ing.name)) {
-        try {
-          const item = await addItem(ing.name, ing.category);
-          await linkItemToDish(dish.id, item.id);
-          setAddedNames((prev) => new Set(prev).add(ing.name));
-        } catch { /* skip */ }
+  const handleToggleLike = useCallback(
+    async (recipeStateId: number) => {
+      try {
+        await toggleLike(recipeStateId);
+        // local モード（未認証）時は toggleLike 内で requestLogin を呼ぶのみで状態は変化しない
+        if (useRecipeStore.getState().mode === 'server') {
+          setRecipeStates((prev) =>
+            prev.map((rs) =>
+              rs.id === recipeStateId ? { ...rs, liked: rs.liked ? 0 : 1 } : rs,
+            ),
+          );
+        }
+      } catch {
+        Alert.alert('エラー', 'いいねに失敗しました');
       }
-    }
-  }, [addedNames, addItem, linkItemToDish, dish.id]);
+    },
+    [toggleLike],
+  );
+
+  const handleAddRecipeToList = useCallback(
+    async (recipe: Recipe) => {
+      for (const ing of recipe.ingredients) {
+        if (!addedNames.has(ing.name)) {
+          try {
+            const item = await addItem(ing.name, ing.category);
+            await linkItemToDish(dish.id, item.id);
+            setAddedNames((prev) => new Set(prev).add(ing.name));
+          } catch {
+            /* skip */
+          }
+        }
+      }
+    },
+    [addedNames, addItem, linkItemToDish, dish.id],
+  );
 
   const handleSaveName = useCallback(async () => {
     const trimmed = dishName.trim();
@@ -143,16 +204,39 @@ export function IngredientsScreen({ dish, onClose }: IngredientsScreenProps) {
     }
   }, [dishName, dish.id, dish.name, updateDish]);
 
+  const refreshLabel = useMemo(() => {
+    const base = extraIngredients.length > 0 ? 'この素材でレシピを再検索' : 'レシピを再検索';
+    if (remaining === null) return base;
+    return `${base}（残り ${remaining} 回）`;
+  }, [extraIngredients.length, remaining]);
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* ヘッダー */}
-      <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
-        <TouchableOpacity onPress={() => { loadAll(); onClose(); }} style={styles.headerSide}>
+      <View
+        style={[
+          styles.header,
+          { backgroundColor: colors.surface, borderBottomColor: colors.border },
+        ]}
+      >
+        <TouchableOpacity
+          onPress={() => {
+            loadAll();
+            onClose();
+          }}
+          style={styles.headerSide}
+        >
           <Text style={[styles.backBtn, { color: colors.primaryLight }]}>← 戻る</Text>
         </TouchableOpacity>
         {editingName ? (
           <TextInput
-            style={[styles.nameInput, { color: colors.text, borderColor: colors.primaryLight, backgroundColor: colors.background }]}
+            style={[
+              styles.nameInput,
+              {
+                color: colors.text,
+                borderColor: colors.primaryLight,
+                backgroundColor: colors.background,
+              },
+            ]}
             value={dishName}
             onChangeText={setDishName}
             onBlur={handleSaveName}
@@ -161,15 +245,14 @@ export function IngredientsScreen({ dish, onClose }: IngredientsScreenProps) {
           />
         ) : (
           <TouchableOpacity style={styles.dishTitleBtn} onPress={() => setEditingName(true)}>
-            <View style={[styles.dishTitleUnderline, { borderBottomColor: 'rgba(251,146,60,0.5)' }]}>
-              <Text style={[styles.dishTitle, { color: colors.primaryLight }]}>
-                {dishName}
-              </Text>
+            <View
+              style={[styles.dishTitleUnderline, { borderBottomColor: 'rgba(251,146,60,0.5)' }]}
+            >
+              <Text style={[styles.dishTitle, { color: colors.primaryLight }]}>{dishName}</Text>
               <Text style={[styles.editIcon, { color: colors.textMuted }]}> ✎</Text>
             </View>
           </TouchableOpacity>
         )}
-        {/* 右側スペーサー（戻るボタンと同じ幅を確保して中央寄せ） */}
         <View style={styles.headerSide} />
       </View>
 
@@ -181,38 +264,57 @@ export function IngredientsScreen({ dish, onClose }: IngredientsScreenProps) {
           </View>
         ) : (
           <>
-            {/* 具材チップ */}
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>具材</Text>
-            <View style={styles.chipContainer}>
-              {ingredients.map((ing) => {
-                const isAdded = addedNames.has(ing.name);
-                return (
-                  <TouchableOpacity
-                    key={ing.name}
-                    style={[
-                      styles.chip,
-                      isAdded
-                        ? { backgroundColor: colors.primary }
-                        : { backgroundColor: colors.surfaceHover, borderColor: 'rgba(251,146,60,0.3)', borderWidth: 1 },
-                    ]}
-                    onPress={() => handleToggleIngredient(ing.name)}
-                  >
-                    <Text style={[styles.chipText, { color: isAdded ? '#fff' : colors.text }]}>
-                      {ing.name}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
+            {ingredients.length > 0 && (
+              <>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>具材</Text>
+                <View style={styles.chipContainer}>
+                  {ingredients.map((ing) => {
+                    const isAdded = addedNames.has(ing.name);
+                    return (
+                      <TouchableOpacity
+                        key={ing.name}
+                        style={[
+                          styles.chip,
+                          isAdded
+                            ? { backgroundColor: colors.primary }
+                            : {
+                                backgroundColor: colors.surfaceHover,
+                                borderColor: 'rgba(251,146,60,0.3)',
+                                borderWidth: 1,
+                              },
+                        ]}
+                        onPress={() => handleToggleIngredient(ing.name)}
+                      >
+                        <Text
+                          style={[styles.chipText, { color: isAdded ? '#fff' : colors.text }]}
+                        >
+                          {ing.name}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </>
+            )}
 
-            {/* 追加素材（買い物リストから）+ 再検索ボタン */}
             {extraIngredients.length > 0 ? (
               <View style={[styles.extraSection, { borderTopColor: colors.border }]}>
-                <Text style={[styles.extraLabel, { color: colors.textMuted }]}>追加素材（買い物リストから）</Text>
+                <Text style={[styles.extraLabel, { color: colors.textMuted }]}>
+                  追加素材（買い物リストから）
+                </Text>
                 <View style={styles.chipContainer}>
                   {extraIngredients.map((name) => (
-                    <View key={name} style={[styles.chip, styles.extraChip, { borderColor: colors.primaryLight }]}>
-                      <Text style={[styles.chipText, { color: colors.primaryLight }]}>+ {name}</Text>
+                    <View
+                      key={name}
+                      style={[
+                        styles.chip,
+                        styles.extraChip,
+                        { borderColor: colors.primaryLight },
+                      ]}
+                    >
+                      <Text style={[styles.chipText, { color: colors.primaryLight }]}>
+                        + {name}
+                      </Text>
                     </View>
                   ))}
                 </View>
@@ -221,7 +323,7 @@ export function IngredientsScreen({ dish, onClose }: IngredientsScreenProps) {
                   onPress={handleSearchWithExtras}
                   disabled={loading}
                 >
-                  <Text style={styles.extraSearchBtnText}>この素材でレシピを再検索</Text>
+                  <Text style={styles.extraSearchBtnText}>{refreshLabel}</Text>
                 </TouchableOpacity>
               </View>
             ) : (
@@ -230,11 +332,10 @@ export function IngredientsScreen({ dish, onClose }: IngredientsScreenProps) {
                 onPress={handleRefresh}
                 disabled={loading}
               >
-                <Text style={styles.extraSearchBtnText}>レシピを再検索</Text>
+                <Text style={styles.extraSearchBtnText}>{refreshLabel}</Text>
               </TouchableOpacity>
             )}
 
-            {/* レシピ */}
             {recipes.length > 0 && (
               <>
                 <Text style={[styles.sectionTitle, { color: colors.text }]}>レシピ</Text>

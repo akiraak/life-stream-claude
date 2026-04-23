@@ -37,7 +37,6 @@
 - [x] 10. `POST /api/dishes/:id/suggest-ingredients` ハンドラ削除（`autoSaveRecipes` 呼出も除去）
 - [x] 10. `server/src/routes/claude.ts` / `recipes.ts` / `services/claude-service.ts` 削除、`index.ts` のマウント整理
 - [x] 10. `docs/specs/shopping-list.md` の廃止節に注記
-- [ ] (動作確認) curl でサーバ単体動作確認（未ログイン `/api/ai/suggest`、`shared`、`migrate`、上限エラー）
 
 ### Phase 2: モバイル側認証 UI 差し替え
 - [x] 11. `expo-application` 導入（`expo-crypto` も併せて導入）
@@ -48,18 +47,17 @@
 - [x] 16. `mobile/app/_layout.tsx` から未認証リダイレクト削除、`<AuthModal>` 常設
 - [x] 17. `mobile/app/(auth)/` 配下削除
 - [x] 18. `mobile/app/(tabs)/_layout.tsx` メニュー改修（未ログイン時「ログイン」、ログイン時 `<email>` + 「ログアウト」）
-- [ ] (動作確認) 新規起動でタブが開け、☰メニューからモーダル経由でログインできることを実機確認
 
 ### Phase 3: モバイル側ローカルストア化
-- [ ] 19. `@react-native-async-storage/async-storage` 導入
-- [ ] 20. `mobile/src/stores/shopping-store.ts` に `mode: 'local' | 'server'` 切替追加（zustand persist / クライアント UUID / 全メソッド分岐）
-- [ ] 21. `mobile/src/stores/recipe-store.ts` に mode 切替追加、いいねは `requestLogin()` で誘導
-- [ ] 22. `mobile/src/api/ai.ts` 新規作成（`suggestAi({ dishName, extraIngredients })` ラッパ）
-- [ ] 22. `suggestIngredients` フロー書き換え（`/api/ai/suggest` 呼出 → local: ローカルキャッシュ / server: `PUT /api/dishes/:id/ai-cache`、自動保存も local / `POST /api/saved-recipes/bulk` で分岐）
-- [ ] 23. `mobile/src/stores/ai-store.ts` 新規作成（残回数 state、`X-AI-Remaining` 受信・エラー 429 ハンドリング）
-- [ ] 24. 料理詳細画面に残回数表示 + 上限到達時のゲート（未ログイン→`requestLogin`、ログイン済→トースト）
-- [ ] 25. `mobile/app/(tabs)/shared.tsx` 未ログイン対応（ハート抜き固定、押下で `requestLogin`）
-- [ ] 26. `mobile/app/(tabs)/recipes.tsx` 未ログイン対応（ローカルデータ表示、いいね操作で `requestLogin`）
+- [x] 19. `@react-native-async-storage/async-storage` 導入
+- [x] 20. `mobile/src/stores/shopping-store.ts` に `mode: 'local' | 'server'` 切替追加（zustand persist / クライアント UUID / 全メソッド分岐）
+- [x] 21. `mobile/src/stores/recipe-store.ts` に mode 切替追加、いいねは `requestLogin()` で誘導
+- [x] 22. `mobile/src/api/ai.ts` 新規作成（`suggestAi({ dishName, extraIngredients })` ラッパ）
+- [x] 22. `suggestIngredients` フロー書き換え（`/api/ai/suggest` 呼出 → local: ローカルキャッシュ / server: `PUT /api/dishes/:id/ai-cache`、自動保存も local / `POST /api/saved-recipes/bulk` で分岐）
+- [x] 23. `mobile/src/stores/ai-store.ts` 新規作成（残回数 state、`X-AI-Remaining` 受信・エラー 429 ハンドリング）
+- [x] 24. 料理詳細画面に残回数表示 + 上限到達時のゲート（未ログイン→`requestLogin`、ログイン済→トースト）
+- [x] 25. `mobile/app/(tabs)/shared.tsx` 未ログイン対応（ハート抜き固定、押下で `requestLogin`）
+- [x] 26. `mobile/app/(tabs)/recipes.tsx` 未ログイン対応（ローカルデータ表示、いいね操作で `requestLogin`）
 - [ ] (動作確認) 新規起動→買い物リスト追加→料理追加→AI 提案→自分のレシピ表示 の全フローがローカルで動作することを実機確認
 
 ### Phase 4: マイグレーション

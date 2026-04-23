@@ -3,6 +3,7 @@ import { View, Text, TextInput, FlatList, RefreshControl, StyleSheet, Alert } fr
 import { useThemeColors } from '../../src/theme/theme-provider';
 import { useRecipeStore } from '../../src/stores/recipe-store';
 import { useShoppingStore } from '../../src/stores/shopping-store';
+import { useAuthStore } from '../../src/stores/auth-store';
 import { RecipeListItem } from '../../src/components/recipes/RecipeListItem';
 import { Toast } from '../../src/components/ui/Toast';
 import type { SavedRecipe } from '../../src/types/models';
@@ -11,6 +12,7 @@ export default function SharedRecipesScreen() {
   const colors = useThemeColors();
   const { sharedRecipes, loading, loadSharedRecipes, toggleLike } = useRecipeStore();
   const { addDish, addItem, linkItemToDish } = useShoppingStore();
+  const { isAuthenticated, requestLogin } = useAuthStore();
   const [search, setSearch] = useState('');
   const [toast, setToast] = useState<string | null>(null);
 
@@ -31,12 +33,22 @@ export default function SharedRecipesScreen() {
   }, [sharedRecipes, search]);
 
   const handleToggleLike = useCallback(async (id: number) => {
+    if (!isAuthenticated) {
+      requestLogin({
+        reason: 'レシピにいいねするにはログインしてください',
+        onSuccess: () => {
+          toggleLike(id).catch(() => Alert.alert('エラー', 'いいねに失敗しました'));
+          loadSharedRecipes();
+        },
+      });
+      return;
+    }
     try {
       await toggleLike(id);
     } catch {
       Alert.alert('エラー', 'いいねに失敗しました');
     }
-  }, [toggleLike]);
+  }, [isAuthenticated, requestLogin, toggleLike, loadSharedRecipes]);
 
   const handleAddToList = useCallback(async (recipe: SavedRecipe) => {
     try {
