@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { useThemeColors } from '../../theme/theme-provider';
 import { useAuthStore } from '../../stores/auth-store';
+import { runLoginMigration } from '../../utils/migration';
 
 type Step = 'email' | 'code';
 
@@ -23,6 +24,8 @@ export function AuthModal() {
   const closeAuthModal = useAuthStore((s) => s.closeAuthModal);
   const sendMagicCode = useAuthStore((s) => s.sendMagicCode);
   const verify = useAuthStore((s) => s.verify);
+  const finishLogin = useAuthStore((s) => s.finishLogin);
+  const cancelLogin = useAuthStore((s) => s.cancelLogin);
 
   const [step, setStep] = useState<Step>('email');
   const [email, setEmail] = useState('');
@@ -60,10 +63,23 @@ export function AuthModal() {
     setLoading(true);
     try {
       await verify(trimmedEmail, trimmedCode);
-      // verify action closes the modal and fires onSuccess
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : '認証に失敗しました';
       Alert.alert('エラー', message);
+      setLoading(false);
+      return;
+    }
+    try {
+      const result = await runLoginMigration();
+      if (result === 'cancelled') {
+        await cancelLogin();
+      } else {
+        finishLogin();
+      }
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'マイグレーションに失敗しました';
+      Alert.alert('エラー', message);
+      await cancelLogin();
     } finally {
       setLoading(false);
     }

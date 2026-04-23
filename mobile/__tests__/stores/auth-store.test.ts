@@ -7,6 +7,8 @@ jest.mock('../../src/api/auth', () => ({
 import * as SecureStore from 'expo-secure-store';
 import * as authApi from '../../src/api/auth';
 import { useAuthStore } from '../../src/stores/auth-store';
+import { useShoppingStore } from '../../src/stores/shopping-store';
+import { useRecipeStore } from '../../src/stores/recipe-store';
 
 const auth = authApi as jest.Mocked<typeof authApi>;
 const secure = SecureStore as jest.Mocked<typeof SecureStore> & { __reset: () => void };
@@ -25,6 +27,20 @@ beforeEach(() => {
     authModalReason: null,
     authModalOnSuccess: null,
   });
+  useShoppingStore.setState({
+    mode: 'local',
+    items: [],
+    dishes: [],
+    loading: false,
+    nextLocalId: -1,
+  });
+  useRecipeStore.setState({
+    mode: 'local',
+    savedRecipes: [],
+    sharedRecipes: [],
+    loading: false,
+    nextLocalId: -1,
+  });
 });
 
 describe('auth-store', () => {
@@ -40,7 +56,7 @@ describe('auth-store', () => {
   });
 
   describe('verify', () => {
-    it('persists token, marks authenticated, closes modal, and fires onSuccess', async () => {
+    it('persists token and marks authenticated but leaves modal state', async () => {
       auth.verifyCode.mockResolvedValue({ token: 'jwt-token', email: 'user@example.com' });
       const onSuccess = jest.fn();
       useAuthStore.setState({
@@ -56,6 +72,27 @@ describe('auth-store', () => {
       const state = useAuthStore.getState();
       expect(state.isAuthenticated).toBe(true);
       expect(state.email).toBe('user@example.com');
+      // modal state intact so caller (AuthModal) can run migration first
+      expect(state.authModalVisible).toBe(true);
+      expect(state.authModalOnSuccess).toBe(onSuccess);
+      expect(onSuccess).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('finishLogin', () => {
+    it('closes modal and fires onSuccess', () => {
+      const onSuccess = jest.fn();
+      useAuthStore.setState({
+        isAuthenticated: true,
+        email: 'user@example.com',
+        authModalVisible: true,
+        authModalReason: 'reason',
+        authModalOnSuccess: onSuccess,
+      });
+
+      useAuthStore.getState().finishLogin();
+
+      const state = useAuthStore.getState();
       expect(state.authModalVisible).toBe(false);
       expect(state.authModalReason).toBeNull();
       expect(state.authModalOnSuccess).toBeNull();
@@ -63,14 +100,74 @@ describe('auth-store', () => {
     });
   });
 
+  describe('cancelLogin', () => {
+    it('removes token, resets auth state, closes modal, and does not fire onSuccess', async () => {
+      await secure.setItemAsync(TOKEN_KEY, 'jwt-token');
+      const onSuccess = jest.fn();
+      useAuthStore.setState({
+        isAuthenticated: true,
+        email: 'user@example.com',
+        userId: 42,
+        authModalVisible: true,
+        authModalReason: 'reason',
+        authModalOnSuccess: onSuccess,
+      });
+
+      await useAuthStore.getState().cancelLogin();
+
+      expect(secure.deleteItemAsync).toHaveBeenCalledWith(TOKEN_KEY);
+      const state = useAuthStore.getState();
+      expect(state.isAuthenticated).toBe(false);
+      expect(state.email).toBeNull();
+      expect(state.userId).toBeNull();
+      expect(state.authModalVisible).toBe(false);
+      expect(state.authModalOnSuccess).toBeNull();
+      expect(onSuccess).not.toHaveBeenCalled();
+    });
+  });
+
   describe('logout', () => {
-    it('removes token and resets state', async () => {
+    it('removes token, resets auth state, and clears local stores', async () => {
       await secure.setItemAsync(TOKEN_KEY, 'existing-token');
       useAuthStore.setState({
         isAuthenticated: true,
         email: 'user@example.com',
         userId: 42,
         isLoading: false,
+      });
+      useShoppingStore.setState({
+        mode: 'server',
+        items: [
+          {
+            id: 1,
+            name: 'x',
+            category: '',
+            checked: 0,
+            dish_id: null,
+            position: 0,
+            created_at: '',
+            updated_at: '',
+          },
+        ],
+        dishes: [],
+      });
+      useRecipeStore.setState({
+        mode: 'server',
+        savedRecipes: [
+          {
+            id: 1,
+            user_id: 1,
+            dish_name: 'd',
+            title: 't',
+            summary: '',
+            steps_json: '[]',
+            ingredients_json: '[]',
+            source_dish_id: null,
+            created_at: '',
+            like_count: 0,
+            liked: 0,
+          },
+        ],
       });
 
       await useAuthStore.getState().logout();
@@ -81,6 +178,10 @@ describe('auth-store', () => {
       expect(state.isAuthenticated).toBe(false);
       expect(state.email).toBeNull();
       expect(state.userId).toBeNull();
+      expect(useShoppingStore.getState().mode).toBe('local');
+      expect(useShoppingStore.getState().items).toHaveLength(0);
+      expect(useRecipeStore.getState().mode).toBe('local');
+      expect(useRecipeStore.getState().savedRecipes).toHaveLength(0);
     });
   });
 
