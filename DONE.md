@@ -130,6 +130,7 @@
 - 2026-04-21 dev-admin 画面全体を上下2段レイアウトに変更（上段: `dev-admin` ブランド + Plans/Specs タブ + ページタイトル + パス、下段: サイドバーのファイルツリー + コンテンツ。トップバーをフル幅に昇格、サイドバーは固定配置から flex レイアウト内のスクロール領域に変更）
 - 2026-04-21 dev-admin を GitHub 風ライトテーマに再配色（サイドバーを角丸ピル化、アクティブタブをオレンジ下線に、インデントを margin ベースに変更）
 - 2026-04-21 plans の md ドキュメントに「アーカイブする」ボタンを追加（`docs/plans/<file>.md` → `docs/plans/archive/<file>.md` に移動する `POST /api/docs/plans/:file/archive` エンドポイントを追加、`docs/plans/archive/` ディレクトリを用意）
+- 2026-04-21 ログインなしで使えるようにする: 変更プラン作成（`docs/plans/no-login-mode.md` に設計検討を、`docs/plans/no-login-mode-impl.md` に確定実装プラン（Phase 1-5 分割・API 最終形・リスク整理）を追加）
 - 2026-04-22 dev-admin TODO エディタ Phase 1: サーバ側 API（`EDITABLE_FILES` ホワイトリスト追加、`GET /api/files/:name` / `GET /api/files/:name/render` / `PUT /api/files/:name` 実装、mtime 楽観ロックで 409、tmp→rename のアトミック書き込み、curl で 200/409/400/404 動作確認）
 - 2026-04-22 dev-admin TODO エディタ Phase 2: SSE 変更通知（`GET /api/files/watch` を `text/event-stream` で実装、`fs.watch` + `stat` による mtime 比較重複排除、2 秒ポーリングのフォールバック・30 秒 keep-alive ping・切断時 watcher 解除、`/api/files/:name` より前にマウントしてルート衝突を回避。curl -N と `echo >>` で TODO.md / DONE.md の変更通知を確認）
 - 2026-04-22 dev-admin TODO エディタ Phase 3: クライアント UI 閲覧（topbar に「TODO」タブを追加・`CATEGORIES` 拡張、`renderTodoView()` で左 TODO/DONE リンク・右プレビューのレイアウトを実装、`GET /api/files/:name/render` の HTML を注入。TODO タブで TODO.md / DONE.md が整形表示されることを確認）
