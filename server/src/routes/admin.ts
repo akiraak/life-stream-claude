@@ -14,6 +14,12 @@ import {
   getAiQuotaStats,
   getSystemInfo,
 } from '../services/admin-service';
+import {
+  readRecentLogs,
+  tailLogFile,
+  type LogEntry,
+  type LogFilter,
+} from '../services/logs-service';
 
 export const adminRouter = Router();
 
@@ -119,4 +125,62 @@ adminRouter.get('/ai-quota', (_req: Request, res: Response) => {
 adminRouter.get('/system', (_req: Request, res: Response) => {
   const info = getSystemInfo();
   res.json({ success: true, data: info, error: null });
+});
+
+// ログ閲覧（末尾 N 件）
+adminRouter.get('/logs', (req: Request, res: Response) => {
+  const linesParam = Number(req.query.lines);
+  const lines = Number.isFinite(linesParam) && linesParam > 0
+    ? Math.min(Math.floor(linesParam), 2000)
+    : 200;
+  const filter: LogFilter = {};
+  if (typeof req.query.level === 'string' && req.query.level) {
+    filter.level = req.query.level;
+  }
+  if (typeof req.query.q === 'string' && req.query.q) {
+    filter.q = req.query.q;
+  }
+  const entries = readRecentLogs(lines, filter);
+  res.json({ success: true, data: entries, error: null });
+});
+
+// ログ閲覧（SSE tail）
+adminRouter.get('/logs/stream', (req: Request, res: Response) => {
+  const filter: LogFilter = {};
+  if (typeof req.query.level === 'string' && req.query.level) {
+    filter.level = req.query.level;
+  }
+  if (typeof req.query.q === 'string' && req.query.q) {
+    filter.q = req.query.q;
+  }
+
+  res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-cache, no-transform');
+  res.setHeader('Connection', 'keep-alive');
+  // nginx / 他の逆プロキシでバッファされると SSE が届かないので無効化を明示
+  res.setHeader('X-Accel-Buffering', 'no');
+  res.flushHeaders?.();
+
+  const write = (entry: LogEntry) => {
+    res.write(`data: ${JSON.stringify(entry)}\n\n`);
+  };
+
+  // 接続直後に直近 50 件を送る
+  for (const entry of readRecentLogs(50, filter)) {
+    write(entry);
+  }
+
+  const unwatch = tailLogFile(filter, write);
+
+  // プロキシのアイドルタイムアウト対策のハートビート
+  const heartbeat = setInterval(() => {
+    res.write(`: keep-alive\n\n`);
+  }, 30000);
+
+  const cleanup = () => {
+    clearInterval(heartbeat);
+    unwatch();
+  };
+  req.on('close', cleanup);
+  req.on('error', cleanup);
 });

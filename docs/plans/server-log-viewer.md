@@ -69,13 +69,13 @@
   ファイル名だけでも確認
 
 ### Phase 3: 管理 API の追加
-- [ ] `server/src/routes/admin.ts` に以下を追加
+- [x] `server/src/routes/admin.ts` に以下を追加
   - `GET /api/admin/logs?lines=200&level=info&q=keyword`
     → ファイル末尾から逆読みで N 件返す（JSON 配列）
   - `GET /api/admin/logs/stream?level=info`
     → `tail -f` 相当を SSE で push（`fs.watch` + 末尾 read、
     接続時は直近 50 件を先に吐く）
-- [ ] `server/tests/integration/admin.test.ts` を新規 or 追記
+- [x] `server/tests/integration/admin.test.ts` を新規 or 追記
   - 未ログインは 401、非 admin は 403
   - ファイルに書いた行が `/api/admin/logs` で取れる
   - SSE はスモークテスト（接続→1 行受信→切断）
