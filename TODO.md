@@ -33,10 +33,6 @@
 - [ ] basket@chobi.me を使えるようにする
 - [ ] サービスの状況をメールで定期報告
 
-## 管理画面にサーバのデプロイ日時を表示
-        docs/plans/admin-deploy-timestamp.md
-- [ ] Phase 3: デプロイ手順に `.env` 更新コマンドを反映、本番で実機確認
-
 ## 本番サーバログを外部から安全に閲覧
         docs/plans/server-log-viewer.md
 - [x] Phase 1: 構造化ロガー（pino）導入と redact 設定、既存 console.* 置換
