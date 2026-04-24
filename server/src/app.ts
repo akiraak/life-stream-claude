@@ -43,13 +43,11 @@ export function createApp(options: CreateAppOptions = {}): Express {
     next();
   });
 
-  // index.html にキャッシュバージョンを埋め込んで返す
   const webDir = path.join(__dirname, '../../web');
-  const indexHtml = fs.readFileSync(path.join(webDir, 'index.html'), 'utf-8')
-    .replace(/__CACHE_VERSION__/g, CACHE_VERSION);
 
+  // PWA は廃止（docs/plans/web-app-removal.md）。ルートは紹介ページへ誘導する
   app.get('/', (_req, res) => {
-    res.type('html').send(indexHtml);
+    res.redirect(301, '/about');
   });
 
   const aboutHtml = fs.readFileSync(path.join(webDir, 'about.html'), 'utf-8');

@@ -2,9 +2,10 @@
 
 ## プロジェクト概要
 
-お料理バスケット — 料理買物リストアプリ（iOS / Android / Web PWA）。
+お料理バスケット — 料理買物リストアプリ（iOS / Android）。
 料理を登録すると Gemini AI が具材とレシピを提案し、買い物リストに一括追加できる。
-Magic Link 認証で複数ユーザー対応。
+Magic Link 認証で複数ユーザー対応。`basket.chobi.me` には紹介ページ（`/about`）と
+プライバシーポリシー（`/privacy`）のみを置き、ユーザー向け PWA は廃止済み。
 
 ## 開発コマンド
 
@@ -70,9 +71,9 @@ cd dev-admin && npm run dev
 - エラーハンドリングは try-catch で明示的に行う
 - ファイル命名: kebab-case (`claude-service.ts`)
 
-### Web クライアント
-- フレームワークなしの Vanilla JS（モバイルファースト）
-- PWA 対応（manifest.json、Service Worker）
+### Web (`web/`)
+- ランディング（`web/about.html`）とプライバシーポリシー（`web/privacy.html`）、本番管理画面（`web/admin/`）のみ
+- ユーザー向け PWA は廃止済み（[docs/plans/web-app-removal.md](docs/plans/web-app-removal.md) 参照）
 
 ### モバイル (React Native / Expo)
 - Expo SDK 54, React Native 0.81
@@ -101,6 +102,6 @@ cd dev-admin && npm run dev
 ## ファイル構成のルール
 
 - サーバのソースは `server/src/` 配下に置く
-- Web クライアントは `web/` 配下に置く
+- Web のランディング/管理画面は `web/` 配下に置く（`about.html`, `privacy.html`, `admin/`, `img/`）
 - モバイルアプリは `mobile/` 配下に置く (Expo Router, `mobile/src/` にソース)
 - 設定ファイルは各プロジェクトルートに置く

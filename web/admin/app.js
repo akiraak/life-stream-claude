@@ -1073,12 +1073,11 @@ function renderAppName() {
 
   // 変更対象の箇所
   const targets = [
-    { file: 'web/index.html', location: '<title>', current: currentName },
-    { file: 'web/index.html', location: 'ログイン画面 <h1>', current: currentName },
-    { file: 'web/index.html', location: 'ヘッダー <h1>', current: currentName },
-    { file: 'web/manifest.json', location: 'name', current: currentName },
-    { file: 'web/manifest.json', location: 'short_name', current: currentName },
+    { file: 'web/about.html', location: '<title>', current: currentName + ' - アプリについて' },
+    { file: 'web/about.html', location: 'OGP meta (og:title / twitter:title)', current: currentName },
+    { file: 'web/about.html', location: 'ヒーロー <h1>', current: currentName },
     { file: 'web/admin/index.html', location: '<title>', current: '管理画面 - ' + currentName },
+    { file: 'mobile/app.json', location: 'expo.name', current: currentName },
   ];
 
   let html = '';
@@ -1402,9 +1401,8 @@ function renderNativeApp() {
         <table>
           <thead><tr><th>項目</th><th>現状</th></tr></thead>
           <tbody>
-            <tr><td><strong>アプリ形態</strong></td><td>PWA（Progressive Web App）— Vanilla JS、モバイルファースト設計</td></tr>
-            <tr><td><strong>manifest.json</strong></td><td>あり（standalone 表示、192/512px アイコン）</td></tr>
-            <tr><td><strong>Service Worker</strong></td><td><span class="badge badge-warning">未実装</span> — オフライン対応・プッシュ通知は未対応</td></tr>
+            <tr><td><strong>アプリ形態</strong></td><td>モバイルアプリ（Expo SDK 54 / React Native）— iOS / Android 公開済み</td></tr>
+            <tr><td><strong>Web</strong></td><td>紹介ページ（<code>/about</code>）とプライバシーポリシー（<code>/privacy</code>）のみ。ユーザー向け PWA は廃止済み</td></tr>
             <tr><td><strong>認証</strong></td><td>Magic Link (OTP) + JWT + Google Sign-In</td></tr>
             <tr><td><strong>バックエンド</strong></td><td>Node.js + Express + SQLite（単一サーバ）</td></tr>
             <tr><td><strong>AI 連携</strong></td><td>Gemini API（具材提案・レシピ生成）</td></tr>

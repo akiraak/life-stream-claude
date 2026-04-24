@@ -2,12 +2,11 @@
 
 [![test](https://github.com/akiraak/cooking-basket/actions/workflows/test.yml/badge.svg)](https://github.com/akiraak/cooking-basket/actions/workflows/test.yml)
 
-スマホ向けの買い物リストアプリ（iOS / Android / Web PWA）。料理を登録すると AI が具材とレシピを提案してくれます。
+スマホ向けの買い物リストアプリ（iOS / Android）。料理を登録すると AI が具材とレシピを提案してくれます。
 
-**Web アプリ**: https://basket.chobi.me/
 **iOS**: App Store (審査中)
 **Android**: Google Play (クローズドテスト中)
-**インストールガイド**: https://akiraak.github.io/cooking-basket/
+**アプリ紹介**: https://basket.chobi.me/about
 
 ## 主な機能
 
@@ -21,23 +20,24 @@
 - **サジェスト** — 過去の購入頻度をもとに食材名・料理名を補完
 - **AI データ引き継ぎ** — 同じ料理名なら前回の AI データを再利用、AI 再取得も可能
 - **Magic Link 認証** — メールアドレスでログイン（OTP）、複数ユーザー対応
-- **PWA** — ホーム画面に追加してネイティブアプリのように使用可能
 - **管理画面** — ユーザー管理・データ一覧・サーバ統計
 
 ## アーキテクチャ
 
 ```
 ┌─────────────┐                         ┌──────────────────┐
-│  Web Client │  <──────────────────>    │  Server (Node.js) │
-│  (HTML/JS)  │       HTTPS/REST        │  Express + SQLite  │
-│  PWA対応     │       JSON + JWT        │                    │
+│ Mobile App  │  <──────────────────>    │  Server (Node.js) │
+│ (React      │       HTTPS/REST        │  Express + SQLite  │
+│  Native)    │       JSON + JWT        │                    │
 └─────────────┘                         ├──────────────────┤
-┌─────────────┐                         │  Gemini API       │ ← AI 具材・レシピ提案
-│ Mobile App  │  <──────────────────>    │  Resend           │ ← Magic Link メール送信
-│ (React      │       HTTPS/REST        │  Claude Code CLI  │ ← レシピ推薦
-│  Native)    │       JSON + JWT        └──────────────────┘
-└─────────────┘
+                                        │  Gemini API       │ ← AI 具材・レシピ提案
+                                        │  Resend           │ ← Magic Link メール送信
+                                        │  Claude Code CLI  │ ← レシピ推薦
+                                        └──────────────────┘
 ```
+
+`basket.chobi.me` ドメイン直下にはアプリ紹介ページ（`/about`）と
+プライバシーポリシー（`/privacy`）、本番管理画面（`/admin/`）のみを配信する。
 
 ## 技術スタック
 
@@ -48,7 +48,7 @@
 | 認証 | Magic Link (OTP) + JWT |
 | メール | Resend |
 | AI | Google Gemini API (具材・レシピ), Claude Code CLI (レシピ推薦) |
-| Web | HTML / CSS / JavaScript (フレームワークなし, モバイルファースト, PWA) |
+| Web | HTML / CSS（紹介ページ + 管理画面のみ） |
 | モバイル | React Native (Expo SDK 54), TypeScript, Zustand |
 | ビルド | EAS Build / EAS Submit |
 
@@ -82,12 +82,11 @@ cooking-basket/
 │   │       └── error-handler.ts
 │   ├── package.json
 │   └── tsconfig.json
-├── web/                    # Web クライアント (静的ファイル)
-│   ├── index.html          # 買い物リスト画面
-│   ├── app.js
-│   ├── style.css
-│   ├── manifest.json       # PWA マニフェスト
-│   └── admin/              # 管理画面
+├── web/                    # 静的ファイル
+│   ├── about.html          # アプリ紹介ページ
+│   ├── privacy.html        # プライバシーポリシー
+│   ├── img/                # 紹介ページ用画像（OGP / QR / スクリーンショット / アイコン）
+│   └── admin/              # 本番管理画面
 ├── mobile/                 # モバイルアプリ (React Native / Expo)
 │   ├── app/                # Expo Router ページ
 │   ├── src/
@@ -149,7 +148,7 @@ npm start
 ```
 
 サーバ起動後:
-- 買い物リスト: http://localhost:3000/
+- アプリ紹介ページ: http://localhost:3000/about （`/` にアクセスするとここへ 301 リダイレクト）
 - 管理画面: http://localhost:3000/admin/
 
 ## API エンドポイント
