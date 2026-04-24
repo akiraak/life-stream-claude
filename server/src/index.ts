@@ -1,9 +1,9 @@
-import dotenv from 'dotenv';
+// lib/logger など env を import 時に読むモジュールより前に .env を流し込む必要があるので、
+// 副作用 import として一番上に置く。
+import 'dotenv/config';
 import { createApp } from './app';
 import { cleanupExpiredTokens } from './services/auth-service';
 import { logger } from './lib/logger';
-
-dotenv.config();
 
 const PORT = process.env.PORT || 3000;
 const app = createApp();
