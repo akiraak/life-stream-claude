@@ -114,6 +114,7 @@
 - 2026-03-06 Google Play クローズドテスト トラック作成・AABアップロード・審査提出
 
 ## 2026-04
+- 2026-04-24 管理画面にサーバのデプロイ日時を表示 Phase 2: `/admin/` システム情報ページの「サーバー」セクションに「デプロイ日時」行を稼働時間の直下に追加（`web/admin/app.js` の `renderSystem()` で `s.deployedAt` が truthy なら `new Date(s.deployedAt).toLocaleString('ja-JP')` を `escapeHtml` 経由で表示、falsy なら muted 色 `#94a3b8` / font-weight 400 で「未設定」を表示、`cd server && npx tsc --noEmit` 緑）
 - 2026-04-24 管理画面にサーバのデプロイ日時を表示 Phase 1: サーバ側実装（`server/.env.example` に `DEPLOYED_AT` のコメント付きテンプレート行を追加、`server/src/services/admin-service.ts` の `getSystemInfo()` 戻り値に `deployedAt: string | null` を追加しヘルパ `getDeployedAt()` で `process.env.DEPLOYED_AT` を読み空文字/undefined/`Date.parse` が NaN のときは `null` を返し、バリデーションを通った文字列はそのまま返す（再整形しない）、`server/tests/unit/admin-service.test.ts` を新設し `setupTestDatabase()` を取り回して `beforeEach`/`afterEach` で `DEPLOYED_AT` をクリーンに管理しつつ「未設定→null」「有効な ISO 8601→文字列をそのまま返す」「`'not-a-date'`→null」の 3 ケースをカバー、`cd server && npm test`（14 files / 136 tests）が緑）
 - 2026-04-24 本番サーバで `/api/ai/suggest` が未ログイン時に `DEVICE_ID_SECRET が設定されていません` で 500 落ちしていた件を修正（原因は本番コンテナへ `server/.env` の envs が渡っておらず `DEVICE_ID_SECRET` 未設定のため `rate-limit-ai.ts` の `hashDeviceId` が throw していた。デプロイシステム側で env_file から注入するように直し、リポジトリからは `docker-compose.yml` を削除してデプロイ定義の単一ソース化）
 - 2026-04-21 管理画面で docs/plans, docs/specs のマークダウンドキュメントを閲覧可能に（API追加 + 一覧/閲覧画面）

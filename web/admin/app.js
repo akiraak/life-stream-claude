@@ -571,6 +571,7 @@ async function renderSystem() {
       <div class="info-section">
         <div class="info-section-title">サーバー</div>
         <div class="info-row"><span class="info-label">稼働時間</span><span class="info-value">${formatUptime(s.uptime)}</span></div>
+        <div class="info-row"><span class="info-label">デプロイ日時</span><span class="info-value"${s.deployedAt ? '' : ' style="color:#94a3b8;font-weight:400"'}>${s.deployedAt ? escapeHtml(new Date(s.deployedAt).toLocaleString('ja-JP')) : '未設定'}</span></div>
         <div class="info-row"><span class="info-label">Node.js</span><span class="info-value">${escapeHtml(s.nodeVersion)}</span></div>
         <div class="info-row"><span class="info-label">メモリ (RSS)</span><span class="info-value">${formatBytes(s.memoryUsage.rss)}</span></div>
         <div class="info-row"><span class="info-label">ヒープ使用量</span><span class="info-value">${formatBytes(s.memoryUsage.heapUsed)} / ${formatBytes(s.memoryUsage.heapTotal)}</span></div>
