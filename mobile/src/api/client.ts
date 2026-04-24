@@ -1,9 +1,10 @@
 import axios from 'axios';
+import { API_BASE_URL } from '../config/api-endpoint';
 import { getToken, removeToken } from '../utils/token';
 import { getDeviceId } from '../utils/device-id';
 
 const client = axios.create({
-  baseURL: 'https://basket.chobi.me',
+  baseURL: API_BASE_URL,
   timeout: 30000,
 });
 

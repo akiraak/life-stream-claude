@@ -35,7 +35,6 @@
 
 ## 実機アプリの接続先サーバ切り替え
         docs/plans/api-endpoint-switch.md
-- [ ] Phase 1: API URL を環境変数化（`src/config/api-endpoint.ts` 新設、`client.ts` 差し替え）
 - [ ] Phase 2: `eas.json` のビルドプロファイル別 env ＋ development/preview のローカル HTTP 許可
 - [ ] Phase 3: 動作確認（`.env` でローカル接続／未設定で本番接続／production ビルドが本番接続）
 

@@ -19,13 +19,13 @@ Expo の `EXPO_PUBLIC_*` 環境変数機構を使う。
 ## フェーズ
 
 ### Phase 1: API URL を環境変数化
-- [ ] `mobile/src/config/api-endpoint.ts` を新規作成
+- [x] `mobile/src/config/api-endpoint.ts` を新規作成
   ```ts
   export const API_BASE_URL =
     process.env.EXPO_PUBLIC_API_URL ?? 'https://basket.chobi.me';
   ```
-- [ ] `mobile/src/api/client.ts` の `baseURL` を `API_BASE_URL` に差し替え
-- [ ] 既存の Jest テスト（`__tests__/api/`）が通ることを確認
+- [x] `mobile/src/api/client.ts` の `baseURL` を `API_BASE_URL` に差し替え
+- [x] 既存の Jest テスト（`__tests__/api/`）が通ることを確認
 
 ### Phase 2: eas.json にビルドプロファイル別の env を追加
 - [ ] `development` / `preview` プロファイルに
