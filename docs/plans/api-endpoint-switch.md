@@ -28,16 +28,15 @@ Expo の `EXPO_PUBLIC_*` 環境変数機構を使う。
 - [x] 既存の Jest テスト（`__tests__/api/`）が通ることを確認
 
 ### Phase 2: eas.json にビルドプロファイル別の env を追加
-- [ ] `development` / `preview` プロファイルに
+- [x] `development` / `preview` プロファイルに
       `"env": { "EXPO_PUBLIC_API_URL": "http://192.168.x.x:3000" }` を追加
       （実 IP は開発機に合わせて適宜書き換える前提）
-- [ ] `production` は env 未指定のまま（フォールバックで本番 URL）
-- [ ] 開発用ローカル HTTP 許可のための Info.plist / AndroidManifest 設定は
+- [x] `production` は env 未指定のまま（フォールバックで本番 URL）
+- [x] 開発用ローカル HTTP 許可のための Info.plist / AndroidManifest 設定は
       **preview / development プロファイルのみ**に限定する
   - iOS: `NSAppTransportSecurity.NSAllowsArbitraryLoads = true`
-  - Android: `usesCleartextTraffic = true`
-  - → `app.config.ts` に移行し、`process.env.EAS_BUILD_PROFILE` で分岐するか、
-     production ビルド前に `app.json` から外す運用にする（シンプル優先なら後者）
+  - Android: `usesCleartextTraffic = true`（`expo-build-properties` 経由）
+  - → `app.config.ts` に移行し、`process.env.EAS_BUILD_PROFILE` で分岐（production ビルドには自動で混入しない）
 
 ### Phase 3: 動作確認
 - [ ] `mobile/.env` に `EXPO_PUBLIC_API_URL=http://192.168.x.x:3000` を書き、

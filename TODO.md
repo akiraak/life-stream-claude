@@ -35,7 +35,6 @@
 
 ## 実機アプリの接続先サーバ切り替え
         docs/plans/api-endpoint-switch.md
-- [ ] Phase 2: `eas.json` のビルドプロファイル別 env ＋ development/preview のローカル HTTP 許可
 - [ ] Phase 3: 動作確認（`.env` でローカル接続／未設定で本番接続／production ビルドが本番接続）
 
 ## テストの導入
