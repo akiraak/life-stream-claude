@@ -114,6 +114,7 @@
 - 2026-03-06 Google Play クローズドテスト トラック作成・AABアップロード・審査提出
 
 ## 2026-04
+- 2026-04-24 本番サーバで `/api/ai/suggest` が未ログイン時に `DEVICE_ID_SECRET が設定されていません` で 500 落ちしていた件を修正（原因は本番コンテナへ `server/.env` の envs が渡っておらず `DEVICE_ID_SECRET` 未設定のため `rate-limit-ai.ts` の `hashDeviceId` が throw していた。デプロイシステム側で env_file から注入するように直し、リポジトリからは `docker-compose.yml` を削除してデプロイ定義の単一ソース化）
 - 2026-04-21 管理画面で docs/plans, docs/specs のマークダウンドキュメントを閲覧可能に（API追加 + 一覧/閲覧画面）
 - 2026-04-21 dev-admin Step1: dev-admin/ ディレクトリ作成、package.json / tsconfig.json 作成
 - 2026-04-21 dev-admin Step2: Express サーバ実装（/api/docs, /api/docs/:category/:file, /api/design/:file、ポート 3010、127.0.0.1 バインド）
