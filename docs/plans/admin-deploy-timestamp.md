@@ -21,7 +21,8 @@
 
 ### 案 A: `.env` の `DEPLOYED_AT` を読むだけ（本プラン採用）
 - デプロイ側（CI / デプロイスクリプト）で `.env` の `DEPLOYED_AT` を
-  現在時刻の ISO 8601 文字列に書き換えてからコンテナを再起動
+  現在時刻の文字列（フォーマットはデプロイ側で自由に決める。運用は太平洋時間）
+  に書き換えてからコンテナを再起動
 - サーバは起動時に `process.env.DEPLOYED_AT` を読むだけ
 - 利点: 実装が最小（env 1 本 + 表示 1 行）、個人プロジェクトに見合う
 - 欠点: デプロイフローが `.env` 更新を忘れると古い値のままになる
@@ -40,49 +41,49 @@
 ## 設計上の原則
 1. **`DEPLOYED_AT` は任意項目**。未設定でも既存のシステム情報表示は壊さない
    （UI 側で「未設定」表示にフォールバック）。
-2. **タイムゾーンを曖昧にしない**。`.env` には ISO 8601（例:
-   `2026-04-24T12:34:56+09:00` または `...Z`）で入れる。サーバは文字列を
-   そのまま返し、表示整形はクライアント（`toLocaleString('ja-JP')`）に任せる。
-3. **不正値は握りつぶす**。ISO 8601 として `Date.parse` が NaN を返したら
-   `null` を返し、UI 側で「未設定」扱い。起動を止めない。
+2. **フォーマットはデプロイ側が決める**。サーバは文字列をそのまま返し、UI も
+   そのまま表示する（`new Date(...)` にかけない）。運用は太平洋時間
+   （例: `2026-04-24 05:34 PDT`）を想定する。
+3. **空白だけの値は未設定扱い**。`trim()` して空なら `null` を返し、UI 側で
+   「未設定」扱い。起動を止めない。
 
 ## フェーズ
 
 ### Phase 1: サーバ側
 - [ ] `server/.env.example` に以下を追記
   ```
-  # デプロイ日時（ISO 8601。デプロイ側で更新する）
-  # 例: DEPLOYED_AT=2026-04-24T12:34:56+09:00
+  # デプロイ日時（任意のフォーマット文字列。デプロイ側で更新する）
+  # 管理画面にはこの文字列がそのまま表示される。太平洋時間で入れる想定。
+  # 例: DEPLOYED_AT="2026-04-24 05:34 PDT"
   # DEPLOYED_AT=
   ```
 - [ ] `server/src/services/admin-service.ts` `getSystemInfo()` の戻り値に
   `deployedAt: string | null` を追加
-  - `process.env.DEPLOYED_AT` を読み、空文字 / undefined / `Date.parse` が
-    NaN のときは `null`
-  - バリデーションを通ったら env の文字列をそのまま返す（再整形しない）
+  - `process.env.DEPLOYED_AT` を読み、`trim()` して空になるときは `null`
+  - それ以外は trim 後の文字列をそのまま返す（再整形しない）
 - [ ] `server/tests/unit/admin-service.test.ts`（または既存のテスト）に
   - `DEPLOYED_AT` 未設定時は `deployedAt: null`
-  - 正しい ISO 8601 が入っていればそのまま返る
-  - 不正値（`"not-a-date"`）は `null`
+  - 値が入っていればそのまま返る
+  - 空白だけ / 前後空白のケースをカバー
   の 3 ケースを追加
 
 ### Phase 2: 管理画面の表示
 - [ ] `web/admin/app.js` `renderSystem()` の「サーバー」セクションに
   「デプロイ日時」の行を追加
-  - `s.deployedAt` が truthy なら `new Date(s.deployedAt).toLocaleString('ja-JP')`
+  - `s.deployedAt` が truthy なら `escapeHtml(s.deployedAt)` でそのまま表示
   - falsy なら「未設定」表示（muted）
 - [ ] 稼働時間の行の直下に置く（「いつデプロイされた／再起動後どれだけ経つか」を
   並べて見られるように）
 
 ### Phase 3: デプロイ手順に反映
 - [ ] `.env` を管理しているデプロイスクリプト側で、コンテナ再起動前に
-  `DEPLOYED_AT` を現在時刻に書き換える行を追加
+  `DEPLOYED_AT` を現在時刻（太平洋時間）に書き換える行を追加
   - 実装場所はこのリポジトリ外（デプロイ基盤側）。本プランでは、
     デプロイ手順書の該当箇所にコマンド例を追記するだけ
   - 例:
     ```
-    # .env の DEPLOYED_AT 行を現在時刻に置換（JST）
-    sed -i -E "s|^DEPLOYED_AT=.*|DEPLOYED_AT=$(date -Iseconds)|" .env
+    # .env の DEPLOYED_AT 行を現在の太平洋時間に置換
+    sed -i -E "s|^DEPLOYED_AT=.*|DEPLOYED_AT=\"$(TZ=America/Los_Angeles date '+%Y-%m-%d %H:%M %Z')\"|" .env
     ```
 - [ ] 本番で 1 回デプロイして、`/admin/` の「デプロイ日時」がその時刻に
   なることを実機確認

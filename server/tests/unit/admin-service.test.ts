@@ -23,13 +23,16 @@ describe('admin-service / getSystemInfo deployedAt', () => {
     expect(getSystemInfo().deployedAt).toBeNull();
   });
 
-  it('returns the raw ISO 8601 string as-is when DEPLOYED_AT is valid', () => {
-    process.env.DEPLOYED_AT = '2026-04-24T12:34:56+09:00';
-    expect(getSystemInfo().deployedAt).toBe('2026-04-24T12:34:56+09:00');
+  it('returns the raw string as-is', () => {
+    process.env.DEPLOYED_AT = '2026-04-24 05:34 PDT';
+    expect(getSystemInfo().deployedAt).toBe('2026-04-24 05:34 PDT');
   });
 
-  it('returns null when DEPLOYED_AT is not a valid date', () => {
-    process.env.DEPLOYED_AT = 'not-a-date';
+  it('trims surrounding whitespace and returns null for whitespace-only', () => {
+    process.env.DEPLOYED_AT = '  ';
     expect(getSystemInfo().deployedAt).toBeNull();
+
+    process.env.DEPLOYED_AT = '  2026-04-24 05:34 PDT  ';
+    expect(getSystemInfo().deployedAt).toBe('2026-04-24 05:34 PDT');
   });
 });

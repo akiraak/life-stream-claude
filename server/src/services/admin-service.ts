@@ -213,9 +213,8 @@ export function getAiQuotaStats() {
 function getDeployedAt(): string | null {
   const raw = process.env.DEPLOYED_AT;
   if (!raw) return null;
-  const parsed = Date.parse(raw);
-  if (Number.isNaN(parsed)) return null;
-  return raw;
+  const trimmed = raw.trim();
+  return trimmed || null;
 }
 
 export function getSystemInfo() {
