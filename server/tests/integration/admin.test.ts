@@ -7,6 +7,7 @@ import request from 'supertest';
 import { createApp } from '../helpers/app';
 import { setupTestDatabase } from '../helpers/db';
 import { createAuthedUser } from '../helpers/auth';
+import { _resetAiLimitsCacheForTest } from '../../src/services/settings-service';
 
 setupTestDatabase();
 
@@ -235,6 +236,125 @@ describe('admin logs routes', () => {
           .set(headers);
         expect(res.status).toBe(403);
       });
+    });
+  });
+});
+
+describe('admin AI limits routes', () => {
+  const app = createApp();
+  const createAdmin = () => createAuthedUser('admin@test.local');
+
+  beforeEach(() => {
+    _resetAiLimitsCacheForTest();
+  });
+
+  describe('GET /api/admin/ai-quota', () => {
+    it('includes current limits in response', async () => {
+      const { headers } = createAdmin();
+      const res = await request(app).get('/api/admin/ai-quota').set(headers);
+      expect(res.status).toBe(200);
+      // tests/setup.ts: AI_LIMIT_USER=20, AI_LIMIT_GUEST=3 (DB 未設定なら env)
+      expect(res.body.data.limits).toEqual({ user: 20, guest: 3 });
+    });
+  });
+
+  describe('PUT /api/admin/ai-limits', () => {
+    it('returns 401 without Authorization header', async () => {
+      const res = await request(app).put('/api/admin/ai-limits').send({ user: 10 });
+      expect(res.status).toBe(401);
+    });
+
+    it('returns 403 for a non-admin user', async () => {
+      const { headers } = createAuthedUser('not-admin@example.com');
+      const res = await request(app)
+        .put('/api/admin/ai-limits')
+        .set(headers)
+        .send({ user: 10 });
+      expect(res.status).toBe(403);
+    });
+
+    it('updates limits and reflects new values in subsequent ai-quota GET', async () => {
+      const { headers } = createAdmin();
+      const put = await request(app)
+        .put('/api/admin/ai-limits')
+        .set(headers)
+        .send({ user: 50, guest: 5 });
+      expect(put.status).toBe(200);
+      expect(put.body.data).toEqual({ user: 50, guest: 5 });
+
+      const get = await request(app).get('/api/admin/ai-quota').set(headers);
+      expect(get.body.data.limits).toEqual({ user: 50, guest: 5 });
+    });
+
+    it('allows partial update (only user)', async () => {
+      const { headers } = createAdmin();
+      const put = await request(app)
+        .put('/api/admin/ai-limits')
+        .set(headers)
+        .send({ user: 99 });
+      expect(put.status).toBe(200);
+      expect(put.body.data.user).toBe(99);
+      expect(put.body.data.guest).toBe(3); // env fallback unchanged
+    });
+
+    it('allows 0 (effectively disables AI)', async () => {
+      const { headers } = createAdmin();
+      const put = await request(app)
+        .put('/api/admin/ai-limits')
+        .set(headers)
+        .send({ user: 0, guest: 0 });
+      expect(put.status).toBe(200);
+      expect(put.body.data).toEqual({ user: 0, guest: 0 });
+    });
+
+    it('returns 400 with invalid_ai_limit for negative numbers', async () => {
+      const { headers } = createAdmin();
+      const res = await request(app)
+        .put('/api/admin/ai-limits')
+        .set(headers)
+        .send({ user: -1 });
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('invalid_ai_limit');
+    });
+
+    it('returns 400 for non-integer values', async () => {
+      const { headers } = createAdmin();
+      const res = await request(app)
+        .put('/api/admin/ai-limits')
+        .set(headers)
+        .send({ user: 1.5 });
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('invalid_ai_limit');
+    });
+
+    it('returns 400 for string values', async () => {
+      const { headers } = createAdmin();
+      const res = await request(app)
+        .put('/api/admin/ai-limits')
+        .set(headers)
+        .send({ user: '10' });
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('invalid_ai_limit');
+    });
+
+    it('returns 400 for values exceeding the cap', async () => {
+      const { headers } = createAdmin();
+      const res = await request(app)
+        .put('/api/admin/ai-limits')
+        .set(headers)
+        .send({ user: 100001 });
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('invalid_ai_limit');
+    });
+
+    it('returns 400 when neither user nor guest is provided', async () => {
+      const { headers } = createAdmin();
+      const res = await request(app)
+        .put('/api/admin/ai-limits')
+        .set(headers)
+        .send({});
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('invalid_ai_limit');
     });
   });
 });

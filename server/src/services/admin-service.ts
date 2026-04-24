@@ -1,6 +1,7 @@
 import { getDatabase } from '../database';
 import fs from 'fs';
 import path from 'path';
+import { getAiLimits } from './settings-service';
 
 // --- Dashboard ---
 
@@ -200,11 +201,14 @@ export function getAiQuotaStats() {
     LIMIT 200
   `).all();
 
+  const limits = getAiLimits();
+
   return {
     today,
     todaySummary,
     daily,
     recent,
+    limits,
   };
 }
 

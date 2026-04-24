@@ -14,6 +14,7 @@ import {
   getAiQuotaStats,
   getSystemInfo,
 } from '../services/admin-service';
+import { setAiLimits } from '../services/settings-service';
 import {
   readRecentLogs,
   tailLogFile,
@@ -119,6 +120,44 @@ adminRouter.delete('/saved-recipes/:id', (req: Request, res: Response) => {
 adminRouter.get('/ai-quota', (_req: Request, res: Response) => {
   const stats = getAiQuotaStats();
   res.json({ success: true, data: stats, error: null });
+});
+
+// AI 上限の更新
+adminRouter.put('/ai-limits', (req: Request, res: Response) => {
+  const body = req.body ?? {};
+  const { user, guest } = body;
+
+  if (user === undefined && guest === undefined) {
+    res.status(400).json({ success: false, data: null, error: 'invalid_ai_limit' });
+    return;
+  }
+
+  const values: { user?: number; guest?: number } = {};
+  if (user !== undefined) {
+    if (typeof user !== 'number' || !Number.isInteger(user)) {
+      res.status(400).json({ success: false, data: null, error: 'invalid_ai_limit' });
+      return;
+    }
+    values.user = user;
+  }
+  if (guest !== undefined) {
+    if (typeof guest !== 'number' || !Number.isInteger(guest)) {
+      res.status(400).json({ success: false, data: null, error: 'invalid_ai_limit' });
+      return;
+    }
+    values.guest = guest;
+  }
+
+  try {
+    const limits = setAiLimits(values);
+    res.json({ success: true, data: limits, error: null });
+  } catch (err) {
+    if (err instanceof Error && err.message.startsWith('invalid_ai_limit')) {
+      res.status(400).json({ success: false, data: null, error: 'invalid_ai_limit' });
+      return;
+    }
+    throw err;
+  }
 });
 
 // システム情報

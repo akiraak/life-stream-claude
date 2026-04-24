@@ -232,5 +232,14 @@ export function initDatabase(): void {
     )
   `);
 
+  // マイグレーション: app_settings テーブル追加（admin から書き換え可能なランタイム設定の保存先）
+  database.exec(`
+    CREATE TABLE IF NOT EXISTS app_settings (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL,
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
+
   logger.info('Database initialized');
 }

@@ -18,6 +18,8 @@ const TRUNCATE_TABLES = [
   'dishes',
   'magic_link_tokens',
   'users',
+  'ai_quota',
+  'app_settings',
 ] as const;
 
 export function truncateAllTables(): void {

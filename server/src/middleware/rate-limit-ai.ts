@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import { Request, Response, NextFunction } from 'express';
 import { getDatabase } from '../database';
+import { getAiLimits } from '../services/settings-service';
 
 function getJstDate(now: Date = new Date()): string {
   // JST = UTC+9。YYYY-MM-DD 形式で返す。
@@ -34,8 +35,7 @@ function hashDeviceId(rawId: string): string {
 }
 
 export function rateLimitAi(req: Request, res: Response, next: NextFunction): void {
-  const limitUser = Number(process.env.AI_LIMIT_USER || 20);
-  const limitGuest = Number(process.env.AI_LIMIT_GUEST || 3);
+  const { user: limitUser, guest: limitGuest } = getAiLimits();
 
   let key: string;
   let limit: number;

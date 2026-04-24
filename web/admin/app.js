@@ -472,7 +472,7 @@ async function renderAiQuota() {
 
   const res = await api('GET', `${API}/ai-quota`);
   if (!res.success) return;
-  const { today, todaySummary, daily, recent } = res.data;
+  const { today, todaySummary, daily, recent, limits } = res.data;
 
   const dailyRows = daily.map(r => `
     <tr>
@@ -483,7 +483,28 @@ async function renderAiQuota() {
     </tr>
   `).join('');
 
+  const limitUser = limits?.user ?? 0;
+  const limitGuest = limits?.guest ?? 0;
+
   area.innerHTML = `
+    <div class="info-section" style="margin-bottom:16px">
+      <div class="info-section-title">1 日あたりの AI 呼出上限</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;align-items:end">
+        <div>
+          <label style="display:block;font-size:12px;color:#64748b;margin-bottom:4px">ログインユーザー / 日</label>
+          <input type="number" id="ai-limit-user" min="0" max="100000" step="1" value="${limitUser}" class="search-input" style="width:100%">
+        </div>
+        <div>
+          <label style="display:block;font-size:12px;color:#64748b;margin-bottom:4px">ゲスト / 日</label>
+          <input type="number" id="ai-limit-guest" min="0" max="100000" step="1" value="${limitGuest}" class="search-input" style="width:100%">
+        </div>
+        <div>
+          <button class="btn btn-primary" id="ai-limit-save">保存</button>
+        </div>
+      </div>
+      <div id="ai-limit-warn" style="margin-top:8px;font-size:12px;color:#94a3b8"></div>
+    </div>
+
     <div class="stats-grid">
       <div class="stat-card">
         <div class="stat-label">今日の呼出数 (${escapeHtml(today)} JST)</div>
@@ -493,12 +514,12 @@ async function renderAiQuota() {
       <div class="stat-card">
         <div class="stat-label">今日のログイン利用</div>
         <div class="stat-value">${todaySummary.user_calls}</div>
-        <div class="stat-sub">${todaySummary.user_keys} ユーザー</div>
+        <div class="stat-sub">${todaySummary.user_keys} ユーザー / 上限 ${limitUser} per user</div>
       </div>
       <div class="stat-card">
         <div class="stat-label">今日のゲスト利用</div>
         <div class="stat-value">${todaySummary.guest_calls}</div>
-        <div class="stat-sub">${todaySummary.guest_keys} 端末</div>
+        <div class="stat-sub">${todaySummary.guest_keys} 端末 / 上限 ${limitGuest} per device</div>
       </div>
     </div>
 
@@ -521,6 +542,41 @@ async function renderAiQuota() {
       <button class="btn btn-primary" onclick="renderAiQuota()">更新</button>
     </div>
   `;
+
+  // 上限編集の挙動
+  const userInput = document.getElementById('ai-limit-user');
+  const guestInput = document.getElementById('ai-limit-guest');
+  const warnEl = document.getElementById('ai-limit-warn');
+  const updateWarn = () => {
+    const u = Number(userInput.value);
+    const g = Number(guestInput.value);
+    if (u === 0 || g === 0) {
+      warnEl.style.color = '#dc2626';
+      warnEl.textContent = '※ 0 は AI 機能を実質停止します';
+    } else {
+      warnEl.style.color = '#94a3b8';
+      warnEl.textContent = '';
+    }
+  };
+  userInput.addEventListener('input', updateWarn);
+  guestInput.addEventListener('input', updateWarn);
+  updateWarn();
+
+  document.getElementById('ai-limit-save').addEventListener('click', async () => {
+    const user = Number(userInput.value);
+    const guest = Number(guestInput.value);
+    if (!Number.isInteger(user) || !Number.isInteger(guest) || user < 0 || guest < 0) {
+      showToast('0 以上の整数を指定してください', 'error');
+      return;
+    }
+    const r = await api('PUT', `${API}/ai-limits`, { user, guest });
+    if (r.success) {
+      showToast('保存しました');
+      renderAiQuota();
+    } else {
+      showToast('保存に失敗しました', 'error');
+    }
+  });
 
   // キー単位の直近利用
   const recentArea = document.createElement('div');

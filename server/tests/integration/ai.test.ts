@@ -10,6 +10,7 @@ vi.mock('../../src/services/gemini-service', () => ({
 import { createApp } from '../helpers/app';
 import { setupTestDatabase } from '../helpers/db';
 import { createAuthedUser } from '../helpers/auth';
+import { setAiLimits, _resetAiLimitsCacheForTest } from '../../src/services/settings-service';
 
 setupTestDatabase();
 
@@ -33,6 +34,8 @@ describe('POST /api/ai/suggest', () => {
   beforeEach(() => {
     askGeminiMock.mockReset();
     askGeminiMock.mockResolvedValue(SAMPLE_RESPONSE);
+    // app_settings は truncate されるが、メモリキャッシュも明示的にクリア
+    _resetAiLimitsCacheForTest();
   });
 
   describe('guest (no auth)', () => {
@@ -94,6 +97,47 @@ describe('POST /api/ai/suggest', () => {
         .send({ dishName: 'カレー' });
       expect(res.status).toBe(200);
       expect(res.headers['x-ai-remaining']).toBe('19');
+    });
+  });
+
+  describe('limits driven by app_settings (DB)', () => {
+    it('DB 値が env より優先される (guest を 1 に絞ると 2 回目で 429)', async () => {
+      setAiLimits({ guest: 1 });
+      const send = () => request(app)
+        .post('/api/ai/suggest')
+        .set('X-Device-Id', 'device-db-limited')
+        .send({ dishName: 'カレー' });
+
+      const first = await send();
+      expect(first.status).toBe(200);
+      expect(first.headers['x-ai-remaining']).toBe('0');
+
+      const second = await send();
+      expect(second.status).toBe(429);
+      expect(second.body.error).toBe('ai_quota_exceeded');
+    });
+
+    it('user 上限を 1 にすると認証ユーザーも 2 回目で 429', async () => {
+      setAiLimits({ user: 1 });
+      const { headers } = createAuthedUser('limited-user@example.com');
+      const send = () => request(app)
+        .post('/api/ai/suggest')
+        .set(headers)
+        .send({ dishName: 'カレー' });
+
+      await send().expect(200);
+      const second = await send();
+      expect(second.status).toBe(429);
+    });
+
+    it('limit を 0 にすると即 429 を返す (AI 機能の実質停止)', async () => {
+      setAiLimits({ guest: 0 });
+      const res = await request(app)
+        .post('/api/ai/suggest')
+        .set('X-Device-Id', 'device-zero-limit')
+        .send({ dishName: 'カレー' });
+      expect(res.status).toBe(429);
+      expect(res.body.error).toBe('ai_quota_exceeded');
     });
   });
 
