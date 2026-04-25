@@ -11,7 +11,6 @@ jest.mock('../../src/api/shopping', () => ({
   deleteItem: jest.fn(),
   deleteCheckedItems: jest.fn(),
   reorderItems: jest.fn(),
-  getItemSuggestions: jest.fn(),
 }));
 
 jest.mock('../../src/api/dishes', () => ({
@@ -24,7 +23,6 @@ jest.mock('../../src/api/dishes', () => ({
   unlinkItemFromDish: jest.fn(),
   reorderDishes: jest.fn(),
   reorderDishItems: jest.fn(),
-  getDishSuggestions: jest.fn(),
 }));
 
 jest.mock('../../src/api/saved-recipes', () => ({

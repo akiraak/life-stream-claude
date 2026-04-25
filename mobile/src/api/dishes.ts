@@ -57,10 +57,3 @@ export async function reorderDishItems(dishId: number, orderedItemIds: number[])
   const res = await client.put<ApiResponse<null>>(`/api/dishes/${dishId}/items/reorder`, { orderedItemIds });
   if (!res.data.success) throw new Error(res.data.error ?? '並び替えに失敗しました');
 }
-
-export async function getDishSuggestions(q?: string): Promise<Array<string | { name: string; count: number }>> {
-  const params = q ? { q } : {};
-  const res = await client.get<ApiResponse<Array<string | { name: string; count: number }>>>('/api/dishes/suggestions', { params });
-  if (!res.data.success) throw new Error(res.data.error ?? '取得に失敗しました');
-  return res.data.data;
-}

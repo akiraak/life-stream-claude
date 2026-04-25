@@ -35,10 +35,3 @@ export async function reorderItems(orderedIds: number[]): Promise<void> {
   const res = await client.put<ApiResponse<null>>('/api/shopping/reorder', { orderedIds });
   if (!res.data.success) throw new Error(res.data.error ?? '並び替えに失敗しました');
 }
-
-export async function getItemSuggestions(q?: string): Promise<Array<string | { name: string; count: number }>> {
-  const params = q ? { q } : {};
-  const res = await client.get<ApiResponse<Array<string | { name: string; count: number }>>>('/api/shopping/suggestions', { params });
-  if (!res.data.success) throw new Error(res.data.error ?? '取得に失敗しました');
-  return res.data.data;
-}

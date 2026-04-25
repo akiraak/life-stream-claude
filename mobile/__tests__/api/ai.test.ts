@@ -32,7 +32,6 @@ describe('suggestAi', () => {
     expect(mockClient.post).toHaveBeenCalledWith('/api/ai/suggest', {
       dishName: '豚汁',
       extraIngredients: undefined,
-      mode: 'both',
     });
     expect(result.ingredients).toHaveLength(1);
     expect(result.recipes).toHaveLength(1);
@@ -78,33 +77,6 @@ describe('suggestAi', () => {
     expect(mockClient.post).toHaveBeenCalledWith('/api/ai/suggest', {
       dishName: 'カレー',
       extraIngredients: ['チキン'],
-      mode: 'both',
-    });
-  });
-
-  it("sends mode='ingredients' when requested", async () => {
-    mockClient.post.mockResolvedValue({
-      data: { success: true, data: { ingredients: [], recipes: [] } },
-      headers: {},
-    });
-    await suggestAi('肉じゃが', undefined, 'ingredients');
-    expect(mockClient.post).toHaveBeenCalledWith('/api/ai/suggest', {
-      dishName: '肉じゃが',
-      extraIngredients: undefined,
-      mode: 'ingredients',
-    });
-  });
-
-  it("sends mode='recipes' when requested", async () => {
-    mockClient.post.mockResolvedValue({
-      data: { success: true, data: { ingredients: [], recipes: [] } },
-      headers: {},
-    });
-    await suggestAi('肉じゃが', undefined, 'recipes');
-    expect(mockClient.post).toHaveBeenCalledWith('/api/ai/suggest', {
-      dishName: '肉じゃが',
-      extraIngredients: undefined,
-      mode: 'recipes',
     });
   });
 });

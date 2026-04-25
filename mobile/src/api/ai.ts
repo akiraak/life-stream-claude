@@ -11,8 +11,6 @@ export interface SuggestAiResult extends SuggestAiData {
   remaining: number | null;
 }
 
-export type SuggestAiMode = 'ingredients' | 'recipes' | 'both';
-
 export class AiQuotaError extends Error {
   remaining: number;
   resetAt: string | null;
@@ -27,13 +25,11 @@ export class AiQuotaError extends Error {
 export async function suggestAi(
   dishName: string,
   extraIngredients?: string[],
-  mode: SuggestAiMode = 'both',
 ): Promise<SuggestAiResult> {
   try {
     const res = await client.post<ApiResponse<SuggestAiData>>('/api/ai/suggest', {
       dishName,
       extraIngredients,
-      mode,
     });
     if (!res.data.success) throw new Error(res.data.error ?? 'AI提案に失敗しました');
     const headerVal = (res.headers ?? {})['x-ai-remaining'];

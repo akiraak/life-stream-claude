@@ -7,7 +7,6 @@ jest.mock('../../src/api/shopping', () => ({
   deleteItem: jest.fn(),
   deleteCheckedItems: jest.fn(),
   reorderItems: jest.fn(),
-  getItemSuggestions: jest.fn(),
 }));
 
 jest.mock('../../src/api/dishes', () => ({
@@ -20,7 +19,6 @@ jest.mock('../../src/api/dishes', () => ({
   unlinkItemFromDish: jest.fn(),
   reorderDishes: jest.fn(),
   reorderDishItems: jest.fn(),
-  getDishSuggestions: jest.fn(),
 }));
 
 jest.mock('../../src/api/ai', () => {
@@ -262,7 +260,7 @@ describe('shopping-store (local mode)', () => {
 
     const result = await useShoppingStore.getState().suggestIngredients(dish.id);
 
-    expect(ai.suggestAi).toHaveBeenCalledWith('カレー', undefined, 'both');
+    expect(ai.suggestAi).toHaveBeenCalledWith('カレー', undefined);
     expect(dishes.updateDishAiCache).not.toHaveBeenCalled(); // local モードではサーバキャッシュ呼出しない
     expect(result.ingredients).toHaveLength(1);
     expect(result.recipes).toHaveLength(1);
@@ -279,67 +277,6 @@ describe('shopping-store (local mode)', () => {
     expect(saved).toHaveLength(1);
     expect(saved[0].dish_name).toBe('カレー');
     expect(saved[0].id).toBeLessThan(0);
-  });
-
-  it("suggestIngredients with mode='ingredients' skips recipe auto-save and preserves recipes_json", async () => {
-    const dish = await useShoppingStore.getState().addDish('肉じゃが');
-    // 既にレシピキャッシュがある状態を再現
-    useShoppingStore.setState((s) => ({
-      dishes: s.dishes.map((d) =>
-        d.id === dish.id
-          ? { ...d, recipes_json: JSON.stringify([{ title: '前回のレシピ' }]) }
-          : d,
-      ),
-    }));
-    ai.suggestAi.mockResolvedValue({
-      ingredients: [{ name: 'じゃがいも', category: '野菜' }],
-      recipes: [],
-      remaining: 5,
-    });
-
-    const result = await useShoppingStore.getState().suggestIngredients(
-      dish.id,
-      undefined,
-      'ingredients',
-    );
-
-    expect(ai.suggestAi).toHaveBeenCalledWith('肉じゃが', undefined, 'ingredients');
-    expect(result.ingredients).toHaveLength(1);
-    expect(result.recipes).toEqual([]);
-    expect(result.recipeStates).toEqual([]);
-    // 既存の recipes_json が温存されていること
-    const updated = useShoppingStore.getState().dishes.find((d) => d.id === dish.id);
-    expect(updated?.recipes_json).toContain('前回のレシピ');
-    expect(updated?.ingredients_json).toContain('じゃがいも');
-    // saved_recipes は空のまま
-    expect(useRecipeStore.getState().savedRecipes).toHaveLength(0);
-  });
-
-  it("suggestIngredients with mode='recipes' generates recipes and auto-saves them", async () => {
-    const dish = await useShoppingStore.getState().addDish('豚汁');
-    ai.suggestAi.mockResolvedValue({
-      ingredients: [{ name: '豚肉', category: '肉類' }],
-      recipes: [
-        {
-          title: '基本の豚汁',
-          summary: 'うまい',
-          steps: ['切る', '煮る'],
-          ingredients: [{ name: '豚肉', category: '肉類' }],
-        },
-      ],
-      remaining: 4,
-    });
-
-    const result = await useShoppingStore.getState().suggestIngredients(
-      dish.id,
-      undefined,
-      'recipes',
-    );
-
-    expect(ai.suggestAi).toHaveBeenCalledWith('豚汁', undefined, 'recipes');
-    expect(result.recipes).toHaveLength(1);
-    expect(result.recipeStates).toHaveLength(1);
-    expect(useRecipeStore.getState().savedRecipes).toHaveLength(1);
   });
 
   it('suggestIngredients marks quota exceeded when AiQuotaError is thrown', async () => {

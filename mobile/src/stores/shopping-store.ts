@@ -4,7 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Dish, DishItem, Ingredient, Recipe, ShoppingItem } from '../types/models';
 import * as shoppingApi from '../api/shopping';
 import * as dishesApi from '../api/dishes';
-import { suggestAi, AiQuotaError, type SuggestAiMode } from '../api/ai';
+import { suggestAi, AiQuotaError } from '../api/ai';
 import { useAiStore } from './ai-store';
 import { useRecipeStore } from './recipe-store';
 
@@ -49,7 +49,6 @@ interface ShoppingState {
   suggestIngredients: (
     dishId: number,
     extraIngredients?: string[],
-    mode?: SuggestAiMode,
   ) => Promise<SuggestIngredientsResult>;
 
   // 料理⇔食材
@@ -300,14 +299,14 @@ export const useShoppingStore = create<ShoppingState>()(
         await dishesApi.reorderDishItems(dishId, orderedItemIds);
       },
 
-      suggestIngredients: async (dishId, extraIngredients, mode = 'both') => {
+      suggestIngredients: async (dishId, extraIngredients) => {
         const state = get();
         const dish = state.dishes.find((d) => d.id === dishId);
         if (!dish) throw new Error('料理が見つかりません');
 
         let result;
         try {
-          result = await suggestAi(dish.name, extraIngredients, mode);
+          result = await suggestAi(dish.name, extraIngredients);
         } catch (e) {
           if (e instanceof AiQuotaError) {
             useAiStore.getState().markQuotaExceeded(e.resetAt);
@@ -317,16 +316,14 @@ export const useShoppingStore = create<ShoppingState>()(
         useAiStore.getState().setRemaining(result.remaining);
 
         const { ingredients, recipes } = result;
-        const ingredientsOnly = mode === 'ingredients';
 
-        // dish にキャッシュ反映。具材のみ取得時は recipes_json を上書きしない
         set((s) => ({
           dishes: s.dishes.map((d) =>
             d.id === dishId
               ? {
                   ...d,
                   ingredients_json: JSON.stringify(ingredients),
-                  recipes_json: ingredientsOnly ? d.recipes_json : JSON.stringify(recipes),
+                  recipes_json: JSON.stringify(recipes),
                   updated_at: nowIso(),
                 }
               : d,
@@ -334,20 +331,15 @@ export const useShoppingStore = create<ShoppingState>()(
         }));
 
         if (state.mode === 'server') {
-          // サーバ側にもキャッシュ保存（失敗しても致命ではないのでログのみ）
           try {
-            const recipesForCache = ingredientsOnly
-              ? (dish.recipes_json ? (JSON.parse(dish.recipes_json) as unknown[]) : [])
-              : recipes;
-            await dishesApi.updateDishAiCache(dishId, ingredients, recipesForCache);
+            await dishesApi.updateDishAiCache(dishId, ingredients, recipes);
           } catch {
             /* noop */
           }
         }
 
-        // レシピ自動保存（具材のみ取得時は recipes が空なので呼ばない）
         let recipeStates: { id: number; liked: number; like_count: number }[] = [];
-        if (!ingredientsOnly && recipes.length > 0) {
+        if (recipes.length > 0) {
           const recipeStore = useRecipeStore.getState();
           const saved = await recipeStore.autoSaveRecipes(dish.name, recipes, dishId);
           recipeStates = saved.map((r) => ({

@@ -15,7 +15,7 @@ import { RecipeCard } from './RecipeCard';
 import { useRecipeStore } from '../../stores/recipe-store';
 import { useAiStore } from '../../stores/ai-store';
 import { useAuthStore } from '../../stores/auth-store';
-import { AiQuotaError, type SuggestAiMode } from '../../api/ai';
+import { AiQuotaError } from '../../api/ai';
 import type { Dish, Ingredient, Recipe, RecipeState } from '../../types/models';
 import type { SuggestIngredientsResult } from '../../stores/shopping-store';
 
@@ -74,19 +74,16 @@ export function IngredientsScreen({ dish, onClose }: IngredientsScreenProps) {
   }, [dish.id]);
 
   const fetchSuggestions = useCallback(
-    async (extras?: string[], mode: SuggestAiMode = 'both') => {
+    async (extras?: string[]) => {
       setLoading(true);
       try {
         const data: SuggestIngredientsResult = await useShoppingStore.getState().suggestIngredients(
           dish.id,
           extras && extras.length > 0 ? extras : undefined,
-          mode,
         );
         setIngredients(data.ingredients);
-        if (mode !== 'ingredients') {
-          setRecipes(data.recipes);
-          setRecipeStates(data.recipeStates);
-        }
+        setRecipes(data.recipes);
+        setRecipeStates(data.recipeStates);
         const existing = new Set<string>();
         for (const ing of data.ingredients) {
           if (dishItemNames.has(ing.name)) existing.add(ing.name);
@@ -97,7 +94,7 @@ export function IngredientsScreen({ dish, onClose }: IngredientsScreenProps) {
           if (!isAuthenticated) {
             requestLogin({
               reason: 'AI 提案の残り回数を増やすにはログインしてください',
-              onSuccess: () => fetchSuggestions(extras, mode),
+              onSuccess: () => fetchSuggestions(extras),
             });
           } else {
             Alert.alert('本日の上限に達しました', '明日また使えます');
@@ -138,10 +135,6 @@ export function IngredientsScreen({ dish, onClose }: IngredientsScreenProps) {
     },
     [addedNames, ingredients, addItem, linkItemToDish, dish.id],
   );
-
-  const handleFetchIngredients = useCallback(() => {
-    fetchSuggestions(undefined, 'ingredients');
-  }, [fetchSuggestions]);
 
   const handleRefresh = useCallback(() => {
     fetchSuggestions();
@@ -208,16 +201,13 @@ export function IngredientsScreen({ dish, onClose }: IngredientsScreenProps) {
     [remaining],
   );
 
-  const fetchIngredientsLabel = useMemo(
-    () => withRemaining('具材を AI で取得'),
-    [withRemaining],
+  const refreshLabel = useMemo(
+    () =>
+      extraIngredients.length > 0
+        ? withRemaining('この素材でレシピをAI検索')
+        : withRemaining('レシピをAI検索'),
+    [extraIngredients.length, withRemaining],
   );
-
-  const refreshLabel = useMemo(() => {
-    if (extraIngredients.length > 0) return withRemaining('この素材でレシピを再検索');
-    if (recipes.length === 0) return withRemaining('レシピを AI で取得');
-    return withRemaining('レシピを再検索');
-  }, [extraIngredients.length, recipes.length, withRemaining]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -269,7 +259,7 @@ export function IngredientsScreen({ dish, onClose }: IngredientsScreenProps) {
         {loading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={colors.primary} />
-            <Text style={[styles.loadingText, { color: colors.textMuted }]}>具材を検索中...</Text>
+            <Text style={[styles.loadingText, { color: colors.textMuted }]}>AI で検索中...</Text>
           </View>
         ) : (
           <>
@@ -306,20 +296,7 @@ export function IngredientsScreen({ dish, onClose }: IngredientsScreenProps) {
               </>
             )}
 
-            {ingredients.length === 0 ? (
-              <View style={styles.emptySection}>
-                <Text style={[styles.emptyText, { color: colors.textMuted }]}>
-                  この料理の具材はまだ取得していません。
-                </Text>
-                <TouchableOpacity
-                  style={[styles.extraSearchBtn, { backgroundColor: colors.primaryLight }]}
-                  onPress={handleFetchIngredients}
-                  disabled={loading}
-                >
-                  <Text style={styles.extraSearchBtnText}>{fetchIngredientsLabel}</Text>
-                </TouchableOpacity>
-              </View>
-            ) : extraIngredients.length > 0 ? (
+            {extraIngredients.length > 0 ? (
               <View style={[styles.extraSection, { borderTopColor: colors.border }]}>
                 <Text style={[styles.extraLabel, { color: colors.textMuted }]}>
                   追加素材（買い物リストから）
@@ -487,16 +464,6 @@ const styles = StyleSheet.create({
   extraChip: {
     borderWidth: 1,
     borderStyle: 'dashed',
-  },
-  emptySection: {
-    alignItems: 'stretch',
-    gap: 16,
-    marginTop: 24,
-    marginBottom: 16,
-  },
-  emptyText: {
-    fontSize: 14,
-    textAlign: 'center',
   },
   extraSearchBtn: {
     borderRadius: 8,
