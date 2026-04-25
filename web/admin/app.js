@@ -120,6 +120,7 @@ function renderDataTable(container, { columns, data, searchFields, actions }) {
         if (actions) {
           html += '<td>';
           actions.forEach(a => {
+            if (a.visible && !a.visible(row)) return;
             html += `<button class="btn ${a.class || 'btn-danger'} btn-sm" data-action="${a.key}" data-id="${row.id}">${a.label}</button> `;
           });
           html += '</td>';
@@ -158,6 +159,7 @@ function renderDataTable(container, { columns, data, searchFields, actions }) {
               if (actions) {
                 tbHtml += '<td>';
                 actions.forEach(a => {
+                  if (a.visible && !a.visible(row)) return;
                   tbHtml += `<button class="btn ${a.class || 'btn-danger'} btn-sm" data-action="${a.key}" data-id="${row.id}">${a.label}</button> `;
                 });
                 tbHtml += '</td>';
@@ -524,6 +526,16 @@ async function renderAiQuota() {
     </div>
 
     <div class="info-section" style="margin-top:16px">
+      <div class="info-section-title">今日の消化数をリセット</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-danger" id="ai-quota-reset-user">ログインユーザー分をリセット</button>
+        <button class="btn btn-danger" id="ai-quota-reset-guest">ゲスト分をリセット</button>
+        <button class="btn btn-danger" id="ai-quota-reset-all">すべてリセット</button>
+      </div>
+      <div style="margin-top:8px;font-size:12px;color:#94a3b8">今日 (${escapeHtml(today)} JST) の消化カウンタを 0 に戻します。過去日には影響しません。</div>
+    </div>
+
+    <div class="info-section" style="margin-top:16px">
       <div class="info-section-title">日次推移（直近14日）</div>
       <table class="data-table" style="width:100%">
         <thead>
@@ -578,6 +590,31 @@ async function renderAiQuota() {
     }
   });
 
+  // 消化数リセットの挙動
+  async function resetAiQuota(scope, options = {}) {
+    const body = { scope, ...options };
+    const r = await api('POST', `${API}/ai-quota/reset`, body);
+    if (r.success) {
+      showToast(`${r.data.deleted} 件リセットしました`);
+      renderAiQuota();
+    } else {
+      showToast('リセットに失敗しました', 'error');
+    }
+  }
+
+  document.getElementById('ai-quota-reset-user').addEventListener('click', () => {
+    if (!confirm('ログインユーザーの今日の AI 呼び出し回数を 0 に戻します。よろしいですか？')) return;
+    resetAiQuota('user');
+  });
+  document.getElementById('ai-quota-reset-guest').addEventListener('click', () => {
+    if (!confirm('ゲストの今日の AI 呼び出し回数を 0 に戻します。よろしいですか？')) return;
+    resetAiQuota('guest');
+  });
+  document.getElementById('ai-quota-reset-all').addEventListener('click', () => {
+    if (!confirm('今日の AI 呼び出し回数 (ログイン + ゲスト) をすべて 0 に戻します。よろしいですか？')) return;
+    resetAiQuota('all');
+  });
+
   // キー単位の直近利用
   const recentArea = document.createElement('div');
   recentArea.className = 'info-section';
@@ -604,6 +641,18 @@ async function renderAiQuota() {
     ],
     data: recent.map((r, i) => ({ ...r, id: `${r.key}|${r.date}|${i}` })),
     searchFields: ['key', 'email', 'date'],
+    actions: [
+      {
+        key: 'reset',
+        label: '今日分リセット',
+        class: 'btn-danger',
+        visible: row => row.date === today,
+        onClick: row => {
+          if (!confirm(`このキーの今日の AI 呼び出し回数を 0 に戻します。よろしいですか？\n\n${row.key}`)) return;
+          resetAiQuota('key', { key: row.key });
+        },
+      },
+    ],
   });
 }
 
