@@ -3,7 +3,7 @@
 ## 機能開発
 - [ ] 管理画面の認証をアプリの認証と別にする。Cloudflare Access で行うようにする
   - プラン: [docs/plans/admin-auth-cloudflare.md](docs/plans/admin-auth-cloudflare.md)
-  - [ ] Phase 0: 前提確認（Tunnel か Proxied DNS かの特定 → Phase 5-1 の封鎖手段を決定）
+  - [x] Phase 0: 前提確認（Tunnel か Proxied DNS かの特定 → Phase 5-1 の封鎖手段を決定）
   - [ ] Phase 1: Cloudflare Access の設定（Application 作成・Google IdP・AUD/iss 取得・最初は Bypass モード）
   - [ ] Phase 2: サーバ側 `requireCloudflareAccess` ミドルウェア実装（jose + iss/aud/RS256 検証 + JWKS 1h キャッシュ + dev バイパス白リスト + `req.adminEmail` + テスト）
   - [ ] Phase 3: `/api/admin` の認証付け替え（`requireAdmin`/`ADMIN_EMAILS` 撤去、CORS 絞り、`/api/admin/me` 追加、結合テスト一括書き換え）
