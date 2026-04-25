@@ -1,6 +1,12 @@
 # TODO
 
 ## 機能開発
+- [ ] 管理画面から未ログインとログインユーザーともにAI呼び出し回数を初期化できるようにする ([docs/plans/admin-ai-quota-reset.md](docs/plans/admin-ai-quota-reset.md))
+  - [x] Phase 1: `resetAiQuota` を `admin-service.ts` に追加 + ユニットテスト
+  - [ ] Phase 2: `POST /api/admin/ai-quota/reset` を `routes/admin.ts` に追加 + 統合テスト
+  - [ ] Phase 3: `web/admin/app.js` `renderAiQuota()` にリセット UI を追加（user / guest / all / キー単位）
+  - [ ] Phase 4: dev サーバで上限到達 → リセット → 再呼び出しの動作確認
+- [ ] サーバ側での料理レシピや料理に関連づいた食材のキャッシュをやめる
 - [ ] アプリ起動直後は右上ハンバーガーのAI使用回数が表示されない
 - [ ] 自分のレシピに表示されるレシピの判定基準の調査
 - [ ] ライトモードのデザイン追加

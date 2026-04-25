@@ -154,6 +154,49 @@ function getJstDate(now: Date = new Date()): string {
   return new Date(jstMs).toISOString().slice(0, 10);
 }
 
+export type AiQuotaResetScope = 'user' | 'guest' | 'all' | 'key';
+
+export function resetAiQuota(
+  scope: AiQuotaResetScope,
+  options?: { key?: string },
+): { scope: AiQuotaResetScope; deleted: number } {
+  const db = getDatabase();
+  const today = getJstDate();
+
+  let result;
+  switch (scope) {
+    case 'user':
+      result = db
+        .prepare("DELETE FROM ai_quota WHERE date = ? AND key LIKE 'user:%'")
+        .run(today);
+      break;
+    case 'guest':
+      result = db
+        .prepare("DELETE FROM ai_quota WHERE date = ? AND key LIKE 'device:%'")
+        .run(today);
+      break;
+    case 'all':
+      result = db
+        .prepare('DELETE FROM ai_quota WHERE date = ?')
+        .run(today);
+      break;
+    case 'key': {
+      const key = options?.key;
+      if (!key) {
+        throw new Error('invalid_scope');
+      }
+      result = db
+        .prepare('DELETE FROM ai_quota WHERE date = ? AND key = ?')
+        .run(today, key);
+      break;
+    }
+    default:
+      throw new Error('invalid_scope');
+  }
+
+  return { scope, deleted: result.changes };
+}
+
 export function getAiQuotaStats() {
   const db = getDatabase();
   const today = getJstDate();
