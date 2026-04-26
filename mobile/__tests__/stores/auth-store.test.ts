@@ -296,7 +296,7 @@ describe('auth-store', () => {
   });
 
   describe('logout', () => {
-    it('removes token, resets local stores, and reloads guest AI quota', async () => {
+    it('removes token, switches to local mode while keeping items, and reloads guest AI quota', async () => {
       await secure.setItemAsync(TOKEN_KEY, 'existing-token');
       ai.getAiQuota.mockResolvedValue({ remaining: 1, limit: 3, resetAt: null });
       useAuthStore.setState({
@@ -351,9 +351,13 @@ describe('auth-store', () => {
       expect(state.userId).toBeNull();
       expect(state.pendingEmail).toBeNull();
       expect(useShoppingStore.getState().mode).toBe('local');
-      expect(useShoppingStore.getState().items).toHaveLength(0);
+      // ログアウトで画面表示が消えないよう、items/dishes/savedRecipes は保持する。
+      // 持っているのはサーバ ID（正の数）だが、local モードの操作は id 一致で in-memory に書くので動作する。
+      expect(useShoppingStore.getState().items).toHaveLength(1);
+      expect(useShoppingStore.getState().items[0].id).toBe(1);
       expect(useRecipeStore.getState().mode).toBe('local');
-      expect(useRecipeStore.getState().savedRecipes).toHaveLength(0);
+      expect(useRecipeStore.getState().savedRecipes).toHaveLength(1);
+      expect(useRecipeStore.getState().savedRecipes[0].id).toBe(1);
       // ゲスト枠の取り直しが行われる
       expect(ai.getAiQuota).toHaveBeenCalled();
       expect(useAiStore.getState().remaining).toBe(1);

@@ -37,10 +37,13 @@ interface AuthState {
 }
 
 function resetLocalStores() {
-  useShoppingStore.getState().clearLocalData();
-  useShoppingStore.getState().setMode('local');
-  useRecipeStore.getState().clearLocalData();
-  useRecipeStore.getState().setMode('local');
+  // ログアウト後も画面に出ていた食材・料理・レシピを残す。
+  // setMode('local') 経由だと items/dishes/savedRecipes が空配列でクリアされ、
+  // ユーザーから「ログアウトで急にデータが消えた」体験になるため、
+  // setState で mode だけ書き換える。
+  // 持っているのはサーバ ID だが、local モードの操作は全て id 一致で in-memory に書くので動作する。
+  useShoppingStore.setState({ mode: 'local' });
+  useRecipeStore.setState({ mode: 'local' });
   // ユーザー枠の残量を引き継がず、後段の loadQuota でゲスト枠を取り直す
   useAiStore.getState().reset();
 }

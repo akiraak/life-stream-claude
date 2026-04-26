@@ -234,6 +234,33 @@ race そのものを断ち切る本プランの方針を採用する。
 - `npm test` (mobile) と `npm test` (server) が通ることを確認
 - 必要なら `docs/plans/testing.md` の関連箇所を更新
 
+### Phase 5: ログアウトでローカル表示が消える問題の修正
+
+Phase 4 の実機確認で発見:「移す」経路でログイン → ログアウトすると、未ログイン時に
+追加し migrate でサーバ側に移したはずの食材・料理が画面から消える。原因は `logout()` →
+`resetLocalStores()` が `clearLocalData()` を呼んで items/dishes/savedRecipes を空にしていること。
+ユーザー視点では「画面に出ていたものが急に消える」体験になる。
+
+#### 対応方針（option A）
+- `resetLocalStores()` から `clearLocalData()` 呼び出しを外す
+- `setMode('local')` 自体も `set({ mode, items: [], dishes: [] })` でクリアするので、
+  代わりに `useShoppingStore.setState({ mode: 'local' })` / `useRecipeStore.setState({ mode: 'local' })`
+  と直接 setState で mode だけ書き換える
+- 結果: ログアウト後も items/dishes/savedRecipes は画面に残る（持っているのはサーバ ID だが、
+  local モードの操作はすべて id 一致で in-memory に書くので動作する）
+- `partialize` は local モードで items/dishes/savedRecipes を AsyncStorage に永続化するので、
+  アプリ再起動後も残る
+
+#### 既知のトレードオフ
+- ログアウト後のデータを「移す」で再ログインすると、サーバに重複登録される可能性がある
+  （local 側のサーバ ID が migrate の `localId` として渡るため）。発生頻度は低いと判断し、
+  必要になったら option B（サーバ ID をローカル ID に振り直す）に切り替える
+
+#### 影響範囲
+- `mobile/src/stores/auth-store.ts` — `resetLocalStores()` の中身
+- `mobile/__tests__/stores/auth-store.test.ts` — logout テストで items/savedRecipes が保持される
+  ことを assert するように書き換え
+
 ## 注意点・リスク
 
 - `verify()` の戻り値や副作用を変えるため、他に呼んでいる箇所がないか
