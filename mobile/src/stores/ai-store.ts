@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { getAiQuota } from '../api/ai';
 
 interface AiState {
   remaining: number | null;
@@ -7,6 +8,7 @@ interface AiState {
 
   setRemaining: (n: number | null) => void;
   markQuotaExceeded: (resetAt: string | null) => void;
+  loadQuota: () => Promise<void>;
   reset: () => void;
 }
 
@@ -29,6 +31,20 @@ export const useAiStore = create<AiState>((set) => ({
       quotaExceeded: true,
       resetAt,
     }),
+
+  // 起動時／認証切替時に呼ぶ。失敗しても既存値を壊さない（fail-soft）。
+  loadQuota: async () => {
+    try {
+      const q = await getAiQuota();
+      set({
+        remaining: q.remaining,
+        quotaExceeded: q.remaining === 0,
+        resetAt: q.resetAt,
+      });
+    } catch {
+      // ネットワーク／サーバ不調時はメニュー非表示のまま据え置く
+    }
+  },
 
   reset: () =>
     set({

@@ -1,7 +1,16 @@
+jest.mock('../../src/api/ai', () => ({
+  __esModule: true,
+  getAiQuota: jest.fn(),
+}));
+
 import { useAiStore } from '../../src/stores/ai-store';
+import { getAiQuota } from '../../src/api/ai';
+
+const mockGetAiQuota = getAiQuota as jest.MockedFunction<typeof getAiQuota>;
 
 beforeEach(() => {
   useAiStore.setState({ remaining: null, quotaExceeded: false, resetAt: null });
+  mockGetAiQuota.mockReset();
 });
 
 describe('ai-store', () => {
@@ -36,7 +45,70 @@ describe('ai-store', () => {
       resetAt: null,
       setRemaining: expect.any(Function),
       markQuotaExceeded: expect.any(Function),
+      loadQuota: expect.any(Function),
       reset: expect.any(Function),
+    });
+  });
+
+  describe('loadQuota', () => {
+    it('populates remaining/resetAt from server response', async () => {
+      mockGetAiQuota.mockResolvedValue({
+        remaining: 12,
+        limit: 20,
+        resetAt: '2026-04-27T15:00:00.000Z',
+      });
+
+      await useAiStore.getState().loadQuota();
+
+      expect(useAiStore.getState()).toMatchObject({
+        remaining: 12,
+        quotaExceeded: false,
+        resetAt: '2026-04-27T15:00:00.000Z',
+      });
+    });
+
+    it('flips quotaExceeded when remaining is 0', async () => {
+      mockGetAiQuota.mockResolvedValue({
+        remaining: 0,
+        limit: 20,
+        resetAt: '2026-04-27T15:00:00.000Z',
+      });
+
+      await useAiStore.getState().loadQuota();
+
+      expect(useAiStore.getState()).toMatchObject({
+        remaining: 0,
+        quotaExceeded: true,
+        resetAt: '2026-04-27T15:00:00.000Z',
+      });
+    });
+
+    it('stores remaining: null without marking quota exceeded', async () => {
+      mockGetAiQuota.mockResolvedValue({
+        remaining: null,
+        limit: null,
+        resetAt: '2026-04-27T15:00:00.000Z',
+      });
+
+      await useAiStore.getState().loadQuota();
+
+      expect(useAiStore.getState()).toMatchObject({
+        remaining: null,
+        quotaExceeded: false,
+      });
+    });
+
+    it('does not throw and keeps existing state on network failure', async () => {
+      useAiStore.setState({ remaining: 7, quotaExceeded: false, resetAt: null });
+      mockGetAiQuota.mockRejectedValue(new Error('network down'));
+
+      await expect(useAiStore.getState().loadQuota()).resolves.toBeUndefined();
+
+      expect(useAiStore.getState()).toMatchObject({
+        remaining: 7,
+        quotaExceeded: false,
+        resetAt: null,
+      });
     });
   });
 });

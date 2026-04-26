@@ -2,13 +2,14 @@ jest.mock('../../src/api/client', () => ({
   __esModule: true,
   default: {
     post: jest.fn(),
+    get: jest.fn(),
   },
 }));
 
 import client from '../../src/api/client';
-import { suggestAi, AiQuotaError } from '../../src/api/ai';
+import { suggestAi, getAiQuota, AiQuotaError } from '../../src/api/ai';
 
-const mockClient = client as unknown as { post: jest.Mock };
+const mockClient = client as unknown as { post: jest.Mock; get: jest.Mock };
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -78,5 +79,39 @@ describe('suggestAi', () => {
       dishName: 'カレー',
       extraIngredients: ['チキン'],
     });
+  });
+});
+
+describe('getAiQuota', () => {
+  it('returns remaining/limit/resetAt from /api/ai/quota', async () => {
+    mockClient.get.mockResolvedValue({
+      data: {
+        success: true,
+        data: { remaining: 12, limit: 20, resetAt: '2026-04-27T15:00:00.000Z' },
+      },
+    });
+
+    const q = await getAiQuota();
+    expect(mockClient.get).toHaveBeenCalledWith('/api/ai/quota');
+    expect(q).toEqual({ remaining: 12, limit: 20, resetAt: '2026-04-27T15:00:00.000Z' });
+  });
+
+  it('passes through nulls (unauthenticated guest without device-id)', async () => {
+    mockClient.get.mockResolvedValue({
+      data: {
+        success: true,
+        data: { remaining: null, limit: null, resetAt: '2026-04-27T15:00:00.000Z' },
+      },
+    });
+    const q = await getAiQuota();
+    expect(q.remaining).toBeNull();
+    expect(q.limit).toBeNull();
+  });
+
+  it('throws when success is false', async () => {
+    mockClient.get.mockResolvedValue({
+      data: { success: false, data: null, error: 'boom' },
+    });
+    await expect(getAiQuota()).rejects.toThrow('boom');
   });
 });

@@ -7,7 +7,7 @@
 - [ ] ログインすると未ログインの時の食材と料理が消える。ログアウトしても食材と料理が戻らない
 - [ ] アプリ起動直後は右上ハンバーガーのAI使用回数が表示されない [plan](docs/plans/ai-quota-on-startup.md)
   - [x] Phase 1: サーバに `GET /api/ai/quota` を追加（rate-limit-ai のヘルパをサービス層に切り出し）
-  - [ ] Phase 2: モバイル `ai-store` に `loadQuota` / `api/ai.ts` に `getAiQuota` を追加
+  - [x] Phase 2: モバイル `ai-store` に `loadQuota` / `api/ai.ts` に `getAiQuota` を追加
   - [ ] Phase 3: `app/_layout.tsx` で起動時・認証切替時に `loadQuota` を呼び、実機確認
 - [ ] 自分のレシピに表示されるレシピの判定基準の調査
 - [ ] ログインのパスコード入力画面での「別のメールアドレスで試す」を削除し「ログインコードの再送」を入れる

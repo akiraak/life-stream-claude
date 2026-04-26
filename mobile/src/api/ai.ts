@@ -22,6 +22,18 @@ export class AiQuotaError extends Error {
   }
 }
 
+export interface AiQuota {
+  remaining: number | null;
+  limit: number | null;
+  resetAt: string | null;
+}
+
+export async function getAiQuota(): Promise<AiQuota> {
+  const res = await client.get<ApiResponse<AiQuota>>('/api/ai/quota');
+  if (!res.data.success) throw new Error(res.data.error ?? 'AI残量取得に失敗');
+  return res.data.data;
+}
+
 export async function suggestAi(
   dishName: string,
   extraIngredients?: string[],
