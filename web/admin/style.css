@@ -108,9 +108,30 @@ body {
   font-weight: 700;
 }
 
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .topbar-user {
   font-size: 13px;
   color: #64748b;
+}
+
+.topbar-logout {
+  font-size: 12px;
+  color: #64748b;
+  text-decoration: none;
+  padding: 4px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.topbar-logout:hover {
+  background: #f1f5f9;
+  color: #1e293b;
 }
 
 /* Content area */

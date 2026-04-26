@@ -2475,6 +2475,13 @@ function renderReactNativePlan() {
 // Init
 // ============================================================
 async function initAdmin() {
+  const logoutLink = document.getElementById('topbar-logout');
+  if (logoutLink) {
+    logoutLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      location.href = '/cdn-cgi/access/logout?returnTo=' + encodeURIComponent('/');
+    });
+  }
   const res = await api('GET', `${API}/me`);
   if (!res || !res.success) return;
   document.getElementById('topbar-user').textContent = (res.data && res.data.email) || '';
