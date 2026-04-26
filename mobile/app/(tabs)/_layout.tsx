@@ -4,6 +4,7 @@ import { Tabs } from 'expo-router';
 import { useThemeColors } from '../../src/theme/theme-provider';
 import { useAuthStore } from '../../src/stores/auth-store';
 import { useAiStore } from '../../src/stores/ai-store';
+import { isLocalServer, localServerLabel } from '../../src/config/api-endpoint';
 
 export default function TabsLayout() {
   const colors = useThemeColors();
@@ -24,6 +25,9 @@ export default function TabsLayout() {
   const headerRight = () => (
     <TouchableOpacity onPress={() => setMenuVisible(true)} style={styles.menuBtn}>
       <Text style={[styles.menuIcon, { color: colors.text }]}>☰</Text>
+      {isLocalServer && (
+        <View style={[styles.menuBadge, { backgroundColor: colors.danger, borderColor: colors.surface }]} />
+      )}
     </TouchableOpacity>
   );
 
@@ -100,6 +104,11 @@ export default function TabsLayout() {
                 </TouchableOpacity>
               </>
             )}
+            {isLocalServer && (
+              <Text style={[styles.menuLocalServer, { color: colors.danger, borderTopColor: colors.border }]}>
+                🔧 ローカル: {localServerLabel}
+              </Text>
+            )}
           </View>
         </TouchableOpacity>
       </Modal>
@@ -123,6 +132,15 @@ const styles = StyleSheet.create({
   },
   menuIcon: {
     fontSize: 20,
+  },
+  menuBadge: {
+    position: 'absolute',
+    top: 2,
+    right: 8,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    borderWidth: 1,
   },
   menuOverlay: {
     flex: 1,
@@ -159,5 +177,11 @@ const styles = StyleSheet.create({
   },
   menuItemText: {
     fontSize: 14,
+  },
+  menuLocalServer: {
+    fontSize: 12,
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
   },
 });
