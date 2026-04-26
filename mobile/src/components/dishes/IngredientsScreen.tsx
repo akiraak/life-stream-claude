@@ -299,7 +299,7 @@ export function IngredientsScreen({ dish, onClose }: IngredientsScreenProps) {
             {extraIngredients.length > 0 ? (
               <View style={[styles.extraSection, { borderTopColor: colors.border }]}>
                 <Text style={[styles.extraLabel, { color: colors.textMuted }]}>
-                  追加素材（買い物リストから）
+                  追加具材（買い物リストから）
                 </Text>
                 <View style={styles.chipContainer}>
                   {extraIngredients.map((name) => (
