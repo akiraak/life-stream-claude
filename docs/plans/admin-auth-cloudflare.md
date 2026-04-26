@@ -115,7 +115,7 @@ Browser ──> Cloudflare Edge ──[Access policy: Google SSO]──> Origin 
   - `basket-admin-allow`（Action: Allow / Include: 管理者 Gmail）→ Reusable Policy として作成済み、basket-admin から detach。Phase 5-2 ステップ 4 で再 attach
 - 動作: 現状 `/admin/` は Bypass のため Google SSO を通らずにそのまま到達できる（旧 Bearer JWT で動作継続）
 
-### Phase 2 — サーバ側 Cloudflare Access JWT 検証ミドルウェア
+### Phase 2 — サーバ側 Cloudflare Access JWT 検証ミドルウェア ✅ 完了 (2026-04-25)
 - 新規ファイル: `server/src/middleware/cloudflare-access.ts`
   - `Cf-Access-Jwt-Assertion` ヘッダから JWT を取り出す
   - `https://<team>.cloudflareaccess.com/cdn-cgi/access/certs` の JWKS を取得して
@@ -157,6 +157,30 @@ Browser ──> Cloudflare Edge ──[Access policy: Google SSO]──> Origin 
   - 既存 `admin.test.ts` の認証アサーション（401/403）は Phase 3 に合わせて書き換え
 - 完了条件: `requireCloudflareAccess` を単独で呼ぶダミールートに対する単体／結合
   テストがすべて通る
+
+**実装結果:**
+- 追加: `server/src/middleware/cloudflare-access.ts`
+  - `createRemoteJWKSet(url, { cacheMaxAge: 60 * 60 * 1000 })` で 1h JWKS キャッシュ
+  - `jwtVerify` のオプション `{ audience, issuer, algorithms: ['RS256'] }`（alg=none も含めて非 RS256 を拒否）
+  - `req.adminEmail` のみセット（`req.userEmail` とは分離）
+  - dev バイパス: `ADMIN_AUTH_DEV_BYPASS === '1'` ＋ `NODE_ENV in {development, test}` の白リスト判定
+  - エラーは `logger.warn` で event=`cf_access_*` を出して 401（`Cloudflare Access 認証が必要です`）
+  - テスト用 `_resetCloudflareAccessJwksCacheForTest()` を export
+- 追加: `jose@^6` を `server/package.json` の dependencies に追加
+- 追加: `server/tests/helpers/auth.ts` に `startCfAccessStub`, `stopCfAccessStub`,
+  `createCfAccessHeaders(email, overrides)` を追加
+  - `generateKeyPair('RS256')` ＋ ローカル HTTP サーバで `/cdn-cgi/access/certs` を配信
+  - `CF_ACCESS_TEAM_DOMAIN` をスタブの `http://127.0.0.1:PORT` に向ける（CF_ACCESS_AUD はテスト固定値）
+  - overrides で aud/iss/exp/foreignKey/algNone/kid を切り替えられる
+- 追加: `server/tests/integration/admin-cloudflare-auth.test.ts`（15 ケース）
+  - 正常 / aud 不一致 / iss 不一致 / 期限切れ / ヘッダ欠落 / 署名不正（未公開鍵）/ alg=none /
+    `CF_ACCESS_TEAM_DOMAIN` 未設定 / `CF_ACCESS_AUD` 未設定 / dev バイパス白リスト 6 ケース
+- 更新: `server/.env.example`
+  - `CF_ACCESS_TEAM_DOMAIN`, `CF_ACCESS_AUD`, `ADMIN_AUTH_DEV_BYPASS`, `ADMIN_AUTH_DEV_EMAIL` を追記
+  - `ADMIN_EMAILS` を削除
+- 留意: `tests/setup.ts` の `ADMIN_EMAILS` および `requireAdmin` を使う既存 admin テストは
+  Phase 3 で一括書き換えるため、Phase 2 では残置
+- 確認: `npx vitest run` で 207 件全て green、`npm run build` も成功
 
 ### Phase 3 — `/api/admin` ルートの認証付け替え
 - [`server/src/app.ts:88`](../../server/src/app.ts) を
