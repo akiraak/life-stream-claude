@@ -103,7 +103,7 @@ exec eas submit --platform ios --latest
 
 LAN の device discovery が不安定なときは `--tunnel` を付けて ngrok 経由で起動する
 （`"$@"` で `expo start` に透過渡しされる）。詳細は
-[mobile-tunnel-toggle.md](mobile-tunnel-toggle.md) 参照。
+[mobile-tunnel-toggle.md](../mobile-tunnel-toggle.md) 参照。
 
 ```bash
 ./mobile-build-local.sh --tunnel              # tunnel 経由
@@ -145,9 +145,9 @@ LAN の device discovery が不安定なときは `--tunnel` を付けて ngrok 
 - [ ] `mobile/eas.json` から preview/development の `EXPO_PUBLIC_API_URL` プレースホルダを削除
 
 ### Phase 2: 動作確認
-- [ ] `./mobile-build-local.sh` で LAN サーバに Expo Go で接続できること
-- [ ] `./mobile-build-prod.sh` で本番サーバに Expo Go で接続できること
-- [ ] `./mobile-submit-testflight.sh` で TestFlight に提出できること
+- [x] `./mobile-build-local.sh` で LAN サーバに Expo Go で接続できること
+- [x] `./mobile-build-prod.sh` で本番サーバに Expo Go で接続できること
+- [x] `./mobile-submit-testflight.sh` で TestFlight に提出できること
 
 ### Phase 3: ドキュメント
-- [ ] README に 3 つのスクリプトの使い方を追記
+- [x] README に 3 つのスクリプトの使い方を追記

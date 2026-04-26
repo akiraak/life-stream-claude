@@ -161,6 +161,31 @@ npm start
 - アプリ紹介ページ: http://localhost:3000/about （`/` にアクセスするとここへ 301 リダイレクト）
 - 管理画面: http://localhost:3000/admin/
 
+## モバイルアプリ
+
+リポジトリルートに 3 つのスクリプトを置いており、Expo Go での実機確認と TestFlight 提出を一発で実行できる。
+
+```bash
+# LAN 上の npm run dev サーバに接続して Expo Go 起動（QR 表示）
+./mobile-build-local.sh
+
+# 本番サーバ (https://basket.chobi.me) に接続して Expo Go 起動
+./mobile-build-prod.sh
+
+# production ビルド + TestFlight 提出（eas build --auto-submit）
+./mobile-submit-testflight.sh
+```
+
+LAN の device discovery が不安定なときは `--tunnel` を付けると ngrok 経由で接続できる（追加引数は `expo start` に透過渡しされる）:
+
+```bash
+./mobile-build-local.sh --tunnel
+./mobile-build-local.sh --tunnel --port 8088   # ポートも併用可
+```
+
+詳細は [docs/plans/archive/mobile-build-scripts.md](docs/plans/archive/mobile-build-scripts.md) と
+[docs/plans/mobile-tunnel-toggle.md](docs/plans/mobile-tunnel-toggle.md) を参照。
+
 ## API エンドポイント
 
 ### 認証

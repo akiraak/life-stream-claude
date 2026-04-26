@@ -4,18 +4,6 @@
 
 ## 機能開発
 - [ ] ローカルサーバに接続する開発アプリの場合は右上ハンバーグのメニューにローカルサーバに接続するのが分かる表示を入れる
-- [ ] expoでのクライアントアプリビルドスクリプトを作成。localサーバ接続と本番サーバ接続と、TextFlightアップの３種類 [plan](docs/plans/mobile-build-scripts.md)
-  - [x] Phase 1: スクリプト追加と eas.json 整理
-    - [x] `mobile-build-local.sh` を `expo start` ベースで作成し `chmod +x`
-    - [x] `mobile-build-prod.sh` を `expo start` ベースで作成し `chmod +x`
-    - [x] `mobile-submit-testflight.sh` を作成し `chmod +x`
-    - [x] `mobile/eas.json` から preview/development の `EXPO_PUBLIC_API_URL` プレースホルダを削除
-  - [ ] Phase 2: 動作確認
-    - [ ] `./mobile-build-local.sh` で LAN サーバに Expo Go で接続できること
-    - [ ] `./mobile-build-prod.sh` で本番サーバに Expo Go で接続できること
-    - [ ] `./mobile-submit-testflight.sh` で TestFlight に提出できること
-  - [ ] Phase 3: ドキュメント
-    - [ ] README に 3 つのスクリプトの使い方を追記
 - [ ] mobile-build スクリプトの tunnel 切り替え対応 [plan](docs/plans/mobile-tunnel-toggle.md)
   - [x] Phase 1: スクリプト改修（`--tunnel` ハードコード削除、`"$@"` で透過渡し）
   - [ ] Phase 2: 動作確認（`./mobile-build-local.sh --tunnel` で ngrok URL 表示）
