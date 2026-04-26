@@ -6,7 +6,6 @@ import pinoHttp from 'pino-http';
 import { errorHandler } from './middleware/error-handler';
 import { requireAuth, optionalAuth } from './middleware/auth';
 import { requireCloudflareAccess } from './middleware/cloudflare-access';
-import { rateLimitAi } from './middleware/rate-limit-ai';
 import { authRouter } from './routes/auth';
 import { shoppingRouter } from './routes/shopping';
 import { adminRouter } from './routes/admin';
@@ -78,8 +77,8 @@ export function createApp(options: CreateAppOptions = {}): Express {
   // 認証ルート（認証不要）
   app.use('/api/auth', authRouter);
 
-  // AI（未ログイン可、端末 ID or ユーザー ID でレート制限）
-  app.use('/api/ai', optionalAuth, rateLimitAi, aiRouter);
+  // AI（未ログイン可。レート制限は /suggest 側で個別適用、/quota は読み取り専用なので除外）
+  app.use('/api/ai', optionalAuth, aiRouter);
 
   // みんなのレシピは未ログイン可（/api/saved-recipes より先にマウント）
   app.use('/api/saved-recipes/shared', savedRecipesSharedRouter);

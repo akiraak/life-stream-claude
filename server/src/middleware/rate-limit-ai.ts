@@ -1,38 +1,11 @@
-import crypto from 'crypto';
 import { Request, Response, NextFunction } from 'express';
 import { getDatabase } from '../database';
 import { getAiLimits } from '../services/settings-service';
-
-function getJstDate(now: Date = new Date()): string {
-  // JST = UTC+9。YYYY-MM-DD 形式で返す。
-  const jstMs = now.getTime() + 9 * 60 * 60 * 1000;
-  return new Date(jstMs).toISOString().slice(0, 10);
-}
-
-function getJstResetAtIso(now: Date = new Date()): string {
-  // 翌日 00:00 JST を UTC の ISO 文字列で返す
-  const jstMs = now.getTime() + 9 * 60 * 60 * 1000;
-  const jst = new Date(jstMs);
-  const nextJstMidnight = Date.UTC(
-    jst.getUTCFullYear(),
-    jst.getUTCMonth(),
-    jst.getUTCDate() + 1,
-    0, 0, 0, 0,
-  );
-  // JST 00:00 を UTC に戻す
-  return new Date(nextJstMidnight - 9 * 60 * 60 * 1000).toISOString();
-}
-
-function hashDeviceId(rawId: string): string {
-  const secret = process.env.DEVICE_ID_SECRET;
-  if (!secret) {
-    throw new Error('DEVICE_ID_SECRET が設定されていません');
-  }
-  return crypto
-    .createHash('sha256')
-    .update(rawId + secret)
-    .digest('hex');
-}
+import {
+  getJstDate,
+  getJstResetAtIso,
+  hashDeviceId,
+} from '../services/ai-quota-service';
 
 export function rateLimitAi(req: Request, res: Response, next: NextFunction): void {
   const { user: limitUser, guest: limitGuest } = getAiLimits();
