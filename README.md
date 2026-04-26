@@ -184,7 +184,7 @@ LAN の device discovery が不安定なときは `--tunnel` を付けると ngr
 ```
 
 詳細は [docs/plans/archive/mobile-build-scripts.md](docs/plans/archive/mobile-build-scripts.md) と
-[docs/plans/mobile-tunnel-toggle.md](docs/plans/mobile-tunnel-toggle.md) を参照。
+[docs/plans/archive/mobile-tunnel-toggle.md](docs/plans/archive/mobile-tunnel-toggle.md) を参照。
 
 ## API エンドポイント
 

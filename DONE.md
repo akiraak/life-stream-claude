@@ -114,6 +114,7 @@
 - 2026-03-06 Google Play クローズドテスト トラック作成・AABアップロード・審査提出
 
 ## 2026-04
+- 2026-04-26 mobile-build スクリプトの tunnel 切り替え対応。`mobile-build-local.sh` / `mobile-build-prod.sh` の `--tunnel` ハードコードを外し、`"$@"` 透過渡しでユーザが必要なときだけ `expo start` に `--tunnel` を渡せる形に。`./mobile-build-local.sh --tunnel` で ngrok URL が出る動作を確認。README とプランに使い方を反映
 - 2026-04-26 expo クライアントアプリビルドスクリプトを整備。`mobile-build-local.sh`（LAN サーバ接続の Expo Go 起動）/`mobile-build-prod.sh`（本番サーバ接続の Expo Go 起動）/`mobile-submit-testflight.sh`（`eas build --auto-submit` で production ビルド + TestFlight 提出）の 3 本をリポジトリルートに追加。`mobile/eas.json` から preview/development の `EXPO_PUBLIC_API_URL` プレースホルダを除去（フォールバック `https://basket.chobi.me` に任せる）。`--tunnel` などの追加引数は `"$@"` 透過渡しで `expo start` に流せる。README に「モバイルアプリ」節を追加して使い方を記載
 - 2026-04-26 CLAUDE.md に「作業着手ルール」セクションを追記。作業開始時に `docs/plans/<task-name>.md` を作成すること、TODO.md に該当項目が無ければ追加してプランファイルへのリンクを記載すること、複数 Phase / Step がある場合は子タスクとして列挙すること、完了時は親タスクを DONE.md に移しプランファイルを `docs/plans/archive/` に移動すること、を明文化
 - 2026-04-26 表示テキスト変更: `mobile/src/components/dishes/IngredientsScreen.tsx:302` の「追加素材（買い物リストから）」を「追加具材（買い物リストから）」に変更

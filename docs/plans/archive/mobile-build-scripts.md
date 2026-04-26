@@ -103,7 +103,7 @@ exec eas submit --platform ios --latest
 
 LAN の device discovery が不安定なときは `--tunnel` を付けて ngrok 経由で起動する
 （`"$@"` で `expo start` に透過渡しされる）。詳細は
-[mobile-tunnel-toggle.md](../mobile-tunnel-toggle.md) 参照。
+[mobile-tunnel-toggle.md](mobile-tunnel-toggle.md) 参照。
 
 ```bash
 ./mobile-build-local.sh --tunnel              # tunnel 経由

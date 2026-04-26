@@ -69,7 +69,7 @@ EXPO_PUBLIC_API_URL="$API_URL" exec npx expo start "$@"
 ### Phase 1: スクリプト改修
 - [x] `mobile-build-local.sh` の `--tunnel` を削除
 - [x] `mobile-build-prod.sh` の `--tunnel` を削除
-- [ ] 動作確認（OFF / `--tunnel` / `--tunnel --port`）
+- [x] 動作確認（OFF / `--tunnel` / `--tunnel --port`）
 
 ### Phase 2: ドキュメント
 - [x] `docs/plans/mobile-build-scripts.md` に tunnel の渡し方を追記
