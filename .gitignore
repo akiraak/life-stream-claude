@@ -31,3 +31,6 @@ Thumbs.db
 
 # TestFlight / Play Console bug reports (PII を含むのでコミットしない)
 mobile/bug-reports/
+
+# Debug screenshots (ローカル作業用、コミット対象外)
+debug-ss/
