@@ -112,7 +112,6 @@ cooking-basket/
 - npm
 - Google Gemini API キー
 - Resend API キー（メール認証用）
-- `jq`（モバイルのローカル接続ビルドスクリプト `mobile-build-local.sh` で `eas.json` を一時書き換えるのに使う。Ubuntu: `sudo apt install jq` / macOS: `brew install jq`）
 
 ### インストール
 
