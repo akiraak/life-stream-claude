@@ -231,7 +231,7 @@ Browser ──> Cloudflare Edge ──[Access policy: Google SSO]──> Origin 
 - 確認: `npx vitest run` で 18 ファイル / 206 件 green、`npm run build` も成功
   - 件数の差分: -4（旧 403 ケース） +2（`/api/admin/me` × 2 ケース）= 元 207 → 206 で整合
 
-### Phase 4 — `web/admin` クライアントの改修
+### Phase 4 — `web/admin` クライアントの改修 ✅ 完了 (2026-04-25)
 - `web/admin/app.js`
   - `getAuthToken` / `Authorization: Bearer` の付与を撤去（[L6, L10-11](../../web/admin/app.js)）
   - 401 時は `location.href = '/cdn-cgi/access/logout?returnTo=' + encodeURIComponent('/admin/')`
@@ -253,6 +253,27 @@ Browser ──> Cloudflare Edge ──[Access policy: Google SSO]──> Origin 
 - 静的ファイル `/admin/*` 配信は edge では Cloudflare Access が守るが、
   Origin 直アクセスでは `express.static` が `index.html` を返してしまう
   （UI シェルだけなので致命ではないが、Phase 5 の Origin 封鎖と組で守る）
+
+**実装結果:**
+- 更新: `web/admin/app.js`
+  - `getAuthToken()` 関数を削除し、`api()` から `Authorization: Bearer` の付与を撤去
+  - `api()` の 401 ハンドラを
+    `location.href = '/cdn-cgi/access/logout?returnTo=' + encodeURIComponent('/admin/')`
+    に変更（`localStorage.removeItem('auth_token'/'auth_email')` も削除）
+  - `api()` の `fetch` に `credentials: 'same-origin'` を明示（CF Access の
+    `CF_Authorization` Cookie が同一オリジンで自動送出されるよう保険）
+  - SSE `connectStream()` でも `Authorization` ヘッダ付与を削除し、401 時の
+    `localStorage` クリア＋`/` 遷移を `/cdn-cgi/access/logout?returnTo=/admin/`
+    遷移に置換
+  - 起動部の `if (!getAuthToken())` ガードを削除。代わりに新規 `initAdmin()` で
+    `GET /api/admin/me` を叩き、`res.data.email` をトップバーに反映してから
+    `Router.init()` を呼ぶ。401 は `api()` 内で既に CF Access ログアウトへ遷移するので
+    `initAdmin` 側では何もしない
+- `web/admin/index.html` は無変更（「アプリへ戻る」リンクは残置）
+- 残課題: 静的ファイル `/admin/*` の Origin 直アクセス問題は Phase 5 の
+  Tunnel 封鎖（既に Phase 0 の確認で Tunnel 経由のため対応不要）と組で解消
+- 確認: 該当ファイルから `auth_token` / `getAuthToken` / `Authorization` /
+  `Bearer` 参照が全て消えていることを `grep -n` で検証済み
 
 ### Phase 5 — ロールアウト / 本番デプロイ
 

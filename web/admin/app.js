@@ -3,19 +3,13 @@
 // ============================================================
 const API = '/api/admin';
 
-function getAuthToken() { return localStorage.getItem('auth_token'); }
-
 async function api(method, url, body = null) {
   const headers = { 'Content-Type': 'application/json' };
-  const token = getAuthToken();
-  if (token) headers['Authorization'] = `Bearer ${token}`;
-  const opts = { method, headers };
+  const opts = { method, headers, credentials: 'same-origin' };
   if (body) opts.body = JSON.stringify(body);
   const res = await fetch(url, opts);
   if (res.status === 401) {
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('auth_email');
-    location.href = '/';
+    location.href = '/cdn-cgi/access/logout?returnTo=' + encodeURIComponent('/admin/');
     return { success: false };
   }
   if (res.status === 403) {
@@ -824,7 +818,6 @@ async function renderLogs() {
     cancelStream();
     setStatus('接続中...', 'log-status-connecting');
 
-    const token = getAuthToken();
     const params = buildQuery();
     const url = `${API}/logs/stream${params.toString() ? '?' + params : ''}`;
     const ctrl = new AbortController();
@@ -833,8 +826,8 @@ async function renderLogs() {
     let res;
     try {
       res = await fetch(url, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
         signal: ctrl.signal,
+        credentials: 'same-origin',
       });
     } catch (err) {
       if (state.closed || ctrl.signal.aborted) return;
@@ -844,9 +837,7 @@ async function renderLogs() {
 
     if (!res.ok || !res.body) {
       if (res.status === 401) {
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('auth_email');
-        location.href = '/';
+        location.href = '/cdn-cgi/access/logout?returnTo=' + encodeURIComponent('/admin/');
         return;
       }
       if (res.status === 403) {
@@ -2483,9 +2474,11 @@ function renderReactNativePlan() {
 // ============================================================
 // Init
 // ============================================================
-if (!getAuthToken()) {
-  location.href = '/';
-} else {
-  document.getElementById('topbar-user').textContent = localStorage.getItem('auth_email') || '';
+async function initAdmin() {
+  const res = await api('GET', `${API}/me`);
+  if (!res || !res.success) return;
+  document.getElementById('topbar-user').textContent = (res.data && res.data.email) || '';
   Router.init();
 }
+
+initAdmin();

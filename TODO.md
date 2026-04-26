@@ -7,7 +7,7 @@
   - [x] Phase 1: Cloudflare Access の設定（Application 作成・Google IdP・AUD/iss 取得・最初は Bypass モード）
   - [x] Phase 2: サーバ側 `requireCloudflareAccess` ミドルウェア実装（jose + iss/aud/RS256 検証 + JWKS 1h キャッシュ + dev バイパス白リスト + `req.adminEmail` + テスト）
   - [x] Phase 3: `/api/admin` の認証付け替え（`requireAdmin`/`ADMIN_EMAILS` 撤去、CORS 絞り、`/api/admin/me` 追加、結合テスト一括書き換え）
-  - [ ] Phase 4: `web/admin` クライアント改修（`auth_token` 依存撤去、401 で `/cdn-cgi/access/logout` へ、SSE 再接続検証）
+  - [x] Phase 4: `web/admin` クライアント改修（`auth_token` 依存撤去、401 で `/cdn-cgi/access/logout` へ、SSE 再接続検証）
   - [ ] Phase 5: 本番ロールアウト（5-1 Origin 直アクセス封鎖必須・5-2 原子的デプロイ順序・5-3 ロールバック手段・5-4 監視）
   - [ ] Phase 6: README / CLAUDE.md / dev-admin の手順更新、TODO → DONE 移動
 - [ ] 追加素材（買い物リストから） -> 追加具材（買い物リストから）
