@@ -71,6 +71,10 @@ export function AuthModal() {
     const trimmedEmail = email.trim();
     if (!trimmedCode || !trimmedEmail) return;
     setLoading(true);
+    // 1. verify(): token を保存するだけ。isAuthenticated は立てず mode も local のまま。
+    // 2. runLoginMigration(): local モードのまま items/dishes/savedRecipes を読み、
+    //    ユーザーに 移す/破棄/キャンセル を問う。mode 切替は行わない。
+    // 3. cancelLogin / finishLogin: 認証フラグ反転と server モード切替の正規ルート。
     try {
       await verify(trimmedEmail, trimmedCode);
     } catch (e: unknown) {
@@ -84,7 +88,7 @@ export function AuthModal() {
       if (result === 'cancelled') {
         await cancelLogin();
       } else {
-        finishLogin();
+        await finishLogin();
       }
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : 'マイグレーションに失敗しました';

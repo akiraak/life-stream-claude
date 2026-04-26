@@ -78,7 +78,7 @@ afterEach(() => {
 });
 
 describe('runLoginMigration', () => {
-  it('switches to server mode without prompting when local data is empty', async () => {
+  it('returns migrated without prompting when local data is empty', async () => {
     const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
 
     const result = await runLoginMigration();
@@ -86,8 +86,9 @@ describe('runLoginMigration', () => {
     expect(result).toBe('migrated');
     expect(alertSpy).not.toHaveBeenCalled();
     expect(migrate).not.toHaveBeenCalled();
-    expect(useShoppingStore.getState().mode).toBe('server');
-    expect(useRecipeStore.getState().mode).toBe('server');
+    // mode 切替は finishLogin の責務になったので、ここでは local のまま。
+    expect(useShoppingStore.getState().mode).toBe('local');
+    expect(useRecipeStore.getState().mode).toBe('local');
   });
 
   it('migrates items/dishes/savedRecipes on "移す"', async () => {
@@ -152,12 +153,13 @@ describe('runLoginMigration', () => {
       title: '基本のカレー',
       sourceDishLocalId: -10,
     });
-    expect(useShoppingStore.getState().mode).toBe('server');
-    expect(useShoppingStore.getState().items).toHaveLength(0);
-    expect(useRecipeStore.getState().mode).toBe('server');
+    // mode 切替・ローカル状態クリアは finishLogin の責務になったので、ここでは何も触らない。
+    expect(useShoppingStore.getState().mode).toBe('local');
+    expect(useShoppingStore.getState().items).toHaveLength(1);
+    expect(useRecipeStore.getState().mode).toBe('local');
   });
 
-  it('clears local data and switches to server on confirmed discard', async () => {
+  it('returns discarded after the user confirms discard', async () => {
     useShoppingStore.setState({
       items: [
         {
@@ -185,8 +187,9 @@ describe('runLoginMigration', () => {
 
     expect(result).toBe('discarded');
     expect(migrate).not.toHaveBeenCalled();
-    expect(useShoppingStore.getState().mode).toBe('server');
-    expect(useShoppingStore.getState().items).toHaveLength(0);
+    // mode 切替・ローカル状態クリアは finishLogin の責務になったので、ここでは何も触らない。
+    expect(useShoppingStore.getState().mode).toBe('local');
+    expect(useShoppingStore.getState().items).toHaveLength(1);
   });
 
   it('returns cancelled and keeps local state on cancel', async () => {

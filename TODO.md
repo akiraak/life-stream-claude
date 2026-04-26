@@ -6,7 +6,7 @@
 - [ ] ログインすると未ログインの時の食材と料理が消える。ログアウトしても食材と料理が戻らない [plan](docs/plans/login-data-loss.md)
   - [x] Phase 1: auth-store の責務再構成（verify / finishLogin / cancelLogin / logout）
   - [x] Phase 2: _layout.tsx の effect を起動時専用に絞る
-  - [ ] Phase 3: AuthModal と migration.ts の整理
+  - [x] Phase 3: AuthModal と migration.ts の整理
   - [ ] Phase 4: テスト追加と実機確認
 - [ ] 自分のレシピに表示されるレシピの判定基準の調査
 - [ ] 料理追加 -> 具材を追加（春キャベツ） -> 料理画面 -> この素材でレシピをAI検索（残り X 回） -> 具材に「春キャベツ」と他の食材が表示されレシピも３つ表示される -> 「レシピをAI検索（残り X 回）」 -> 「春キャベツ」が追加素材（買い物リストから）に表示される。本来は具材の方に表示されるべき

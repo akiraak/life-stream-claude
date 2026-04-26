@@ -40,20 +40,12 @@ function safeJsonParse<T>(value: string | null | undefined, fallback: T): T {
   }
 }
 
-async function switchStoresToServer(): Promise<void> {
-  const shopping = useShoppingStore.getState();
-  const recipe = useRecipeStore.getState();
-  shopping.clearLocalData();
-  recipe.clearLocalData();
-  shopping.setMode('server');
-  recipe.setMode('server');
-  await Promise.all([shopping.loadAll(), recipe.loadSavedRecipes()]);
-}
-
-// ログイン直後に呼ぶ。ローカルに未ログインデータがあれば移す／破棄／キャンセルを問い合わせる。
+// ログイン直後（verify 完了後）に呼ぶ。local モードのままローカルデータを読み、
+// 移す／破棄／キャンセルをユーザーに問う。サーバモードへの切替は呼び出し側
+// （AuthModal → finishLogin）に任せる。
 // 戻り値:
 //   'migrated'   — ローカルデータをサーバに移した（または元々空だった）
-//   'discarded'  — ローカルデータを破棄してサーバモードへ
+//   'discarded'  — ローカルデータの破棄を確定した
 //   'cancelled'  — ユーザーがキャンセル。呼び出し側でログインをロールバックする
 export async function runLoginMigration(): Promise<MigrationResult> {
   const shopping = useShoppingStore.getState();
@@ -65,7 +57,6 @@ export async function runLoginMigration(): Promise<MigrationResult> {
   const totalCount = localItems.length + localDishes.length + localSavedRecipes.length;
 
   if (totalCount === 0) {
-    await switchStoresToServer();
     return 'migrated';
   }
 
@@ -91,7 +82,6 @@ export async function runLoginMigration(): Promise<MigrationResult> {
       ],
     );
     if (confirm !== 'confirm-discard') return 'cancelled';
-    await switchStoresToServer();
     return 'discarded';
   }
 
@@ -121,7 +111,6 @@ export async function runLoginMigration(): Promise<MigrationResult> {
 
   try {
     await migrate({ items, dishes, savedRecipes });
-    await switchStoresToServer();
     return 'migrated';
   } catch (e) {
     const message = e instanceof Error ? e.message : 'マイグレーションに失敗しました';
