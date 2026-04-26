@@ -35,6 +35,11 @@ const AI_QUOTA_KEY_PATTERN = /^(user:\d+|device:[0-9a-f]{64})$/;
 
 export const adminRouter = Router();
 
+// ログイン中の管理者情報（クライアントのトップバー表示用）
+adminRouter.get('/me', (req: Request, res: Response) => {
+  res.json({ success: true, data: { email: req.adminEmail ?? null }, error: null });
+});
+
 // ダッシュボード統計
 adminRouter.get('/dashboard', (_req: Request, res: Response) => {
   const stats = getDashboardStats();
@@ -200,7 +205,7 @@ adminRouter.post('/ai-quota/reset', (req: Request, res: Response) => {
       {
         scope: result.scope,
         deleted: result.deleted,
-        adminUserId: req.userId,
+        adminEmail: req.adminEmail,
         ...(scope === 'key' ? { key } : {}),
       },
       'ai_quota_reset',

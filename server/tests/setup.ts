@@ -15,7 +15,6 @@ process.env.RESEND_API_KEY = 'test-dummy-resend-key';
 process.env.EMAIL_FROM = 'noreply@test.local';
 process.env.GOOGLE_CLIENT_ID = 'test-dummy-google-client-id';
 process.env.GEMINI_API_KEY = 'test-dummy-gemini-key';
-process.env.ADMIN_EMAILS = 'admin@test.local';
 process.env.DEVICE_ID_SECRET = 'test-device-id-secret';
 process.env.AI_LIMIT_USER = '20';
 process.env.AI_LIMIT_GUEST = '3';

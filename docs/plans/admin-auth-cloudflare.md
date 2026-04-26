@@ -182,7 +182,7 @@ Browser ──> Cloudflare Edge ──[Access policy: Google SSO]──> Origin 
   Phase 3 で一括書き換えるため、Phase 2 では残置
 - 確認: `npx vitest run` で 207 件全て green、`npm run build` も成功
 
-### Phase 3 — `/api/admin` ルートの認証付け替え
+### Phase 3 — `/api/admin` ルートの認証付け替え ✅ 完了 (2026-04-25)
 - [`server/src/app.ts:88`](../../server/src/app.ts) を
   `app.use('/api/admin', requireCloudflareAccess, adminRouter);` に差し替え
 - [`server/src/app.ts:7`](../../server/src/app.ts) の
@@ -206,6 +206,30 @@ Browser ──> Cloudflare Edge ──[Access policy: Google SSO]──> Origin 
   - 「非 admin ユーザーで 403」のアサーションは廃止（CF Access ポリシーで弾かれるので
     Origin 側に「authenticated だが admin ではない」ケースは原理的に存在しない）
 - 完了条件: 既存の admin 結合テストが新ヘルパー経由で全部 green
+
+**実装結果:**
+- 更新: `server/src/app.ts`
+  - import から `requireAdmin` を外し、`requireCloudflareAccess` を追加
+  - `app.use('/api/admin', cors({ origin: false }), requireCloudflareAccess, adminRouter);` に切替
+- 削除: `server/src/middleware/auth.ts` から `requireAdmin` を完全に削除
+  - `Express.Request` 型拡張の `userId` / `userEmail` は `requireAuth` / `optionalAuth` で
+    引き続き使うので残置
+- 更新: `server/src/routes/admin.ts`
+  - `ai_quota_reset` ログを `adminUserId: req.userId` から `adminEmail: req.adminEmail` に変更
+  - 先頭に `GET /me` を追加し `{ success, data: { email: req.adminEmail }, error }` を返す
+- 削除: `server/tests/setup.ts` から `process.env.ADMIN_EMAILS` を削除
+- 書き換え: `server/tests/integration/admin.test.ts`
+  - `createAuthedUser` import を削除し `createCfAccessHeaders / startCfAccessStub / stopCfAccessStub` に置換
+  - top-level `beforeAll` / `afterAll` で 1 つの JWKS スタブを全 describe で共有
+  - `createAdminHeaders = () => createCfAccessHeaders('admin@test.local')` で機械的に置換
+  - 旧「403 for a non-admin user」(logs / ai-limits / SSE / ai-quota-reset) を全削除
+  - 旧「401 without Authorization header」を「401 without Cf-Access-Jwt-Assertion header」に
+    リネーム（assertion はいずれも 401 のままで挙動同じ）
+  - SSE 結合テストの低レベル `http.request` も `Authorization` から
+    `Cf-Access-Jwt-Assertion` に切替
+  - 新規 `describe('GET /api/admin/me')` で正常系（adminEmail 返却）と認証失敗（401）を追加
+- 確認: `npx vitest run` で 18 ファイル / 206 件 green、`npm run build` も成功
+  - 件数の差分: -4（旧 403 ケース） +2（`/api/admin/me` × 2 ケース）= 元 207 → 206 で整合
 
 ### Phase 4 — `web/admin` クライアントの改修
 - `web/admin/app.js`

@@ -4,7 +4,8 @@ import path from 'path';
 import fs from 'fs';
 import pinoHttp from 'pino-http';
 import { errorHandler } from './middleware/error-handler';
-import { requireAuth, requireAdmin, optionalAuth } from './middleware/auth';
+import { requireAuth, optionalAuth } from './middleware/auth';
+import { requireCloudflareAccess } from './middleware/cloudflare-access';
 import { rateLimitAi } from './middleware/rate-limit-ai';
 import { authRouter } from './routes/auth';
 import { shoppingRouter } from './routes/shopping';
@@ -85,7 +86,8 @@ export function createApp(options: CreateAppOptions = {}): Express {
 
   // 保護された API ルート
   app.use('/api/shopping', requireAuth, shoppingRouter);
-  app.use('/api/admin', requireAuth, requireAdmin, adminRouter);
+  // 管理 API は Cloudflare Access で守る。CORS は同一オリジン専用に絞る（多層防御）
+  app.use('/api/admin', cors({ origin: false }), requireCloudflareAccess, adminRouter);
   app.use('/api/dishes', requireAuth, dishesRouter);
   app.use('/api/saved-recipes', requireAuth, savedRecipesRouter);
   app.use('/api/migrate', requireAuth, migrateRouter);

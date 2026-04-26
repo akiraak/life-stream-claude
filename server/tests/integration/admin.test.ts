@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -6,7 +6,11 @@ import http from 'node:http';
 import request from 'supertest';
 import { createApp } from '../helpers/app';
 import { setupTestDatabase } from '../helpers/db';
-import { createAuthedUser } from '../helpers/auth';
+import {
+  createCfAccessHeaders,
+  startCfAccessStub,
+  stopCfAccessStub,
+} from '../helpers/auth';
 import { _resetAiLimitsCacheForTest } from '../../src/services/settings-service';
 import { getDatabase } from '../../src/database';
 
@@ -17,22 +21,24 @@ function jstDate(now: Date = new Date()): string {
 
 setupTestDatabase();
 
+// Cloudflare Access JWKS スタブを全テストで共有する
+beforeAll(async () => {
+  await startCfAccessStub();
+});
+
+afterAll(async () => {
+  await stopCfAccessStub();
+});
+
+const createAdminHeaders = () => createCfAccessHeaders('admin@test.local');
+
 describe('admin logs routes', () => {
   const app = createApp();
 
-  // tests/setup.ts: ADMIN_EMAILS = 'admin@test.local'
-  const createAdmin = () => createAuthedUser('admin@test.local');
-
   describe('authorization', () => {
-    it('returns 401 without Authorization header', async () => {
+    it('returns 401 without Cf-Access-Jwt-Assertion header', async () => {
       const res = await request(app).get('/api/admin/logs');
       expect(res.status).toBe(401);
-    });
-
-    it('returns 403 for a non-admin user', async () => {
-      const { headers } = createAuthedUser('not-admin@example.com');
-      const res = await request(app).get('/api/admin/logs').set(headers);
-      expect(res.status).toBe(403);
     });
   });
 
@@ -69,7 +75,7 @@ describe('admin logs routes', () => {
 
     describe('GET /api/admin/logs', () => {
       it('returns recent log entries in order', async () => {
-        const { headers } = createAdmin();
+        const headers = await createAdminHeaders();
         writeLines([
           { level: 30, time: 1, msg: 'first' },
           { level: 30, time: 2, msg: 'second' },
@@ -87,7 +93,7 @@ describe('admin logs routes', () => {
       });
 
       it('limits by ?lines= and returns the last N', async () => {
-        const { headers } = createAdmin();
+        const headers = await createAdminHeaders();
         writeLines([
           { level: 30, msg: 'a' },
           { level: 30, msg: 'b' },
@@ -99,7 +105,7 @@ describe('admin logs routes', () => {
       });
 
       it('filters by ?level= (warn and above)', async () => {
-        const { headers } = createAdmin();
+        const headers = await createAdminHeaders();
         writeLines([
           { level: 30, msg: 'info-msg' },
           { level: 40, msg: 'warn-msg' },
@@ -116,7 +122,7 @@ describe('admin logs routes', () => {
       });
 
       it('filters by ?q= case-insensitively', async () => {
-        const { headers } = createAdmin();
+        const headers = await createAdminHeaders();
         writeLines([
           { level: 30, msg: 'apple' },
           { level: 30, msg: 'Banana' },
@@ -128,7 +134,7 @@ describe('admin logs routes', () => {
       });
 
       it('skips non-JSON lines silently', async () => {
-        const { headers } = createAdmin();
+        const headers = await createAdminHeaders();
         fs.writeFileSync(
           logFile,
           'not json\n' + JSON.stringify({ level: 30, msg: 'ok' }) + '\n',
@@ -140,7 +146,7 @@ describe('admin logs routes', () => {
       });
 
       it('resolves pino-roll dated filenames when base file does not exist', async () => {
-        const { headers } = createAdmin();
+        const headers = await createAdminHeaders();
         // pino-roll は `server.log` を `server.YYYY-MM-DD.N.log` に展開するのでそれを再現
         fs.writeFileSync(
           path.join(logDir, 'server.2026-04-23.1.log'),
@@ -153,7 +159,7 @@ describe('admin logs routes', () => {
       });
 
       it('returns an empty array when LOG_FILE_PATH is unset', async () => {
-        const { headers } = createAdmin();
+        const headers = await createAdminHeaders();
         delete process.env.LOG_FILE_PATH;
         const res = await request(app).get('/api/admin/logs').set(headers);
         expect(res.body.success).toBe(true);
@@ -163,7 +169,7 @@ describe('admin logs routes', () => {
 
     describe('GET /api/admin/logs/stream', () => {
       it('streams initial entries and tails new lines as SSE', async () => {
-        const { headers } = createAdmin();
+        const headers = await createAdminHeaders();
         writeLines([{ level: 30, msg: 'preexisting' }]);
 
         const server = app.listen(0);
@@ -178,7 +184,9 @@ describe('admin logs routes', () => {
                 port,
                 path: '/api/admin/logs/stream',
                 method: 'GET',
-                headers: { Authorization: headers.Authorization },
+                headers: {
+                  'Cf-Access-Jwt-Assertion': headers['Cf-Access-Jwt-Assertion'],
+                },
               },
               (res) => {
                 try {
@@ -235,20 +243,36 @@ describe('admin logs routes', () => {
         }
       }, 10000);
 
-      it('returns 403 for a non-admin SSE connection', async () => {
-        const { headers } = createAuthedUser('stream-not-admin@example.com');
-        const res = await request(app)
-          .get('/api/admin/logs/stream')
-          .set(headers);
-        expect(res.status).toBe(403);
+      it('returns 401 without Cf-Access-Jwt-Assertion on SSE connection', async () => {
+        const res = await request(app).get('/api/admin/logs/stream');
+        expect(res.status).toBe(401);
       });
     });
   });
 });
 
+describe('GET /api/admin/me', () => {
+  const app = createApp();
+
+  it('returns the admin email from the verified CF Access JWT', async () => {
+    const headers = await createCfAccessHeaders('me-admin@test.local');
+    const res = await request(app).get('/api/admin/me').set(headers);
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({
+      success: true,
+      data: { email: 'me-admin@test.local' },
+      error: null,
+    });
+  });
+
+  it('returns 401 without Cf-Access-Jwt-Assertion header', async () => {
+    const res = await request(app).get('/api/admin/me');
+    expect(res.status).toBe(401);
+  });
+});
+
 describe('admin AI limits routes', () => {
   const app = createApp();
-  const createAdmin = () => createAuthedUser('admin@test.local');
 
   beforeEach(() => {
     _resetAiLimitsCacheForTest();
@@ -256,7 +280,7 @@ describe('admin AI limits routes', () => {
 
   describe('GET /api/admin/ai-quota', () => {
     it('includes current limits in response', async () => {
-      const { headers } = createAdmin();
+      const headers = await createAdminHeaders();
       const res = await request(app).get('/api/admin/ai-quota').set(headers);
       expect(res.status).toBe(200);
       // tests/setup.ts: AI_LIMIT_USER=20, AI_LIMIT_GUEST=3 (DB 未設定なら env)
@@ -265,22 +289,13 @@ describe('admin AI limits routes', () => {
   });
 
   describe('PUT /api/admin/ai-limits', () => {
-    it('returns 401 without Authorization header', async () => {
+    it('returns 401 without Cf-Access-Jwt-Assertion header', async () => {
       const res = await request(app).put('/api/admin/ai-limits').send({ user: 10 });
       expect(res.status).toBe(401);
     });
 
-    it('returns 403 for a non-admin user', async () => {
-      const { headers } = createAuthedUser('not-admin@example.com');
-      const res = await request(app)
-        .put('/api/admin/ai-limits')
-        .set(headers)
-        .send({ user: 10 });
-      expect(res.status).toBe(403);
-    });
-
     it('updates limits and reflects new values in subsequent ai-quota GET', async () => {
-      const { headers } = createAdmin();
+      const headers = await createAdminHeaders();
       const put = await request(app)
         .put('/api/admin/ai-limits')
         .set(headers)
@@ -293,7 +308,7 @@ describe('admin AI limits routes', () => {
     });
 
     it('allows partial update (only user)', async () => {
-      const { headers } = createAdmin();
+      const headers = await createAdminHeaders();
       const put = await request(app)
         .put('/api/admin/ai-limits')
         .set(headers)
@@ -304,7 +319,7 @@ describe('admin AI limits routes', () => {
     });
 
     it('allows 0 (effectively disables AI)', async () => {
-      const { headers } = createAdmin();
+      const headers = await createAdminHeaders();
       const put = await request(app)
         .put('/api/admin/ai-limits')
         .set(headers)
@@ -314,7 +329,7 @@ describe('admin AI limits routes', () => {
     });
 
     it('returns 400 with invalid_ai_limit for negative numbers', async () => {
-      const { headers } = createAdmin();
+      const headers = await createAdminHeaders();
       const res = await request(app)
         .put('/api/admin/ai-limits')
         .set(headers)
@@ -324,7 +339,7 @@ describe('admin AI limits routes', () => {
     });
 
     it('returns 400 for non-integer values', async () => {
-      const { headers } = createAdmin();
+      const headers = await createAdminHeaders();
       const res = await request(app)
         .put('/api/admin/ai-limits')
         .set(headers)
@@ -334,7 +349,7 @@ describe('admin AI limits routes', () => {
     });
 
     it('returns 400 for string values', async () => {
-      const { headers } = createAdmin();
+      const headers = await createAdminHeaders();
       const res = await request(app)
         .put('/api/admin/ai-limits')
         .set(headers)
@@ -344,7 +359,7 @@ describe('admin AI limits routes', () => {
     });
 
     it('returns 400 for values exceeding the cap', async () => {
-      const { headers } = createAdmin();
+      const headers = await createAdminHeaders();
       const res = await request(app)
         .put('/api/admin/ai-limits')
         .set(headers)
@@ -354,7 +369,7 @@ describe('admin AI limits routes', () => {
     });
 
     it('returns 400 when neither user nor guest is provided', async () => {
-      const { headers } = createAdmin();
+      const headers = await createAdminHeaders();
       const res = await request(app)
         .put('/api/admin/ai-limits')
         .set(headers)
@@ -367,7 +382,6 @@ describe('admin AI limits routes', () => {
 
 describe('POST /api/admin/ai-quota/reset', () => {
   const app = createApp();
-  const createAdmin = () => createAuthedUser('admin@test.local');
   const today = jstDate();
   const yesterday = jstDate(new Date(Date.now() - 24 * 60 * 60 * 1000));
   const deviceHash = 'a'.repeat(64);
@@ -392,24 +406,15 @@ describe('POST /api/admin/ai-quota/reset', () => {
     ).map((r) => r.key);
   }
 
-  it('returns 401 without Authorization header', async () => {
+  it('returns 401 without Cf-Access-Jwt-Assertion header', async () => {
     const res = await request(app)
       .post('/api/admin/ai-quota/reset')
       .send({ scope: 'all' });
     expect(res.status).toBe(401);
   });
 
-  it('returns 403 for a non-admin user', async () => {
-    const { headers } = createAuthedUser('reset-not-admin@example.com');
-    const res = await request(app)
-      .post('/api/admin/ai-quota/reset')
-      .set(headers)
-      .send({ scope: 'all' });
-    expect(res.status).toBe(403);
-  });
-
   it("scope='all' clears today's todaySummary.total_calls", async () => {
-    const { headers } = createAdmin();
+    const headers = await createAdminHeaders();
     seed();
 
     const post = await request(app)
@@ -424,7 +429,7 @@ describe('POST /api/admin/ai-quota/reset', () => {
   });
 
   it("scope='user' leaves guest rows intact", async () => {
-    const { headers } = createAdmin();
+    const headers = await createAdminHeaders();
     seed();
 
     const post = await request(app)
@@ -437,7 +442,7 @@ describe('POST /api/admin/ai-quota/reset', () => {
   });
 
   it("scope='guest' leaves user rows intact", async () => {
-    const { headers } = createAdmin();
+    const headers = await createAdminHeaders();
     seed();
 
     const post = await request(app)
@@ -450,7 +455,7 @@ describe('POST /api/admin/ai-quota/reset', () => {
   });
 
   it("scope='key' deletes only the specified key for today", async () => {
-    const { headers } = createAdmin();
+    const headers = await createAdminHeaders();
     seed();
 
     const post = await request(app)
@@ -463,7 +468,7 @@ describe('POST /api/admin/ai-quota/reset', () => {
   });
 
   it('is idempotent: a second call returns deleted: 0 with 200', async () => {
-    const { headers } = createAdmin();
+    const headers = await createAdminHeaders();
     seed();
 
     const first = await request(app)
@@ -481,7 +486,7 @@ describe('POST /api/admin/ai-quota/reset', () => {
   });
 
   it("returns 400 invalid_scope for unknown scopes", async () => {
-    const { headers } = createAdmin();
+    const headers = await createAdminHeaders();
     const res = await request(app)
       .post('/api/admin/ai-quota/reset')
       .set(headers)
@@ -491,7 +496,7 @@ describe('POST /api/admin/ai-quota/reset', () => {
   });
 
   it("returns 400 invalid_scope when scope is missing", async () => {
-    const { headers } = createAdmin();
+    const headers = await createAdminHeaders();
     const res = await request(app)
       .post('/api/admin/ai-quota/reset')
       .set(headers)
@@ -501,7 +506,7 @@ describe('POST /api/admin/ai-quota/reset', () => {
   });
 
   it("returns 400 when scope='key' but key is missing", async () => {
-    const { headers } = createAdmin();
+    const headers = await createAdminHeaders();
     const res = await request(app)
       .post('/api/admin/ai-quota/reset')
       .set(headers)
@@ -511,7 +516,7 @@ describe('POST /api/admin/ai-quota/reset', () => {
   });
 
   it("returns 400 when scope='key' has malformed key", async () => {
-    const { headers } = createAdmin();
+    const headers = await createAdminHeaders();
     const res = await request(app)
       .post('/api/admin/ai-quota/reset')
       .set(headers)
