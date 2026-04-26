@@ -68,6 +68,10 @@ export default function RecipesScreen() {
         placeholderTextColor={colors.textMuted}
         value={search}
         onChangeText={setSearch}
+        autoComplete="off"
+        importantForAutofill="no"
+        returnKeyType="search"
+        clearButtonMode="while-editing"
       />
       <FlatList
         data={filtered}

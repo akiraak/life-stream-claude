@@ -241,6 +241,9 @@ export function IngredientsScreen({ dish, onClose }: IngredientsScreenProps) {
             onBlur={handleSaveName}
             onSubmitEditing={handleSaveName}
             autoFocus
+            autoComplete="off"
+            importantForAutofill="no"
+            returnKeyType="done"
           />
         ) : (
           <TouchableOpacity style={styles.dishTitleBtn} onPress={() => setEditingName(true)}>

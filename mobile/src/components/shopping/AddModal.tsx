@@ -106,6 +106,9 @@ export function AddModal({
             value={name}
             onChangeText={setName}
             onSubmitEditing={handleSubmit}
+            autoComplete="off"
+            importantForAutofill="no"
+            returnKeyType="done"
           />
 
           {(mode === 'item' || mode === 'edit') && (
