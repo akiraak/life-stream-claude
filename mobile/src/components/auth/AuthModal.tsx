@@ -121,6 +121,9 @@ export function AuthModal() {
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoCorrect={false}
+                  textContentType="emailAddress"
+                  autoComplete="email"
+                  returnKeyType="send"
                   editable={!loading}
                   autoFocus
                 />
@@ -149,6 +152,9 @@ export function AuthModal() {
                   value={code}
                   onChangeText={setCode}
                   keyboardType="number-pad"
+                  textContentType="oneTimeCode"
+                  autoComplete="sms-otp"
+                  returnKeyType="done"
                   autoFocus
                   editable={!loading}
                 />

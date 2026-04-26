@@ -4,7 +4,7 @@
 
 ## 機能開発
 - [ ] アプリの入力欄で入力補完機能を有効にする [plan](docs/plans/mobile-input-autocomplete.md)
-  - [ ] Phase 1: AuthModal の email / OTP オートフィル対応
+  - [x] Phase 1: AuthModal の email / OTP オートフィル対応
   - [ ] Phase 2: その他 TextInput の補完挙動チューニング
   - [ ] Phase 3: iOS / Android 実機確認
 - [ ] 料理追加 -> 具材を追加（春キャベツ） -> 料理画面 -> この素材でレシピをAI検索（残り X 回） -> 具材に「春キャベツ」と他の食材が表示されレシピも３つ表示される -> 「レシピをAI検索（残り X 回）」 -> 「春キャベツ」が追加素材（買い物リストから）に表示される。本来は具材の方に表示されるべき
