@@ -6,6 +6,7 @@ import { ThemeProvider, useThemeColors } from '../src/theme/theme-provider';
 import { useAuthStore } from '../src/stores/auth-store';
 import { useShoppingStore } from '../src/stores/shopping-store';
 import { useRecipeStore } from '../src/stores/recipe-store';
+import { useAiStore } from '../src/stores/ai-store';
 import { AuthModal } from '../src/components/auth/AuthModal';
 
 function RootNavigator() {
@@ -26,6 +27,8 @@ function RootNavigator() {
       useShoppingStore.getState().loadAll();
       useRecipeStore.getState().loadSavedRecipes();
     }
+    // 起動時／ログイン・ログアウト切替時に AI 残量を再取得（ハンバーガーメニュー表示用）
+    useAiStore.getState().loadQuota();
   }, [isAuthenticated, isLoading]);
 
   if (isLoading) {

@@ -3,6 +3,7 @@ import { requestLogin as apiRequestMagicCode, verifyCode, getMe } from '../api/a
 import { getToken, setToken, removeToken } from '../utils/token';
 import { useShoppingStore } from './shopping-store';
 import { useRecipeStore } from './recipe-store';
+import { useAiStore } from './ai-store';
 
 interface RequestLoginOptions {
   reason?: string | null;
@@ -35,6 +36,8 @@ function resetLocalStores() {
   useShoppingStore.getState().setMode('local');
   useRecipeStore.getState().clearLocalData();
   useRecipeStore.getState().setMode('local');
+  // ユーザー枠の残量を引き継がず、_layout の loadQuota でゲスト枠を取り直す
+  useAiStore.getState().reset();
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({

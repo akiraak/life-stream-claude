@@ -2,9 +2,14 @@
 set -e
 cd "$(dirname "$0")/mobile"
 
-IP=$(hostname -I 2>/dev/null | awk '{print $1}')
+# デフォルトルート（インターネット向け）の送信元 IP を取る。
+# hostname -I の先頭は WSL2 の NAT IP (10.5.0.x) になりやすく、スマホからは到達できないため。
+IP=$(ip route get 1.1.1.1 2>/dev/null | awk '{for (i=1; i<=NF; i++) if ($i=="src") print $(i+1)}')
 if [ -z "$IP" ]; then
   IP=$(ipconfig getifaddr en0 2>/dev/null || ipconfig getifaddr en1 2>/dev/null || true)
+fi
+if [ -z "$IP" ]; then
+  IP=$(hostname -I 2>/dev/null | awk '{print $1}')
 fi
 if [ -z "$IP" ]; then
   echo "[mobile-build-local] LAN IP を検出できませんでした" >&2
