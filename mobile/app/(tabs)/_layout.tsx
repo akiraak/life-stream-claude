@@ -112,7 +112,6 @@ function TabIcon({ name, color, size }: { name: string; color: string; size: num
     cart: '🛒',
     book: '📖',
   };
-  const { Text } = require('react-native');
   return <Text style={{ fontSize: size * 0.8, color }}>{icons[name] ?? '?'}</Text>;
 }
 
