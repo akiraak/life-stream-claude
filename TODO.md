@@ -3,6 +3,13 @@
 > 作業が完了した項目を DONE.md に移動する。docs/plans/ にプランファイルがある場合は docs/plans/archive に移動させる。
 
 ## 機能開発
+- [ ] アプリのシンプル化。買物リスト、レシピ履歴のみ。いいねの廃止 [plan](docs/plans/app-simplification.md)
+  - 参考: [my-recipes-display-criteria.md](docs/plans/my-recipes-display-criteria.md), [my-recipes-migrate-likes.md](docs/plans/my-recipes-migrate-likes.md)
+  - [ ] Phase 1: サーバ — likes / shared エンドポイント・サービス・admin 削除（テスト含む）
+  - [ ] Phase 2: モバイル — `shared` タブ削除 / `recipes` フィルタ撤廃 / ハート UI 除去
+  - [ ] Phase 3: モバイル — ストア / 型 / API クライアント / テストから likes 除去
+  - [ ] Phase 4: DB マイグレーション — `recipe_likes` テーブル DROP
+  - [ ] Phase 5: 実機動作確認 + プラン後片付け（DONE.md 移動 + archive 移動）
 - [ ] 自分のレシピに表示されるレシピの判定基準の調査 [plan](docs/plans/my-recipes-display-criteria.md)
   - [x] 現状仕様の整理（コード調査）
   - [x] 実機での挙動確認（local → ログイン「移す」でレシピ消失を再現）
