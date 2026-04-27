@@ -2,7 +2,8 @@ import { useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useThemeColors } from '../../theme/theme-provider';
 import { ShoppingItemRow } from './ShoppingItemRow';
-import { DraggableList, isDragActive } from '../ui/DraggableList';
+import { DraggableList } from '../ui/DraggableList';
+import { useDragState } from '../ui/drag-context';
 import type { Dish, DishItem } from '../../types/models';
 
 interface DishGroupProps {
@@ -37,6 +38,7 @@ export function DishGroup({
   itemDragging,
 }: DishGroupProps) {
   const colors = useThemeColors();
+  const { ref: dragRef } = useDragState();
 
   const uncheckedItems = dish.items.filter((i) => !i.checked);
   const checkedItems = dish.items.filter((i) => i.checked);
@@ -77,16 +79,16 @@ export function DishGroup({
       <View style={[styles.leftBorder, { backgroundColor: dropTarget ? colors.primary : colors.primary }]} />
       <View style={styles.content}>
         <View style={styles.header}>
-          <TouchableOpacity style={styles.dishNameArea} onPress={() => { if (!isDragActive()) onPressDishName(dish); }}>
+          <TouchableOpacity style={styles.dishNameArea} onPress={() => { if (!dragRef.current) onPressDishName(dish); }}>
             <Text style={[styles.dishName, { color: colors.primaryLight }]} numberOfLines={1}>
               {dish.name}
             </Text>
           </TouchableOpacity>
           <View style={styles.headerButtons}>
-            <TouchableOpacity onPress={() => { if (!isDragActive()) onAddItem(dish.id); }} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <TouchableOpacity onPress={() => { if (!dragRef.current) onAddItem(dish.id); }} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
               <Text style={[styles.headerBtn, { color: colors.primaryLight }]}>+</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => { if (!isDragActive()) onDeleteDish(dish); }} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <TouchableOpacity onPress={() => { if (!dragRef.current) onDeleteDish(dish); }} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
               <Text style={[styles.headerBtn, { color: colors.textMuted }]}>×</Text>
             </TouchableOpacity>
           </View>

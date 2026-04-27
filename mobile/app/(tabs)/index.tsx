@@ -17,6 +17,7 @@ import { DishGroup } from '../../src/components/shopping/DishGroup';
 import { ShoppingItemRow } from '../../src/components/shopping/ShoppingItemRow';
 import { AddModal } from '../../src/components/shopping/AddModal';
 import { DraggableList } from '../../src/components/ui/DraggableList';
+import { DragProvider } from '../../src/components/ui/drag-context';
 import { ConfirmDialog } from '../../src/components/ui/ConfirmDialog';
 import { Toast } from '../../src/components/ui/Toast';
 import { IngredientsScreen } from '../../src/components/dishes/IngredientsScreen';
@@ -307,6 +308,7 @@ export default function ShoppingListScreen() {
   // scrollEnabled は state で管理
 
   return (
+    <DragProvider>
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView
         style={styles.scroll}
@@ -427,6 +429,7 @@ export default function ShoppingListScreen() {
         </View>
       )}
     </View>
+    </DragProvider>
   );
 }
 

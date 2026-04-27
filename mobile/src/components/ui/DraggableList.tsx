@@ -6,12 +6,7 @@ import {
   type GestureResponderEvent,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
-
-// モジュールレベルのドラッグ状態フラグ（同期的にチェック可能）
-let _dragActive = false;
-export function isDragActive() {
-  return _dragActive;
-}
+import { useDragState } from './drag-context';
 
 export interface DragCallbacks {
   onDragStart?: () => void;
@@ -34,6 +29,7 @@ interface ItemLayout {
 }
 
 export function DraggableList<T>({ data, keyExtractor, renderItem, onReorder, onDragStart, onDragEnd, onDragMoveY, onDragDrop, elevatedKey }: DraggableListProps<T>) {
+  const { ref: sharedDragRef, setDragging: setSharedDragging } = useDragState();
   const [activeKey, setActiveKey] = useState<string | null>(null);
   const [displayOrder, setDisplayOrder] = useState<T[] | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -95,12 +91,12 @@ export function DraggableList<T>({ data, keyExtractor, renderItem, onReorder, on
     onDragEnd?.();
     onDragDropRef.current?.(draggedItem, lastPageYRef.current);
     onReorder(finalOrder);
-    // 少し後にフラグをリセット（次のタップイベントが処理された後）
+    // 少し後にフラグをリセット（drop 直後に走るタップを抑止するため）
     setTimeout(() => {
       justFinishedDragRef.current = false;
-      _dragActive = false;
+      setSharedDragging(false);
     }, 300);
-  }, [onReorder, onDragEnd]);
+  }, [onReorder, onDragEnd, setSharedDragging]);
 
   const moveDrag = useCallback((pageY: number) => {
     if (!dragActiveRef.current) return;
@@ -151,11 +147,11 @@ export function DraggableList<T>({ data, keyExtractor, renderItem, onReorder, on
   }, [dragYAnim, keyExtractor]);
 
   const startDrag = useCallback(async (index: number, pageY: number) => {
-    if (dragActiveRef.current || _dragActive) return;
+    if (dragActiveRef.current || sharedDragRef.current) return;
     // measure前に即座にフラグを立てて子のタッチイベントをブロック
     dragActiveRef.current = true;
     justFinishedDragRef.current = true;
-    _dragActive = true;
+    setSharedDragging(true);
     setIsDragging(true);
     onDragStart?.();
 
@@ -189,7 +185,7 @@ export function DraggableList<T>({ data, keyExtractor, renderItem, onReorder, on
     setDisplayOrder(order);
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-  }, [data, keyExtractor, measureAllItems, dragYAnim, onDragStart]);
+  }, [data, keyExtractor, measureAllItems, dragYAnim, onDragStart, sharedDragRef, setSharedDragging]);
 
   // コンテナレベルでタッチムーブ・タッチエンドを処理
   const handleContainerTouchMove = useCallback((e: GestureResponderEvent) => {
@@ -311,10 +307,6 @@ function DraggableItem({ index, children, onLongPress, disabled, justFinishedDra
     </View>
   );
 }
-
-// DragOverlay は不要になったが、互換性のためにエクスポート
-export type DragOverlayState = null;
-export function DragOverlay(_props: { state: DragOverlayState }) { return null; }
 
 const styles = StyleSheet.create({
   container: {
