@@ -157,7 +157,7 @@ Phase 1 と同じ。**必ず証拠を添える**。
 
 - [x] Phase 0: 一次データ（行数 / 変更頻度 / `any` 件数 / 未使用 export / 循環依存 / ESLint 警告 / 重複リテラル）が「Phase 0 一次データ」節に追記され、`web/admin/` の扱いが確定している
 - [x] Phase 1: サーバ側候補リスト（証拠付き）が本ファイルに追記され、必須チェックがすべて消化されている
-- [ ] Phase 2: モバイル側候補リスト（証拠付き）が本ファイルに追記され、必須チェックがすべて消化されている
+- [x] Phase 2: モバイル側候補リスト（証拠付き）が本ファイルに追記され、必須チェックがすべて消化されている
 - [ ] Phase 3: 優先度付け済み上位候補が個別プランファイルとして起こされ、`TODO.md` に追加されている
 - [ ] 本プランは `docs/plans/archive/` に移送されている（個別プランの完了は待たない）
 
@@ -463,4 +463,128 @@ mobile はハードコード `throw new Error('...')` が 1 件のみ（`'料理
 | 起動・DB 初期化の見通し | `database.ts` のアドホック・マイグレーション（S4） |
 
 ### モバイル
-（Phase 2 で記入。各候補は「ファイル / 観点 / **証拠（行番号・関数名・重複箇所）** / 想定工数 / リスク」）
+
+スナップショット日: 2026-04-27。Phase 0 一次データを参照しつつ、**必須チェックの結果**と**コード読解で得た証拠**を併記する。
+
+#### 必須チェックの結果
+
+| 必須チェック | 結果 |
+| --- | --- |
+| `mobile/src/api/` から `/api/admin` を叩いていないか | **無し**。`grep "api/admin\|/admin/" mobile/src/api/` ヒット 0、`mobile/src/` 全体でも 0。CLAUDE.md 明記の禁止事項を遵守 |
+| `mobile/src/types/models.ts` と各所のインライン型の重複 | **重複あり**（候補 M6）。`ApiResponse<T>` が `mobile/src/api/auth.ts:3` で再定義（他の API クライアントは `types/api.ts:1` から import）。`type ModalMode = 'item' \| 'dish' \| 'edit'` が `mobile/app/(tabs)/index.tsx:25` と `mobile/src/components/shopping/AddModal.tsx:16` の双方で定義。`stores/shopping-store.ts:18,341` の `recipeStates: { id: number }[]` は `types/models.ts:41 RecipeState` と等価ながら未参照（M7 と接続）。`api/saved-recipes.ts:21` / `api/migrate.ts:26` の `ingredients?: { name: string; category: string }[]` は `models.ts:29 Ingredient` と同形 |
+| `stores/` の状態と `__tests__/stores/` の対応 | **概ね対応**。`stores/{ai,auth,recipe,shopping}-store.ts` ↔ `__tests__/stores/{同名}.test.ts` が 1:1（store 4 / test 4）。テスト LoC は auth 437 / shopping 316 / recipe 122 / ai 114 と十分。ただし `auth-store.test.ts` は `runLoginMigration` のフロー保証が中心で、`finishLogin` 内の 4 store 同期挙動（`useShoppingStore.setMode('server')` → `loadAll` → `useAiStore.loadQuota`）の検証は薄い |
+
+#### 候補
+
+##### M1: `shopping-store.ts` のローカル/サーバ二重実装と責務肥大
+
+- **ファイル**: `mobile/src/stores/shopping-store.ts`（399 LoC、Phase 0 で行数 3 位）
+- **観点**: store 責務肥大、心得 4（重複した if/else パターン）、心得 7（分割で見通しが良くなるか）
+- **証拠**:
+  - 1 ストアに 14 個の action（`loadAll` / `addItem` / `updateItemName` / `toggleCheck` / `deleteItem` / `deleteCheckedItems` / `reorderItems` / `addDish` / `updateDish` / `deleteDish` / `reorderDishes` / `reorderDishItems` / `suggestIngredients` / `linkItemToDish` / `unlinkItemFromDish`）が同居
+  - `if (get().mode === 'local')` / `if (get().mode === 'server')` の **mode 分岐が 15 箇所**（行 107 / 124 / 150 / 166 / 179 / 192 / 206 / 220 / 241 / 252 / 265 / 278 / 333 / 360 / 372）。`recipe-store.ts` も同パターンで 3 箇所（行 69 / 80 / 91）
+  - 各 action がローカル分岐で 10〜30 行のドメインロジック（local id 採番、`rebuildDishItems`、position 振り直し等）を抱えるため、サーバ側 API ラッパとして読みづらい
+  - `suggestIngredients`（行 302–357）は **AI 提案 + ローカル state 更新 + サーバ AI キャッシュ更新 + 別 store (`useRecipeStore`) の `autoSaveRecipes` 連鎖呼出 + ai-store の残量反映** と 5 責務を 1 関数で扱う
+  - 戻り値型 `SuggestIngredientsResult.recipeStates`（行 13–19, 341, 355）は **どこからも参照されていない**（M7 と接続）
+- **想定工数**: 数日（local/server 戦略を分離した薄い `local-shopping.ts` / `server-shopping.ts` への切り出し、または注入。さらに `suggestIngredients` を画面側 (IngredientsScreen) と分担）
+- **リスク**: 中（ローカルモードはログイン前体験の根幹。テストは `__tests__/stores/shopping-store.test.ts` 316 行で網羅されているので退行検出はしやすいが、現在 mode 切替や recipe-store 連鎖の境界条件まで含んでいるか先に確認が必要）
+- **メンテ性インパクト**: 高（高 LoC × 中頻度（変更 7）× 二重実装 × 跨ぎ依存）
+
+##### M2: `app/(tabs)/index.tsx` の画面ファイル肥大と store 内部直叩き
+
+- **ファイル**: `mobile/app/(tabs)/index.tsx`（503 LoC、Phase 0 で **mobile 最大 LoC + 最高変更頻度 16**）
+- **観点**: 画面ファイルへのロジック集中、store 抽象を貫通する `setState` 直書き
+- **証拠**:
+  - 503 LoC のうち styles 約 70 行を除く 430 行が 1 関数 `ShoppingListScreen` 内の処理。`useState` 11 個（行 31–41）、`useCallback` 14 個、`useRef` 2 個。
+  - `useShoppingStore.setState({ ... })` を画面から直接呼ぶ箇所が 3 件: `index.tsx:156`（`reorderDishes` 楽観更新）、`165`（`reorderDishItems` 楽観更新）、`176`（ungrouped reorder の特殊操作）。store 側の reorder action は API のみ呼びローカル state を更新しないため、画面が補っている → 責務漏出
+  - `dishesApi.unlinkItemFromDish` / `dishesApi.linkItemToDish` を画面から直接 import（行 15）。本来 `useShoppingStore` の link/unlink を経由できるはずだが、`handleUpdateItem`（123–141）と `handleItemDrop`（231–254）が `loadAll` を併用するために API を直叩きしている
+  - 17 箇所の `try { ... } catch { Alert.alert('エラー', '<msg>に失敗しました') }` パターン（grep で 17）。
+  - ドラッグ＆ドロップ周りの `dishGroupRefs` / `dishGroupLayouts` / `measureDishGroups` / `handleItemDragMove` / `handleItemDrop`（行 43–272）はカスタムフック化候補（テスト難易度も下がる）
+- **想定工数**: 数日（カスタムフック分離 → store の reorder/link を楽観更新込みに昇格 → 画面コンポーネントを props 経由に薄化 → 手動 UI 検証）
+- **リスク**: 中〜高（CLAUDE.md「RN 描画テスト未導入」のため UI 退行検出は手動。ドラッグ周りの順序依存が強く、分割でタイミング差が出やすい）
+- **メンテ性インパクト**: 高（最大 LoC × 最高頻度の典型）
+
+##### M3: `IngredientsScreen.tsx` の多責務化と複数 store 直接参照
+
+- **ファイル**: `mobile/src/components/dishes/IngredientsScreen.tsx`（457 LoC、Phase 0 で行数 2 位、変更頻度 14）
+- **観点**: 画面コンポーネント vs 状態管理の責務分離、エラーハンドリング一貫性
+- **証拠**:
+  - 1 コンポーネントが 4 つのストア／API を直接束ねる: `useShoppingStore`（28 行）、`useAiStore`（29）、`useAuthStore`（30）、`AiQuotaError`（17）
+  - ローカル `useState` 6 個（行 32–37: `loading` / `ingredients` / `recipes` / `addedNames` / `dishName` / `editingName`）—— `ingredients` / `recipes` は store の `dish.ingredients_json` / `dish.recipes_json` キャッシュと並走しており、初期表示の `useEffect`（54–73）は **`dish.id` のみ依存に絞るため `eslint-disable-next-line react-hooks/exhaustive-deps`** が必要になっている。状態の一意な保持先が決まっていないサイン
+  - `fetchSuggestions`（75–109）は AI 呼出 + クォータ超過検出 + 未認証時のログイン誘導 + 成功時のローカル state 反映 + アラート表示の **5 責務**
+  - dish 名インライン編集（`handleSaveName` 158–172）は本機能から独立しているが同一コンポーネントに同居
+  - エラーハンドリングは `Alert.alert('エラー', ...)` 直叩き（91–103, 102, 138 等で計 7 箇所、`Toast` 経由ではない）—— index.tsx と挙動が揃っていない
+- **想定工数**: 1〜2 日（ヘッダ/dish 名編集を分離コンポーネントへ + AI 提案ロジックを `useDishSuggestions` フックへ。state 一意化を実現）
+- **リスク**: 中（手動検証必須。ログイン誘導フロー (`requestLogin` の `onSuccess` コールバック) が壊れないこと）
+- **メンテ性インパクト**: 高（変更頻度 14 で active な領域。M1 と分担次第で工数大きく変動）
+
+##### M4: `DraggableList.tsx` のモジュールレベル可変状態と dead code
+
+- **ファイル**: `mobile/src/components/ui/DraggableList.tsx`（341 LoC、Phase 0 で行数 4 位）
+- **観点**: モジュール状態の散在、心得 11（dead code）
+- **証拠**:
+  - **モジュールレベルの mutable global**: 行 11 `let _dragActive = false;` と `export function isDragActive()` を `ShoppingItemRow.tsx:4,20,48` / `DishGroup.tsx:5,80,86,89` がインポートして「ドラッグ中はタップを無視」のために参照している。テストでリセットできない／同時並行ドラッグが破綻し得る形になっている
+  - `setTimeout(() => { ... _dragActive = false; }, 300)`（行 99–102）でフラグを解除。300ms というマジックナンバーは race を内包
+  - **明示された dead code**: 行 315 `// DragOverlay は不要になったが、互換性のためにエクスポート` → `export type DragOverlayState = null` / `export function DragOverlay(_props: { state: DragOverlayState }) { return null }`。Phase 0 / 本フェーズのリポジトリ全体 grep で参照ゼロを確認。心得 11 の典型例
+  - 内側の `DraggableItem`（行 271–313）はファイル末尾に同居。コンポーネント本体 + サブコンポーネント + ジェスチャ計測 + dead export を 1 ファイルに抱える
+- **想定工数**: 1〜2 日（`useDragGuard` フック等で global 撤去 → `DragOverlay` 削除 → サブコンポーネント分離）
+- **リスク**: 中（タイミング依存のドラッグ動作。手動検証必須。CLAUDE.md「RN 描画テスト未導入」）
+- **メンテ性インパクト**: 中〜高（global 撤去はバグ予防として効く）
+
+##### M5: API クライアント層のボイラープレート（`if (!res.data.success) throw new Error(...)` × 26）
+
+- **ファイル**: `mobile/src/api/{auth,shopping,dishes,ai,saved-recipes,migrate}.ts`
+- **観点**: 心得 4（3 箇所以上の重複は共通化）、エラーハンドリング一貫性、注意点 1（API レスポンス形式固定）
+- **証拠**:
+  - 全 API 関数が同じ 3 行ボイラープレート: `const res = await client.X<ApiResponse<T>>(url, ...)` / `if (!res.data.success) throw new Error(res.data.error ?? '<日本語メッセージ>')` / `return res.data.data`。**該当行を grep すると 26 関数で出現**（`api/dishes.ts` 9 / `api/shopping.ts` 6 / `api/auth.ts` 3 / `api/saved-recipes.ts` 3 / `api/ai.ts` 2 / `api/migrate.ts` 1、AiQuotaError の特殊処理を含む箇所を除く）
+  - `client.ts` が axios インスタンスでレスポンスインタセプタ（`error.message = serverMessage`）を持つので、共通化先として自然な位置にある
+  - 共通化すれば「`success: false` 時のエラー文言の決め方」が 1 箇所に集約され、ユーザー向けメッセージ（`'追加に失敗しました'` 等）と内部ログのレイヤを切り分けられる
+- **想定工数**: 半日（`client.ts` に `request<T>(method, url, data?, config?)` ヘルパを足し、各 API 関数を 1 行に薄化）
+- **リスク**: 低（呼出側のシグネチャ不変。`__tests__/api/client.test.ts` 117 行と `__tests__/api/ai.test.ts` 119 行で挙動を抑え込みやすい）
+- **メンテ性インパクト**: 中（API 追加の摩擦が大きく下がる）
+
+##### M6: 型定義の重複整理
+
+- **ファイル**: `mobile/src/api/auth.ts`、`mobile/app/(tabs)/index.tsx`、`mobile/src/components/shopping/AddModal.tsx`、`mobile/src/api/saved-recipes.ts`、`mobile/src/api/migrate.ts`、`mobile/src/stores/shopping-store.ts`
+- **観点**: 注意点（インライン型の重複）、心得 4
+- **証拠**:
+  - `ApiResponse<T>` の重複: `mobile/src/types/api.ts:1` を 6 ファイルが import しているが、`mobile/src/api/auth.ts:3-7` だけは独自定義。`grep "ApiResponse<"` で確認
+  - `type ModalMode = 'item' \| 'dish' \| 'edit'` の重複: `app/(tabs)/index.tsx:25` ↔ `components/shopping/AddModal.tsx:16` で同一定義
+  - `stores/shopping-store.ts:18,341` の `recipeStates: { id: number }[]` は `types/models.ts:41 RecipeState` と等価ながら別定義
+  - `api/saved-recipes.ts:21 BulkSavedRecipeInput.ingredients` と `api/migrate.ts:26 MigrateSavedRecipeInput.ingredients` の `{ name: string; category: string }[]` は `types/models.ts:29 Ingredient[]` と同形
+- **想定工数**: 半日（型を `types/` に集約 → 各定義を `import type` に置き換え）
+- **リスク**: 低
+- **メンテ性インパクト**: 中（型のソース・オブ・トゥルース確立は将来の追加変更を確実に楽にする）
+
+##### M7: 未使用 export / フィールドの削除（心得 11）
+
+- **観点**: 未使用機能の削除
+- **証拠**（参照 0 件をリポジトリ全体で確認済み）:
+  - `mobile/src/components/ui/SuggestionsList.tsx`（55 LoC 全体）— 本体・テストどこからも import されない
+  - `mobile/src/hooks/use-debounce.ts`（12 LoC 全体）— 同上
+  - `mobile/src/components/ui/DraggableList.tsx:316-317 DragOverlay` / `DragOverlayState` — コメント「不要になったが、互換性のためにエクスポート」（M4 と接続）
+  - `mobile/src/types/models.ts:45 SuggestIngredientsResponse` — 旧サーバレスポンス形。現行は `stores/shopping-store.ts:13 SuggestIngredientsResult` を使い、本型は参照ゼロ
+  - `mobile/src/stores/shopping-store.ts:13–19 SuggestIngredientsResult.recipeStates` および 341–355 の生成ロジック — 戻り値の `recipeStates` を読む箇所がリポジトリ全体に存在しない（IngredientsScreen は `data.ingredients` / `data.recipes` のみ消費）
+- **想定工数**: 半日（削除 + 既存テストの該当ケースも併せて整理）
+- **リスク**: 低（呼出なしを確認済み。Git 履歴に残るので必要なら復元可）
+- **メンテ性インパクト**: 中（読み手のノイズを減らし、`recipeStates` を消すことで shopping-store → recipe-store の不要結合も切れる）
+
+##### M8（任意・小粒）: `app/(tabs)/_layout.tsx` の `TabIcon` 内 `require('react-native')`
+
+- **ファイル**: `mobile/app/(tabs)/_layout.tsx`
+- **観点**: 細かいコードの臭い（top-level import で済むものを内側で `require`）
+- **証拠**: 行 110–117 `function TabIcon` 内で `const { Text } = require('react-native')`。同ファイル冒頭の行 2 で既に `Text` を ES import 済み。
+- **想定工数**: 30 分
+- **リスク**: 低
+- **メンテ性インパクト**: 低
+
+#### 観点チェックの総括
+
+| 観点 | 状況 |
+| --- | --- |
+| 画面ファイルにロジック集中 | `app/(tabs)/index.tsx` で顕著（M2）。`recipes.tsx`（100 LoC）は適度 |
+| Zustand store の責務肥大 | `shopping-store.ts` で顕著（M1）。`recipe-store.ts` は同パターンだが小規模、ai/auth は概ね適切 |
+| API クライアント層の型・エラー処理の統一感 | ボイラープレート重複（M5）+ `auth.ts` の `ApiResponse` 再定義（M6） |
+| コンポーネントの責務（表示 vs 状態管理） | `IngredientsScreen.tsx`（M3）、`DraggableList.tsx`（M4）。他は概ね役割が明確 |
+| `mobile/src/utils/` 配下の凝集度 | `migration.ts`（120 LoC）はログイン直後の一回限りロジックで凝集している。延命要否は M1（shopping-store のローカル/サーバ分離）の結論次第 |
+| `hooks/` `theme/` `config/` の利用状況 | `hooks/use-debounce.ts` は未使用（M7）。`theme/`・`config/` は薄く健全 |
