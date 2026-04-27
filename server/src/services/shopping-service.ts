@@ -68,24 +68,6 @@ export function deleteCheckedItems(userId: number): number {
   return result.changes;
 }
 
-export function deleteAllItems(userId: number): number {
-  const db = getDatabase();
-  const result = db.prepare('DELETE FROM shopping_items WHERE user_id = ?').run(userId);
-  return result.changes;
-}
-
-export function getUncheckedItems(userId: number): ShoppingItem[] {
-  const db = getDatabase();
-  return db.prepare('SELECT * FROM shopping_items WHERE user_id = ? AND checked = 0 ORDER BY created_at DESC').all(userId) as ShoppingItem[];
-}
-
-export function getStats(userId: number): { total: number; checked: number; unchecked: number } {
-  const db = getDatabase();
-  const total = (db.prepare('SELECT COUNT(*) as count FROM shopping_items WHERE user_id = ?').get(userId) as { count: number }).count;
-  const checked = (db.prepare('SELECT COUNT(*) as count FROM shopping_items WHERE user_id = ? AND checked = 1').get(userId) as { count: number }).count;
-  return { total, checked, unchecked: total - checked };
-}
-
 export function reorderItems(userId: number, orderedIds: number[]): void {
   const db = getDatabase();
   const stmt = db.prepare('UPDATE shopping_items SET position = ? WHERE id = ? AND user_id = ?');
