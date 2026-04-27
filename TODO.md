@@ -27,11 +27,6 @@
 - [ ] Google認証を他のアカウントでチェック
 
 ## 開発管理画面
-- [ ] plans, specs の右のコンテンツは2ペインにして左に見出しを表示 [plan](docs/plans/dev-admin-doc-toc-pane.md)
-  - [x] Phase 1: 2ペインレイアウト (CSS + ラッパー)
-  - [x] Phase 2: TOC 構築 (見出し走査・id 付与・階層リスト)
-  - [x] Phase 3: クリックスクロール / アクティブ追従 (IntersectionObserver)
-  - [ ] Phase 4: 動作確認 (短/長/Mermaid/狭幅/アーカイブボタン)
 - [ ] plansでアーカイブにしたら即アーカイブに移動した表示に反映して
 - [ ] 開発管理画面の機能だけど切り出して他のプロジェクトからもすぐ使えるようにする
 
