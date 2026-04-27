@@ -2,8 +2,6 @@ import type { Recipe, SavedRecipe } from '../../src/types/models';
 
 jest.mock('../../src/api/saved-recipes', () => ({
   getSavedRecipes: jest.fn(),
-  getSharedRecipes: jest.fn(),
-  toggleLike: jest.fn(),
   deleteSavedRecipe: jest.fn(),
   createSavedRecipesBulk: jest.fn(),
 }));
@@ -27,7 +25,6 @@ function resetStore(mode: 'local' | 'server') {
   useRecipeStore.setState({
     mode,
     savedRecipes: [],
-    sharedRecipes: [],
     loading: false,
     nextLocalId: -1,
   });
@@ -57,30 +54,11 @@ describe('recipe-store (server mode)', () => {
     expect(useRecipeStore.getState().savedRecipes).toEqual(recipes);
   });
 
-  it('toggleLike updates saved and shared recipes with the server response', async () => {
-    useRecipeStore.setState({
-      savedRecipes: [
-        { id: 1, liked: 0, like_count: 0 } as SavedRecipe,
-        { id: 2, liked: 0, like_count: 0 } as SavedRecipe,
-      ],
-      sharedRecipes: [{ id: 1, liked: 0, like_count: 0 } as SavedRecipe],
-    });
-    api.toggleLike.mockResolvedValue({ liked: 1, like_count: 3 });
-
-    await useRecipeStore.getState().toggleLike(1);
-
-    expect(api.toggleLike).toHaveBeenCalledWith(1);
-    const state = useRecipeStore.getState();
-    expect(state.savedRecipes[0]).toMatchObject({ liked: 1, like_count: 3 });
-    expect(state.savedRecipes[1]).toMatchObject({ liked: 0 });
-    expect(state.sharedRecipes[0]).toMatchObject({ liked: 1, like_count: 3 });
-  });
-
   it('autoSaveRecipes posts bulk and prepends to state', async () => {
     const recipes = [makeRecipe({ title: 'R1' }), makeRecipe({ title: 'R2' })];
     const created = [
-      { id: 100, title: 'R1', liked: 0, like_count: 0 } as SavedRecipe,
-      { id: 101, title: 'R2', liked: 0, like_count: 0 } as SavedRecipe,
+      { id: 100, title: 'R1' } as SavedRecipe,
+      { id: 101, title: 'R2' } as SavedRecipe,
     ];
     api.createSavedRecipesBulk.mockResolvedValue(created);
 
@@ -117,14 +95,6 @@ describe('recipe-store (local mode)', () => {
     const state = useRecipeStore.getState();
     expect(state.savedRecipes).toHaveLength(2);
     expect(state.nextLocalId).toBe(-3);
-  });
-
-  it('toggleLike triggers requestLogin when not authenticated', async () => {
-    await useRecipeStore.getState().toggleLike(1);
-    expect(api.toggleLike).not.toHaveBeenCalled();
-    const auth = useAuthStore.getState();
-    expect(auth.authModalVisible).toBe(true);
-    expect(auth.authModalReason).toContain('いいね');
   });
 
   it('deleteSavedRecipe removes locally only', async () => {

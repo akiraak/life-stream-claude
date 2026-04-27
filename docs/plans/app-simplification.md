@@ -265,6 +265,6 @@
 
 - [x] Phase 1: サーバ — likes / shared エンドポイント・サービス・admin 削除（テスト含む）
 - [x] Phase 2: モバイル — `shared` タブ削除 / `recipes` フィルタ撤廃 / ハート UI 除去
-- [ ] Phase 3: モバイル — ストア / 型 / API クライアント / テストから likes 除去
+- [x] Phase 3: モバイル — ストア / 型 / API クライアント / テストから likes 除去
 - [ ] Phase 4: DB マイグレーション — `recipe_likes` テーブル DROP
 - [ ] Phase 5: 実機動作確認 + プラン後片付け（DONE.md 移動 + archive 移動）

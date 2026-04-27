@@ -84,7 +84,6 @@ function resetStore(mode: 'local' | 'server') {
   useRecipeStore.setState({
     mode,
     savedRecipes: [],
-    sharedRecipes: [],
     loading: false,
     nextLocalId: -1,
   });
@@ -265,7 +264,6 @@ describe('shopping-store (local mode)', () => {
     expect(result.ingredients).toHaveLength(1);
     expect(result.recipes).toHaveLength(1);
     expect(result.recipeStates).toHaveLength(1);
-    expect(result.recipeStates[0].liked).toBe(0);
     expect(useAiStore.getState().remaining).toBe(2);
 
     // dish のキャッシュ

@@ -15,7 +15,7 @@ export interface SuggestIngredientsResult {
   dishName: string;
   ingredients: Ingredient[];
   recipes: Recipe[];
-  recipeStates: { id: number; liked: number; like_count: number }[];
+  recipeStates: { id: number }[];
 }
 
 interface ShoppingState {
@@ -338,14 +338,12 @@ export const useShoppingStore = create<ShoppingState>()(
           }
         }
 
-        let recipeStates: { id: number; liked: number; like_count: number }[] = [];
+        let recipeStates: { id: number }[] = [];
         if (recipes.length > 0) {
           const recipeStore = useRecipeStore.getState();
           const saved = await recipeStore.autoSaveRecipes(dish.name, recipes, dishId);
           recipeStates = saved.map((r) => ({
             id: r.id,
-            liked: r.liked,
-            like_count: r.like_count,
           }));
         }
 

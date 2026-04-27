@@ -40,8 +40,6 @@ export interface Recipe {
 
 export interface RecipeState {
   id: number;
-  liked: number;
-  like_count: number;
 }
 
 export interface SuggestIngredientsResponse {
@@ -62,6 +60,4 @@ export interface SavedRecipe {
   ingredients_json: string;
   source_dish_id: number | null;
   created_at: string;
-  like_count: number;
-  liked: number;
 }

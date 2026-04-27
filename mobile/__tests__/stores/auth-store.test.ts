@@ -27,8 +27,6 @@ jest.mock('../../src/api/dishes', () => ({
 
 jest.mock('../../src/api/saved-recipes', () => ({
   getSavedRecipes: jest.fn(),
-  getSharedRecipes: jest.fn(),
-  toggleLike: jest.fn(),
   deleteSavedRecipe: jest.fn(),
   createSavedRecipesBulk: jest.fn(),
 }));
@@ -95,7 +93,6 @@ beforeEach(() => {
   useRecipeStore.setState({
     mode: 'local',
     savedRecipes: [],
-    sharedRecipes: [],
     loading: false,
     nextLocalId: -1,
   });
@@ -334,8 +331,6 @@ describe('auth-store', () => {
             ingredients_json: '[]',
             source_dish_id: null,
             created_at: '',
-            like_count: 0,
-            liked: 0,
           },
         ],
       });

@@ -3,14 +3,12 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Recipe, SavedRecipe } from '../types/models';
 import * as savedRecipesApi from '../api/saved-recipes';
-import { useAuthStore } from './auth-store';
 
 export type Mode = 'local' | 'server';
 
 interface RecipeState {
   mode: Mode;
   savedRecipes: SavedRecipe[];
-  sharedRecipes: SavedRecipe[];
   loading: boolean;
   nextLocalId: number;
 
@@ -18,8 +16,6 @@ interface RecipeState {
   clearLocalData: () => void;
 
   loadSavedRecipes: () => Promise<void>;
-  loadSharedRecipes: () => Promise<void>;
-  toggleLike: (id: number) => Promise<void>;
   deleteSavedRecipe: (id: number) => Promise<void>;
 
   autoSaveRecipes: (
@@ -49,8 +45,6 @@ function buildLocalSavedRecipe(
     ingredients_json: JSON.stringify(recipe.ingredients ?? []),
     source_dish_id: sourceDishId,
     created_at: nowIso(),
-    like_count: 0,
-    liked: 0,
   };
 }
 
@@ -59,17 +53,16 @@ export const useRecipeStore = create<RecipeState>()(
     (set, get) => ({
       mode: 'local',
       savedRecipes: [],
-      sharedRecipes: [],
       loading: false,
       nextLocalId: -1,
 
       setMode: (mode) => {
         if (get().mode === mode) return;
-        set({ mode, savedRecipes: [], sharedRecipes: [] });
+        set({ mode, savedRecipes: [] });
       },
 
       clearLocalData: () => {
-        set({ savedRecipes: [], sharedRecipes: [], nextLocalId: -1 });
+        set({ savedRecipes: [], nextLocalId: -1 });
       },
 
       loadSavedRecipes: async () => {
@@ -83,39 +76,12 @@ export const useRecipeStore = create<RecipeState>()(
         }
       },
 
-      loadSharedRecipes: async () => {
-        // みんなのレシピは未ログインでもサーバから取得可能（サーバ側で optionalAuth）
-        set({ loading: true });
-        try {
-          const recipes = await savedRecipesApi.getSharedRecipes();
-          set({ sharedRecipes: recipes });
-        } finally {
-          set({ loading: false });
-        }
-      },
-
-      toggleLike: async (id) => {
-        if (get().mode === 'local') {
-          // local モードでは いいね は認証必須 — AuthModal を誘導
-          useAuthStore.getState().requestLogin({ reason: 'レシピにいいねする' });
-          return;
-        }
-        const result = await savedRecipesApi.toggleLike(id);
-        const update = (r: SavedRecipe) =>
-          r.id === id ? { ...r, liked: result.liked, like_count: result.like_count } : r;
-        set((s) => ({
-          savedRecipes: s.savedRecipes.map(update),
-          sharedRecipes: s.sharedRecipes.map(update),
-        }));
-      },
-
       deleteSavedRecipe: async (id) => {
         if (get().mode === 'server') {
           await savedRecipesApi.deleteSavedRecipe(id);
         }
         set((s) => ({
           savedRecipes: s.savedRecipes.filter((r) => r.id !== id),
-          sharedRecipes: s.sharedRecipes.filter((r) => r.id !== id),
         }));
       },
 
