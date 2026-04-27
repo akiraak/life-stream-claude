@@ -73,10 +73,10 @@ CSS:
 - [x] Phase 1: レイアウト変更（CSS + ラッパー HTML）
   - [x] `.doc-pane-layout` / `.doc-toc` / `.doc-body` の CSS を追加
   - [x] `renderMarkdown` 内で plans/specs のときに 2 ペインラッパーを組む（TOC は空のまま）
-- [ ] Phase 2: TOC 構築
-  - [ ] `.md-content` 内の見出しを走査し、必要なら id を付与
-  - [ ] 階層付き `<ul>` を生成して `.doc-toc` に挿入
-  - [ ] 見出しが 0〜1 件のときは TOC ペインを非表示
+- [x] Phase 2: TOC 構築
+  - [x] `.md-content` 内の見出しを走査し、必要なら id を付与
+  - [x] 階層付き `<ul>` を生成して `.doc-toc` に挿入
+  - [x] 見出しが 0〜1 件のときは TOC ペインを非表示
 - [ ] Phase 3: クリック / アクティブ追従
   - [ ] クリックで該当見出しへスムーズスクロール
   - [ ] IntersectionObserver で active ハイライトを切替

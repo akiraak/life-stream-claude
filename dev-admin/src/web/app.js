@@ -315,10 +315,66 @@ async function renderMarkdown(category, filePath) {
     layout.appendChild(body);
 
     contentArea.appendChild(layout);
+    buildDocToc(div, toc);
     renderMermaidIn(div);
   } catch (err) {
     showError(err.message);
   }
+}
+
+// 見出しテキストから id 用 slug を生成する。日本語は \p{L} で残し、空白等はハイフンへ。
+// used Set で重複時は -2, -3… を suffix にする
+function slugifyHeading(text, used) {
+  let base = String(text || '')
+    .toLowerCase()
+    .trim()
+    .replace(/[\s　]+/g, '-')
+    .replace(/[^\p{L}\p{N}_-]/gu, '');
+  if (!base) base = 'section';
+  let slug = base;
+  let n = 2;
+  while (used.has(slug)) {
+    slug = `${base}-${n}`;
+    n++;
+  }
+  used.add(slug);
+  return slug;
+}
+
+// .md-content 内の H2〜H4 から TOC を組み立てて tocEl に挿入する。
+// H1 は topbar の page-title と重複するため除外、見出し 0〜1 件なら何もしない（CSS :empty で非表示）
+function buildDocToc(mdContentEl, tocEl) {
+  if (!mdContentEl || !tocEl) return;
+  const headings = mdContentEl.querySelectorAll('h2, h3, h4');
+  if (headings.length < 2) return;
+
+  const used = new Set();
+  headings.forEach((h) => { if (h.id) used.add(h.id); });
+  headings.forEach((h) => {
+    if (!h.id) h.id = slugifyHeading(h.textContent, used);
+  });
+
+  const list = document.createElement('ul');
+  list.className = 'doc-toc-list';
+  headings.forEach((h) => {
+    const level = parseInt(h.tagName.substring(1), 10);
+    const li = document.createElement('li');
+    li.className = `doc-toc-item doc-toc-item-h${level}`;
+    const a = document.createElement('a');
+    a.className = 'doc-toc-link';
+    a.href = `#${encodeURIComponent(h.id)}`;
+    a.dataset.targetId = h.id;
+    a.textContent = h.textContent;
+    // ルーティングは hash ベースなのでデフォルトのアンカー遷移は抑止し、直接スクロール
+    a.addEventListener('click', (e) => {
+      e.preventDefault();
+      const target = document.getElementById(h.id);
+      if (target) target.scrollIntoView({ block: 'start' });
+    });
+    li.appendChild(a);
+    list.appendChild(li);
+  });
+  tocEl.appendChild(list);
 }
 
 async function archiveDirectory(dirName) {
