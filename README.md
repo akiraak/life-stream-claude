@@ -14,7 +14,6 @@
 - **料理管理** — 料理を追加して食材をグループ化、料理間のドラッグ移動
 - **AI 具材提案** — 料理名から Gemini AI がレシピごとの具材を自動提案、タップでリストに追加
 - **AI レシピ表示** — 料理ごとにおすすめレシピ3件を表示（手順・食材付き）
-- **レシピ保存・いいね** — レシピにいいねを付けて保存、複数ユーザー間で共有
 - **レシピノート** — 生成したレシピを自動保存・検索（無限スクロール対応）
 - **リストに追加** — レシピカードから食材を一括で買い物リストに追加
 - **サジェスト** — 過去の購入頻度をもとに食材名・料理名を補完
@@ -64,7 +63,7 @@ cooking-basket/
 │   │   │   ├── auth.ts           # 認証 API (Magic Link)
 │   │   │   ├── shopping.ts      # 買い物リスト API
 │   │   │   ├── dishes.ts        # 料理 API + AI 具材提案
-│   │   │   ├── saved-recipes.ts  # レシピ保存・いいね API
+│   │   │   ├── saved-recipes.ts  # レシピ保存 API
 │   │   │   ├── recipes.ts       # レシピ推薦 API
 │   │   │   ├── claude.ts        # Claude Code 汎用 API
 │   │   │   ├── admin.ts         # 管理用 API
@@ -73,7 +72,7 @@ cooking-basket/
 │   │   │   ├── auth-service.ts         # 認証・JWT・OTP・メール送信
 │   │   │   ├── shopping-service.ts     # 買い物リスト CRUD
 │   │   │   ├── dish-service.ts         # 料理 CRUD + AI データ管理
-│   │   │   ├── saved-recipe-service.ts # レシピ保存・いいね管理
+│   │   │   ├── saved-recipe-service.ts # レシピ保存管理
 │   │   │   ├── gemini-service.ts       # Gemini API 呼び出し
 │   │   │   ├── claude-service.ts       # Claude CLI 呼び出し
 │   │   │   └── admin-service.ts        # 管理機能
@@ -228,10 +227,9 @@ LAN の device discovery が不安定なときは `--tunnel` を付けると ngr
 | メソッド | パス | 説明 |
 |---------|------|------|
 | GET | `/api/saved-recipes` | レシピノート一覧 |
-| GET | `/api/saved-recipes/shared` | みんなのレシピ一覧 |
 | GET | `/api/saved-recipes/:id` | レシピ詳細 |
 | POST | `/api/saved-recipes` | レシピ保存 |
-| PUT | `/api/saved-recipes/:id/like` | いいねトグル |
+| POST | `/api/saved-recipes/bulk` | レシピ一括保存（AI 結果の自動保存用） |
 | DELETE | `/api/saved-recipes/:id` | レシピ削除 |
 
 ### レスポンス形式

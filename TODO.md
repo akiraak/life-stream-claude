@@ -3,7 +3,6 @@
 > 作業が完了した項目を DONE.md に移動する。docs/plans/ にプランファイルがある場合は docs/plans/archive に移動させる。
 
 ## 機能開発
-- [ ] `web/admin/app.js` / `web/about.html` / `README.md` 内の「みんなのレシピ」「いいね」残存記述を整理（アプリシンプル化以降のズレ）
 - [ ] 空状態メッセージの改善（レシピノート / 買い物リスト） [plan](docs/plans/empty-state-messages.md)
   - [ ] Phase 1: 文言確定（ユーザー確認）
   - [ ] Phase 2: 実装
