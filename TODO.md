@@ -3,7 +3,6 @@
 > 作業が完了した項目を DONE.md に移動する。docs/plans/ にプランファイルがある場合は docs/plans/archive に移動させる。
 
 ## 機能開発
-- [ ] リファクタリング 6: `IngredientsScreen.tsx` の責務分離 [plan](docs/plans/refactoring-mobile-ingredients-screen.md)
 - [ ] リファクタリング 7: `database.ts` のマイグレーション整理 [plan](docs/plans/refactoring-server-database-migrations.md)
 - [ ] リファクタリング 8（TODO ストック）: `shopping-store.ts` の local/server 二重実装の解消（数日規模・要設計判断・M1）
 - [ ] リファクタリング 9（TODO ストック）: `app/(tabs)/index.tsx` の責務漏出整理（数日規模・M1 の上で M2 として進める）

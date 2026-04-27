@@ -1,112 +1,103 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
-  TextInput,
   ActivityIndicator,
   StyleSheet,
   Alert,
 } from 'react-native';
 import { useThemeColors } from '../../theme/theme-provider';
 import { useShoppingStore } from '../../stores/shopping-store';
-import { RecipeCard } from './RecipeCard';
 import { useAiStore } from '../../stores/ai-store';
-import { useAuthStore } from '../../stores/auth-store';
-import { AiQuotaError } from '../../api/ai';
+import { useDishSuggestions } from '../../hooks/use-dish-suggestions';
+import { RecipeCard } from './RecipeCard';
+import { DishNameHeader } from './DishNameHeader';
 import type { Dish, Ingredient, Recipe } from '../../types/models';
-import type { SuggestIngredientsResult } from '../../stores/shopping-store';
 
 interface IngredientsScreenProps {
   dish: Dish;
   onClose: () => void;
 }
 
+function parseJson<T>(json: string | null): T[] {
+  if (!json) return [];
+  try {
+    return JSON.parse(json) as T[];
+  } catch {
+    return [];
+  }
+}
+
 export function IngredientsScreen({ dish, onClose }: IngredientsScreenProps) {
   const colors = useThemeColors();
-  const { addItem, linkItemToDish, loadAll, updateDish } = useShoppingStore();
-  const { remaining } = useAiStore();
-  const { isAuthenticated, requestLogin } = useAuthStore();
+  const addItem = useShoppingStore((s) => s.addItem);
+  const linkItemToDish = useShoppingStore((s) => s.linkItemToDish);
+  const loadAll = useShoppingStore((s) => s.loadAll);
+  // store の最新 dish を購読する。AI 提案は store の dish.ingredients_json /
+  // recipes_json に書き戻すので、ここがそのまま唯一の真実になる。
+  const liveDish = useShoppingStore((s) => s.dishes.find((d) => d.id === dish.id)) ?? dish;
+  const remaining = useAiStore((s) => s.remaining);
 
-  const [loading, setLoading] = useState(false);
-  const [ingredients, setIngredients] = useState<Ingredient[]>([]);
-  const [recipes, setRecipes] = useState<Recipe[]>([]);
-  const [addedNames, setAddedNames] = useState<Set<string>>(new Set());
-  const [dishName, setDishName] = useState(dish.name);
-  const [editingName, setEditingName] = useState(false);
+  const ingredients = useMemo<Ingredient[]>(
+    () => parseJson<Ingredient>(liveDish.ingredients_json),
+    [liveDish.ingredients_json],
+  );
+  const recipes = useMemo<Recipe[]>(
+    () => parseJson<Recipe>(liveDish.recipes_json),
+    [liveDish.recipes_json],
+  );
 
   const pinnedExtras = useMemo(
-    () => dish.items.filter((i) => !i.checked).map((i) => i.name),
-    [dish.items],
+    () => liveDish.items.filter((i) => !i.checked).map((i) => i.name),
+    [liveDish.items],
   );
 
   const dishItemNames = useMemo(() => new Set(pinnedExtras), [pinnedExtras]);
 
   const extraIngredients = useMemo(() => {
     const aiNames = new Set(ingredients.map((i) => i.name));
-    return dish.items
+    return liveDish.items
       .filter((item) => !item.checked && !aiNames.has(item.name))
       .map((item) => item.name);
-  }, [dish.items, ingredients]);
+  }, [liveDish.items, ingredients]);
 
-  // dish.ingredients_json / recipes_json に前回のキャッシュがあれば初期表示に使う
-  useEffect(() => {
-    if (!dish.ingredients_json && !dish.recipes_json) return;
-    try {
-      const cachedIngredients: Ingredient[] = dish.ingredients_json
-        ? JSON.parse(dish.ingredients_json)
-        : [];
-      const cachedRecipes: Recipe[] = dish.recipes_json ? JSON.parse(dish.recipes_json) : [];
-      setIngredients(cachedIngredients);
-      setRecipes(cachedRecipes);
-      const existing = new Set<string>();
-      for (const ing of cachedIngredients) {
-        if (dishItemNames.has(ing.name)) existing.add(ing.name);
-      }
-      setAddedNames(existing);
-    } catch {
-      /* 破損したキャッシュは無視 */
+  const showError = useCallback((title: string, message: string) => {
+    Alert.alert(title, message);
+  }, []);
+
+  const { loading, fetchSuggestions } = useDishSuggestions({
+    dishId: dish.id,
+    onError: showError,
+  });
+
+  // addedNames は「視覚的に追加済みとマークするチップ」のローカル状態。
+  // dish.items への実体は addItem + linkItemToDish 経由で残っているが、
+  // 一度トグル off した後に再 mark しないために local に持つ。
+  const [addedNames, setAddedNames] = useState<Set<string>>(() => {
+    const initial = new Set<string>();
+    const cached = parseJson<Ingredient>(dish.ingredients_json);
+    const itemNames = new Set(dish.items.filter((i) => !i.checked).map((i) => i.name));
+    for (const ing of cached) {
+      if (itemNames.has(ing.name)) initial.add(ing.name);
     }
-    // 初回のみ参照（dish.id で dep 判定）
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dish.id]);
+    return initial;
+  });
 
-  const fetchSuggestions = useCallback(
-    async (extras?: string[]) => {
-      setLoading(true);
-      try {
-        const data: SuggestIngredientsResult = await useShoppingStore.getState().suggestIngredients(
-          dish.id,
-          extras && extras.length > 0 ? extras : undefined,
-        );
-        setIngredients(data.ingredients);
-        setRecipes(data.recipes);
-        const existing = new Set<string>();
-        for (const ing of data.ingredients) {
-          if (dishItemNames.has(ing.name)) existing.add(ing.name);
-        }
-        setAddedNames(existing);
-      } catch (e: unknown) {
-        if (e instanceof AiQuotaError) {
-          if (!isAuthenticated) {
-            requestLogin({
-              reason: 'AI 提案の残り回数を増やすにはログインしてください',
-              onSuccess: () => fetchSuggestions(extras),
-            });
-          } else {
-            Alert.alert('本日の上限に達しました', '明日また使えます');
-          }
-        } else {
-          const message = e instanceof Error ? e.message : 'AI提案に失敗しました';
-          Alert.alert('エラー', message);
-        }
-      } finally {
-        setLoading(false);
-      }
-    },
-    [dish.id, dishItemNames, isAuthenticated, requestLogin],
-  );
+  // ingredients_json が更新されたとき（fetch 直後 / ログイン後の再 fetch 等）に
+  // 「すでに買い物リストに入っている具材」を再シードする。
+  // dishItemNames の変化単独では再シードしない（ユーザーのトグル off を保つ）。
+  const seededFor = useRef<string | null>(liveDish.ingredients_json);
+  useEffect(() => {
+    if (seededFor.current === liveDish.ingredients_json) return;
+    seededFor.current = liveDish.ingredients_json;
+    const existing = new Set<string>();
+    for (const ing of ingredients) {
+      if (dishItemNames.has(ing.name)) existing.add(ing.name);
+    }
+    setAddedNames(existing);
+  }, [liveDish.ingredients_json, ingredients, dishItemNames]);
 
   const handleToggleIngredient = useCallback(
     async (name: string) => {
@@ -135,7 +126,7 @@ export function IngredientsScreen({ dish, onClose }: IngredientsScreenProps) {
   );
 
   const handleSearch = useCallback(() => {
-    fetchSuggestions(pinnedExtras.length > 0 ? pinnedExtras : undefined);
+    void fetchSuggestions(pinnedExtras.length > 0 ? pinnedExtras : undefined);
   }, [fetchSuggestions, pinnedExtras]);
 
   const handleAddRecipeToList = useCallback(
@@ -155,22 +146,6 @@ export function IngredientsScreen({ dish, onClose }: IngredientsScreenProps) {
     [addedNames, addItem, linkItemToDish, dish.id],
   );
 
-  const handleSaveName = useCallback(async () => {
-    const trimmed = dishName.trim();
-    if (!trimmed || trimmed === dish.name) {
-      setDishName(dish.name);
-      setEditingName(false);
-      return;
-    }
-    try {
-      await updateDish(dish.id, trimmed);
-      setEditingName(false);
-    } catch {
-      setDishName(dish.name);
-      setEditingName(false);
-    }
-  }, [dishName, dish.id, dish.name, updateDish]);
-
   const withRemaining = useCallback(
     (base: string) => (remaining === null ? base : `${base}（残り ${remaining} 回）`),
     [remaining],
@@ -184,6 +159,11 @@ export function IngredientsScreen({ dish, onClose }: IngredientsScreenProps) {
     [extraIngredients.length, withRemaining],
   );
 
+  const handleClose = useCallback(() => {
+    void loadAll();
+    onClose();
+  }, [loadAll, onClose]);
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View
@@ -192,44 +172,10 @@ export function IngredientsScreen({ dish, onClose }: IngredientsScreenProps) {
           { backgroundColor: colors.surface, borderBottomColor: colors.border },
         ]}
       >
-        <TouchableOpacity
-          onPress={() => {
-            loadAll();
-            onClose();
-          }}
-          style={styles.headerSide}
-        >
+        <TouchableOpacity onPress={handleClose} style={styles.headerSide}>
           <Text style={[styles.backBtn, { color: colors.primaryLight }]}>← 戻る</Text>
         </TouchableOpacity>
-        {editingName ? (
-          <TextInput
-            style={[
-              styles.nameInput,
-              {
-                color: colors.text,
-                borderColor: colors.primaryLight,
-                backgroundColor: colors.background,
-              },
-            ]}
-            value={dishName}
-            onChangeText={setDishName}
-            onBlur={handleSaveName}
-            onSubmitEditing={handleSaveName}
-            autoFocus
-            autoComplete="off"
-            importantForAutofill="no"
-            returnKeyType="done"
-          />
-        ) : (
-          <TouchableOpacity style={styles.dishTitleBtn} onPress={() => setEditingName(true)}>
-            <View
-              style={[styles.dishTitleUnderline, { borderBottomColor: 'rgba(251,146,60,0.5)' }]}
-            >
-              <Text style={[styles.dishTitle, { color: colors.primaryLight }]}>{dishName}</Text>
-              <Text style={[styles.editIcon, { color: colors.textMuted }]}> ✎</Text>
-            </View>
-          </TouchableOpacity>
-        )}
+        <DishNameHeader dish={liveDish} />
         <View style={styles.headerSide} />
       </View>
 
@@ -363,34 +309,6 @@ const styles = StyleSheet.create({
   },
   backBtn: {
     fontSize: 16,
-  },
-  dishTitleBtn: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  dishTitleUnderline: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    paddingBottom: 2,
-  },
-  dishTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  editIcon: {
-    fontSize: 13,
-  },
-  nameInput: {
-    fontSize: 18,
-    fontWeight: '600',
-    borderWidth: 1,
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    flex: 1,
-    textAlign: 'center',
   },
   scroll: {
     flex: 1,
