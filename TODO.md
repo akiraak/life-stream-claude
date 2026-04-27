@@ -3,7 +3,6 @@
 > 作業が完了した項目を DONE.md に移動する。docs/plans/ にプランファイルがある場合は docs/plans/archive に移動させる。
 
 ## 機能開発
-- [ ] リファクタリング 2: モバイル小粒整理（API ボイラープレート / 型重複 / 未使用 export / TabIcon require） [plan](docs/plans/refactoring-mobile-cleanup.md)
 - [ ] リファクタリング 3: サーバ route 層のエラーハンドリング統一 + メッセージ定数化 [plan](docs/plans/refactoring-server-error-handling.md)
 - [ ] リファクタリング 4: `admin-service.ts` の責務分割と `any` 解消 [plan](docs/plans/refactoring-server-admin-service.md)
 - [ ] リファクタリング 5: `DraggableList.tsx` のモジュール状態撤去と dead code 削除 [plan](docs/plans/refactoring-mobile-draggable-list.md)
