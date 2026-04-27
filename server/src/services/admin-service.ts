@@ -2,33 +2,26 @@ import { getDatabase } from '../database';
 import fs from 'fs';
 import path from 'path';
 import { getAiLimits } from './settings-service';
+import { getJstDate } from './ai-quota-service';
+import { getCount, getOne } from '../lib/db-helpers';
 
 // --- Dashboard ---
 
 export function getDashboardStats() {
-  const db = getDatabase();
-  const totalUsers = (db.prepare('SELECT COUNT(*) as c FROM users').get() as any).c;
-  const totalItems = (db.prepare('SELECT COUNT(*) as c FROM shopping_items').get() as any).c;
-  const totalDishes = (db.prepare('SELECT COUNT(*) as c FROM dishes').get() as any).c;
-  const totalPurchases = (db.prepare('SELECT COUNT(*) as c FROM purchase_history').get() as any).c;
-  const recentUsersCount = (db.prepare(
-    "SELECT COUNT(*) as c FROM users WHERE created_at >= datetime('now', '-7 days')"
-  ).get() as any).c;
-  const recentItemsCount = (db.prepare(
-    "SELECT COUNT(*) as c FROM shopping_items WHERE created_at >= datetime('now', '-7 days')"
-  ).get() as any).c;
-  const activeUsersToday = (db.prepare(
-    "SELECT COUNT(*) as c FROM users WHERE last_login_at >= datetime('now', '-1 day')"
-  ).get() as any).c;
-
   return {
-    totalUsers,
-    totalItems,
-    totalDishes,
-    totalPurchases,
-    recentUsersCount,
-    recentItemsCount,
-    activeUsersToday,
+    totalUsers: getCount('SELECT COUNT(*) as c FROM users'),
+    totalItems: getCount('SELECT COUNT(*) as c FROM shopping_items'),
+    totalDishes: getCount('SELECT COUNT(*) as c FROM dishes'),
+    totalPurchases: getCount('SELECT COUNT(*) as c FROM purchase_history'),
+    recentUsersCount: getCount(
+      "SELECT COUNT(*) as c FROM users WHERE created_at >= datetime('now', '-7 days')",
+    ),
+    recentItemsCount: getCount(
+      "SELECT COUNT(*) as c FROM shopping_items WHERE created_at >= datetime('now', '-7 days')",
+    ),
+    activeUsersToday: getCount(
+      "SELECT COUNT(*) as c FROM users WHERE last_login_at >= datetime('now', '-1 day')",
+    ),
   };
 }
 
@@ -68,23 +61,40 @@ export function getAllShoppingItems() {
   `).all();
 }
 
-export function updateShoppingItem(id: number, data: { name?: string; category?: string; checked?: number }) {
+interface AdminShoppingItemRow {
+  id: number;
+  user_id: number;
+  name: string;
+  category: string;
+  checked: number;
+  position: number | null;
+  dish_id: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export function updateShoppingItem(
+  id: number,
+  data: { name?: string; category?: string; checked?: number },
+): AdminShoppingItemRow | null {
   const db = getDatabase();
-  const item = db.prepare('SELECT * FROM shopping_items WHERE id = ?').get(id);
-  if (!item) return null;
+  const existing = getOne<AdminShoppingItemRow>(
+    'SELECT * FROM shopping_items WHERE id = ?',
+    id,
+  );
+  if (!existing) return null;
 
-  const fields: string[] = [];
-  const values: any[] = [];
-  if (data.name !== undefined) { fields.push('name = ?'); values.push(data.name); }
-  if (data.category !== undefined) { fields.push('category = ?'); values.push(data.category); }
-  if (data.checked !== undefined) { fields.push('checked = ?'); values.push(data.checked); }
-  fields.push("updated_at = datetime('now')");
-
-  if (fields.length > 1) {
-    values.push(id);
-    db.prepare(`UPDATE shopping_items SET ${fields.join(', ')} WHERE id = ?`).run(...values);
+  if (data.name !== undefined) {
+    db.prepare("UPDATE shopping_items SET name = ?, updated_at = datetime('now') WHERE id = ?").run(data.name, id);
   }
-  return db.prepare('SELECT * FROM shopping_items WHERE id = ?').get(id);
+  if (data.category !== undefined) {
+    db.prepare("UPDATE shopping_items SET category = ?, updated_at = datetime('now') WHERE id = ?").run(data.category, id);
+  }
+  if (data.checked !== undefined) {
+    db.prepare("UPDATE shopping_items SET checked = ?, updated_at = datetime('now') WHERE id = ?").run(data.checked, id);
+  }
+
+  return getOne<AdminShoppingItemRow>('SELECT * FROM shopping_items WHERE id = ?', id) ?? null;
 }
 
 export function deleteShoppingItem(id: number): boolean {
@@ -148,9 +158,13 @@ export function deleteSavedRecipeAdmin(id: number): boolean {
 
 // --- AI Quota ---
 
-function getJstDate(now: Date = new Date()): string {
-  const jstMs = now.getTime() + 9 * 60 * 60 * 1000;
-  return new Date(jstMs).toISOString().slice(0, 10);
+export interface AiQuotaTodaySummary {
+  total_calls: number;
+  unique_keys: number;
+  user_calls: number;
+  guest_calls: number;
+  user_keys: number;
+  guest_keys: number;
 }
 
 export type AiQuotaResetScope = 'user' | 'guest' | 'all' | 'key';
@@ -200,7 +214,8 @@ export function getAiQuotaStats() {
   const db = getDatabase();
   const today = getJstDate();
 
-  const todaySummary = db.prepare(`
+  const todaySummary = getOne<AiQuotaTodaySummary>(
+    `
     SELECT
       COALESCE(SUM(count), 0) as total_calls,
       COUNT(*) as unique_keys,
@@ -210,7 +225,9 @@ export function getAiQuotaStats() {
       COALESCE(SUM(CASE WHEN key LIKE 'device:%' THEN 1 ELSE 0 END), 0) as guest_keys
     FROM ai_quota
     WHERE date = ?
-  `).get(today) as any;
+  `,
+    today,
+  );
 
   const daily = db.prepare(`
     SELECT
@@ -264,7 +281,6 @@ function getDeployedAt(): string | null {
 }
 
 export function getSystemInfo() {
-  const db = getDatabase();
   const dbPath = process.env.DB_PATH || path.join(__dirname, '../../../shopping.db');
 
   let dbSizeBytes = 0;
@@ -276,7 +292,7 @@ export function getSystemInfo() {
   const tables = ['users', 'shopping_items', 'dishes', 'magic_link_tokens', 'purchase_history', 'saved_recipes', 'ai_quota'];
   const tableCounts: Record<string, number> = {};
   for (const table of tables) {
-    tableCounts[table] = (db.prepare(`SELECT COUNT(*) as c FROM ${table}`).get() as any).c;
+    tableCounts[table] = getCount(`SELECT COUNT(*) as c FROM ${table}`);
   }
 
   const mem = process.memoryUsage();

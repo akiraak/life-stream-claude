@@ -3,7 +3,6 @@
 > 作業が完了した項目を DONE.md に移動する。docs/plans/ にプランファイルがある場合は docs/plans/archive に移動させる。
 
 ## 機能開発
-- [ ] リファクタリング 4: `admin-service.ts` の責務分割と `any` 解消 [plan](docs/plans/refactoring-server-admin-service.md)
 - [ ] リファクタリング 5: `DraggableList.tsx` のモジュール状態撤去と dead code 削除 [plan](docs/plans/refactoring-mobile-draggable-list.md)
 - [ ] リファクタリング 6: `IngredientsScreen.tsx` の責務分離 [plan](docs/plans/refactoring-mobile-ingredients-screen.md)
 - [ ] リファクタリング 7: `database.ts` のマイグレーション整理 [plan](docs/plans/refactoring-server-database-migrations.md)

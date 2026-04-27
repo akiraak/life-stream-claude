@@ -1,6 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { getDatabase } from '../../src/database';
-import { getSystemInfo, resetAiQuota } from '../../src/services/admin-service';
+import {
+  getAiQuotaStats,
+  getDashboardStats,
+  getSystemInfo,
+  resetAiQuota,
+  updateShoppingItem,
+} from '../../src/services/admin-service';
 import { setupTestDatabase } from '../helpers/db';
 
 setupTestDatabase();
@@ -137,5 +143,137 @@ describe('admin-service / resetAiQuota', () => {
     expect(() => resetAiQuota('key')).toThrow('invalid_scope');
     expect(() => resetAiQuota('key', {})).toThrow('invalid_scope');
     expect(() => resetAiQuota('key', { key: '' })).toThrow('invalid_scope');
+  });
+});
+
+describe('admin-service / getDashboardStats', () => {
+  it('returns zero counts for an empty database', () => {
+    expect(getDashboardStats()).toEqual({
+      totalUsers: 0,
+      totalItems: 0,
+      totalDishes: 0,
+      totalPurchases: 0,
+      recentUsersCount: 0,
+      recentItemsCount: 0,
+      activeUsersToday: 0,
+    });
+  });
+
+  it('counts users / items / dishes / purchases including the recent / active subsets', () => {
+    const db = getDatabase();
+    const userId = Number(
+      db.prepare("INSERT INTO users (email, created_at, last_login_at) VALUES (?, datetime('now'), datetime('now'))").run('a@test').lastInsertRowid,
+    );
+    db.prepare("INSERT INTO users (email, created_at, last_login_at) VALUES (?, datetime('now', '-30 days'), datetime('now', '-30 days'))").run('b@test');
+    db.prepare("INSERT INTO shopping_items (user_id, name, created_at) VALUES (?, ?, datetime('now'))").run(userId, 'milk');
+    db.prepare("INSERT INTO shopping_items (user_id, name, created_at) VALUES (?, ?, datetime('now', '-30 days'))").run(userId, 'old');
+    db.prepare("INSERT INTO dishes (user_id, name) VALUES (?, ?)").run(userId, 'curry');
+    db.prepare("INSERT INTO purchase_history (user_id, item_name) VALUES (?, ?)").run(userId, 'milk');
+
+    expect(getDashboardStats()).toEqual({
+      totalUsers: 2,
+      totalItems: 2,
+      totalDishes: 1,
+      totalPurchases: 1,
+      recentUsersCount: 1,
+      recentItemsCount: 1,
+      activeUsersToday: 1,
+    });
+  });
+});
+
+describe('admin-service / updateShoppingItem', () => {
+  function seedItem(overrides: { name?: string; category?: string; checked?: number } = {}): number {
+    const db = getDatabase();
+    const userId = Number(
+      db.prepare("INSERT INTO users (email) VALUES (?)").run('owner@test').lastInsertRowid,
+    );
+    const result = db
+      .prepare('INSERT INTO shopping_items (user_id, name, category, checked) VALUES (?, ?, ?, ?)')
+      .run(userId, overrides.name ?? 'milk', overrides.category ?? '飲料', overrides.checked ?? 0);
+    return Number(result.lastInsertRowid);
+  }
+
+  it('returns null when the item does not exist', () => {
+    expect(updateShoppingItem(999, { name: 'x' })).toBeNull();
+  });
+
+  it('updates only name when name is provided', () => {
+    const id = seedItem();
+    const updated = updateShoppingItem(id, { name: 'soy milk' });
+    expect(updated?.name).toBe('soy milk');
+    expect(updated?.category).toBe('飲料');
+    expect(updated?.checked).toBe(0);
+  });
+
+  it('updates only checked when checked is provided', () => {
+    const id = seedItem();
+    const updated = updateShoppingItem(id, { checked: 1 });
+    expect(updated?.checked).toBe(1);
+    expect(updated?.name).toBe('milk');
+  });
+
+  it('updates name and checked together', () => {
+    const id = seedItem();
+    const updated = updateShoppingItem(id, { name: 'oat milk', checked: 1 });
+    expect(updated?.name).toBe('oat milk');
+    expect(updated?.checked).toBe(1);
+  });
+
+  it('returns the row unchanged when no fields are provided', () => {
+    const id = seedItem();
+    const updated = updateShoppingItem(id, {});
+    expect(updated?.name).toBe('milk');
+    expect(updated?.category).toBe('飲料');
+    expect(updated?.checked).toBe(0);
+  });
+});
+
+describe('admin-service / getAiQuotaStats', () => {
+  const today = jstDate();
+  const deviceHash = 'a'.repeat(64);
+
+  beforeEach(() => {
+    const db = getDatabase();
+    const insert = db.prepare('INSERT INTO ai_quota (key, date, count) VALUES (?, ?, ?)');
+    insert.run('user:1', today, 5);
+    insert.run('user:2', today, 3);
+    insert.run(`device:${deviceHash}`, today, 2);
+  });
+
+  it("aggregates today's calls split by user / guest", () => {
+    const stats = getAiQuotaStats();
+    expect(stats.today).toBe(today);
+    expect(stats.todaySummary).toEqual({
+      total_calls: 10,
+      unique_keys: 3,
+      user_calls: 8,
+      guest_calls: 2,
+      user_keys: 2,
+      guest_keys: 1,
+    });
+  });
+});
+
+describe('admin-service / getSystemInfo tableCounts', () => {
+  it('returns COUNT(*) for every tracked table', () => {
+    const db = getDatabase();
+    const userId = Number(
+      db.prepare("INSERT INTO users (email) VALUES (?)").run('a@test').lastInsertRowid,
+    );
+    db.prepare("INSERT INTO users (email) VALUES (?)").run('b@test');
+    db.prepare("INSERT INTO shopping_items (user_id, name) VALUES (?, ?)").run(userId, 'milk');
+    db.prepare("INSERT INTO dishes (user_id, name) VALUES (?, ?)").run(userId, 'curry');
+
+    const info = getSystemInfo();
+    expect(info.tableCounts).toMatchObject({
+      users: 2,
+      shopping_items: 1,
+      dishes: 1,
+      magic_link_tokens: 0,
+      purchase_history: 0,
+      saved_recipes: 0,
+      ai_quota: 0,
+    });
   });
 });
