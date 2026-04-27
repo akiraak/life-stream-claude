@@ -67,7 +67,7 @@ export default function RecipesScreen() {
         refreshControl={<RefreshControl refreshing={loading} onRefresh={loadSavedRecipes} tintColor={colors.primary} />}
         ListEmptyComponent={
           <Text style={[styles.emptyText, { color: colors.textMuted }]}>
-            {search ? '検索結果なし' : 'レシピを生成すると自動で保存されます'}
+            {search ? '検索結果なし' : '買い物リストで料理レシピを検索すると表示されます'}
           </Text>
         }
       />
