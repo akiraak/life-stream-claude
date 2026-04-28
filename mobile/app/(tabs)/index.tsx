@@ -15,6 +15,7 @@ import { useShoppingStore } from '../../src/stores/shopping-store';
 import { useDishDragCoordinator } from '../../src/hooks/use-dish-drag-coordinator';
 import { DishGroup } from '../../src/components/shopping/DishGroup';
 import { ShoppingItemRow } from '../../src/components/shopping/ShoppingItemRow';
+import { CheckedItemsSection } from '../../src/components/shopping/CheckedItemsSection';
 import { AddModal } from '../../src/components/shopping/AddModal';
 import { DraggableList } from '../../src/components/ui/DraggableList';
 import { DragProvider } from '../../src/components/ui/drag-context';
@@ -35,9 +36,6 @@ export default function ShoppingListScreen() {
   const [toast, setToast] = useState<string | null>(null);
   const [activeDish, setActiveDish] = useState<Dish | null>(null);
   const [editItem, setEditItem] = useState<{ id: number; name: string } | null>(null);
-  const [checkedExpanded, setCheckedExpanded] = useState(false);
-  const [checkedLimit, setCheckedLimit] = useState(10);
-  const CHECKED_PAGE_SIZE = 10;
 
   const drag = useDishDragCoordinator({
     onMoveSuccess: (targetDishId) => {
@@ -260,36 +258,11 @@ export default function ShoppingListScreen() {
           </View>
         )}
 
-        {checkedItems.length > 0 && (
-          <View style={styles.checkedSection}>
-            <TouchableOpacity style={styles.checkedHeader} onPress={() => setCheckedExpanded(!checkedExpanded)}>
-              <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>
-                {checkedExpanded ? '▼' : '▶'} チェック済み ({checkedItems.length})
-              </Text>
-            </TouchableOpacity>
-            {checkedExpanded && (
-              <>
-                {checkedItems.slice(0, checkedLimit).map((item) => (
-                  <ShoppingItemRow
-                    key={item.id}
-                    id={item.id}
-                    name={item.name}
-                    checked={item.checked}
-                    onToggleCheck={handleToggleCheck}
-                    onPressName={handlePressItemName}
-                  />
-                ))}
-                {checkedItems.length > checkedLimit && (
-                  <TouchableOpacity onPress={() => setCheckedLimit((l) => l + CHECKED_PAGE_SIZE)}>
-                    <Text style={[styles.showMoreBtn, { color: colors.primaryLight }]}>
-                      さらに {checkedItems.length - checkedLimit} 件を表示
-                    </Text>
-                  </TouchableOpacity>
-                )}
-              </>
-            )}
-          </View>
-        )}
+        <CheckedItemsSection
+          items={checkedItems}
+          onToggleCheck={handleToggleCheck}
+          onPressItemName={handlePressItemName}
+        />
       </ScrollView>
 
       <View style={styles.fabContainer}>
@@ -357,21 +330,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginBottom: 4,
     fontWeight: '500',
-  },
-  checkedSection: {
-    marginTop: 16,
-    opacity: 0.6,
-  },
-  checkedHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  showMoreBtn: {
-    textAlign: 'center',
-    paddingVertical: 8,
-    fontSize: 14,
   },
   fabContainer: {
     position: 'absolute',

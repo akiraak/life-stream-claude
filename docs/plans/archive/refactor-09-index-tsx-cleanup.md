@@ -204,28 +204,36 @@
 
 ### Phase 5: `CheckedItemsSection` の component 化（小さめ）
 
-- [ ] 新規 `mobile/src/components/shopping/CheckedItemsSection.tsx`。props:
+- [x] 新規 `mobile/src/components/shopping/CheckedItemsSection.tsx`。props:
   - `items: ShoppingItem[]`
   - `onToggleCheck: (id, checked) => void`
   - `onPressItemName?: (id, name) => void`
-- [ ] 内部 state として `expanded` / `limit` を保持（コンテナから state を引き上げる）
-- [ ] `index.tsx` の L362-391 を `<CheckedItemsSection ... />` に置換
-- [ ] スナップショットでなくロジックテスト: 「閉じている時は子を描画しない」
+- [x] 内部 state として `expanded` / `limit` を保持（コンテナから state を引き上げる）
+- [x] `index.tsx` の checked セクション JSX + 関連 state + styles 3 件を `<CheckedItemsSection ... />` に置換
+- [x] スナップショットでなくロジックテスト: 「閉じている時は子を描画しない」
   「閾値超えで `さらに N 件を表示` が出る」「タップで limit が伸びる」の 3 件
+  - `react-test-renderer` (jest-expo に同梱・19.1.0) で render し、`act` + `props.onPress()`
+    で state 遷移を駆動。`@testing-library/react-native` (render + fireEvent) は導入していない
+  - 型補完用に `@types/react-test-renderer` を devDependencies に追加
 
 ### Phase 6: テスト整理 & Expo Go 動作確認
 
-- [ ] `__tests__/stores/shopping-store.test.ts` を再構成
+- [x] `__tests__/stores/shopping-store.test.ts` を再構成
   - reorder セクションを「対称」前提に書き換え（local/server 両方で state 反映）
   - `moveItemToDish` セクション新設
-- [ ] `__tests__/hooks/use-dish-drag-coordinator.test.ts`（or 純関数版）
-- [ ] `__tests__/components/CheckedItemsSection.test.tsx`
-- [ ] `tsc --noEmit` クリーン
-- [ ] Expo Go でユーザー手元確認（** ユーザー側で実施 **）
+  - （Phase 2 / 3 で同時に着地済み。L419 `reorder symmetry` / L585 `moveItemToDish` を確認）
+- [x] `__tests__/hooks/use-dish-drag-coordinator.test.ts`（or 純関数版）
+  - Phase 4 で `__tests__/hooks/dish-drag-helpers.test.ts` として着地済み（純関数版）
+- [x] `__tests__/components/CheckedItemsSection.test.tsx`
+  - Phase 5 で着地済み
+- [x] `tsc --noEmit` クリーン（2026-04-27 確認）
+- [x] Jest 全 15 suites / 130 件 PASS（2026-04-27 確認）
+- [x] Expo Go でユーザー手元確認（2026-04-27 実機 OK）
   - 食材ダイアログから料理を変える
   - 食材を料理間 / その他へドラッグ
   - 料理リスト・料理内・その他リストの並び替え
   - 並び替え API がエラーになる状況での挙動（オフライン化など）
+  - メモ: 実機確認中に「ログイン中でオフライン状態の時の挙動のチェック」を別 TODO として切り出し
 
 ## 影響範囲
 
