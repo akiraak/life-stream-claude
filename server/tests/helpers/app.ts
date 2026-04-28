@@ -1,1 +1,1 @@
-export { createApp } from '../../src/app';
+export { createApp, type CreateAppOptions } from '../../src/app';

@@ -70,6 +70,26 @@ describe('POST /api/migrate', () => {
     expect(res.body.data.savedRecipeIdMap).toEqual({});
   });
 
+  it('accepts a ~1MB body (login data import headroom)', async () => {
+    const { headers } = createAuthedUser('migrate-large@example.com');
+
+    // 1 件 ~5KB の savedRecipe を 200 件で約 1MB のボディを作る。
+    // デフォルト 100KB 上限のままだと 413 で落ちることを担保するための回帰テスト。
+    const filler = 'あ'.repeat(2500); // utf-8 で 1 文字 3byte なので約 7.5KB
+    const savedRecipes = Array.from({ length: 200 }, (_, i) => ({
+      localId: `r${i}`,
+      dishName: `料理${i}`,
+      title: `タイトル${i}`,
+      summary: filler,
+      steps: [filler],
+      ingredients: [{ name: '玉ねぎ', category: '野菜' }],
+    }));
+
+    const res = await request(app).post('/api/migrate').set(headers).send({ savedRecipes });
+    expect(res.status).toBe(201);
+    expect(Object.keys(res.body.data.savedRecipeIdMap)).toHaveLength(200);
+  });
+
   it('isolates imported data per user', async () => {
     const alice = createAuthedUser('migrate-a@example.com');
     const bob = createAuthedUser('migrate-b@example.com');

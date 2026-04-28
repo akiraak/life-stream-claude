@@ -18,12 +18,23 @@ import { logger } from './lib/logger';
 
 // DB の初期化／マイグレーションは呼び出し側（index.ts / テスト helper）の責務にする。
 // createApp 自体は Express アプリの組み立てだけを行う純粋な関数として保つ。
-export function createApp(): Express {
+export interface CreateAppOptions {
+  // /api/migrate のリクエストボディ上限。ログイン時のデータ移行は数 MB に達することがあるため
+  // 全 API より緩めに設定する。テストで 413 を検証するために小さい値で上書きできるようにしている。
+  migrateBodyLimit?: string;
+}
+
+export function createApp(options: CreateAppOptions = {}): Express {
+  const { migrateBodyLimit = '10mb' } = options;
   const app = express();
   const CACHE_VERSION = Date.now().toString();
 
   // ミドルウェア
   app.use(cors());
+  // /api/migrate だけは大きめのボディ（ログイン時のローカルデータ一括投入）を許す。
+  // body-parser は req._body が既に立っていると no-op になるため、グローバルより前に
+  // パス限定のパーサを挟むことで「migrate は大きめ・他は小さめ」を両立させる。
+  app.use('/api/migrate', express.json({ limit: migrateBodyLimit }));
   app.use(express.json());
 
   // 構造化ロギング（リクエスト毎に req.id を採番し、レスポンス終了時に 1 行出す）
