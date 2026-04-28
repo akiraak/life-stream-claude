@@ -4,7 +4,8 @@
 
 ## 機能開発
 - [ ] アイテム編集ダイアログから削除を削除 [plan](docs/plans/remove-delete-from-item-edit-dialog.md)
-- [ ] サービスの状況をメールで定期報告
+- [ ] サービスの状況をメールで定期報告 [plan](docs/plans/service-status-email-report.md)
+- [ ] AI のトークン使用量を記録して料金集計できるようにする（`gemini-service.ts` で `usageMetadata` を取り出して `ai_usage` テーブルに保存、モデル別単価表で円換算。preview モデルは無料扱い。完了後にステータス報告メールに `cost` 行を追加）
 
 - [ ] ログインコードをサービスのメアドから送る
 - [ ] ログイン中でオフライン状態の時の挙動のチェック
