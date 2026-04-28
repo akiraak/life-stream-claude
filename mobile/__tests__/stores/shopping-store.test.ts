@@ -427,3 +427,41 @@ describe('shopping-store (setMode)', () => {
     expect(useShoppingStore.getState().items).toHaveLength(1);
   });
 });
+
+// auth-store.logout は items/dishes を画面に残すため、`setMode('local')` ではなく
+// `useShoppingStore.setState({ mode: 'local' })` を直接呼ぶ意図的迂回を持つ。
+// Phase 3 で backend 抽象を入れた後も、この迂回が正しく機能すること
+// （= mode 切替後のアクションが local backend を選ぶこと）を担保する。
+describe('shopping-store (logout pathway: setState mode bypass)', () => {
+  it('keeps items/dishes when mode is flipped via setState', async () => {
+    resetStore('server');
+    useShoppingStore.setState({
+      items: [makeItem({ id: 1, name: 'A' })],
+      dishes: [makeDish({ id: 10, name: 'カレー' })],
+    });
+
+    useShoppingStore.setState({ mode: 'local' });
+
+    const state = useShoppingStore.getState();
+    expect(state.mode).toBe('local');
+    expect(state.items).toHaveLength(1);
+    expect(state.dishes).toHaveLength(1);
+  });
+
+  it('routes subsequent actions through the local backend after setState bypass', async () => {
+    resetStore('server');
+    useShoppingStore.setState({
+      items: [makeItem({ id: 1, name: 'A' })],
+      dishes: [],
+      nextLocalId: -1,
+    });
+
+    useShoppingStore.setState({ mode: 'local' });
+    const item = await useShoppingStore.getState().addItem('B');
+
+    expect(shopping.createItem).not.toHaveBeenCalled();
+    expect(item.id).toBe(-1);
+    expect(useShoppingStore.getState().items.map((i) => i.id)).toEqual([-1, 1]);
+    expect(useShoppingStore.getState().nextLocalId).toBe(-2);
+  });
+});

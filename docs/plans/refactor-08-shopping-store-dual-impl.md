@@ -138,12 +138,37 @@ mode 分岐を潰す代わりに backend 抽象は作らず、各アクション
 
 ### Phase 3: `ShoppingBackend` 抽象の導入
 
-- [ ] `mobile/src/stores/backends/shopping-backend.ts` を新設し、interface と
+- [x] `mobile/src/stores/backends/shopping-backend.ts` を新設し、interface と
   `LocalShoppingBackend` / `ServerShoppingBackend` を実装
-- [ ] ストアは `mode` から backend を選び、アクション本体は単一に
-- [ ] ID 採番（local の `nextLocalId`）は LocalBackend 内に閉じ込める
-- [ ] `setMode` の役割は「保持データを切る + backend 切替」になるよう整理。
+- [x] ストアは `mode` から backend を選び、アクション本体は単一に
+- [x] ID 採番（local の `nextLocalId`）は LocalBackend 内に閉じ込める
+- [x] `setMode` の役割は「保持データを切る + backend 切替」になるよう整理。
   ログアウト時の「データを残しつつ mode だけ戻す」迂回は引き続きサポート（テスト追加）
+
+> 完了メモ（2026-04-27）:
+> - `shopping-backend.ts` に `ShoppingBackend` interface と
+>   `createLocalShoppingBackend(allocator)` / `createServerShoppingBackend()` を実装。
+>   factory 形式にして `class` を避け、ID allocator は注入。LocalBackend は loadAll で
+>   `null` を返す規約にし、その他 update / delete / link / unlink / reorder / cache 系は
+>   no-op、createItem / createDish のみ負 ID で record を組み立てて返す
+> - `shopping-store.ts` の各アクションから `if (mode === 'local') ... else ...` 分岐を
+>   排除し、`backend = backendFor()` → `await backend.xxx(...)` → 共通 `set(...)` に統一。
+>   backend インスタンスは store 構築時に 1 度だけ生成し、`backendFor()` が
+>   `get().mode` を毎回読み直すので、`setState({ mode: 'local' })` 迂回でも次のアクションが
+>   正しく local backend を選ぶ（auth-store.logout 経路の温存）
+> - `nextLocalId` の採番は `LocalShoppingBackend` の allocator closure に閉じ込め、
+>   store の `set/get` に委譲する形にした。永続化スキーマ（`partialize`）は変更なし
+> - reorder 系（`reorderItems` / `reorderDishes` / `reorderDishItems`）は本タスクの
+>   非スコープのため、現状の非対称（server は state を呼び出し側に任せる）を保つ。
+>   `if (mode === 'local')` の早期 state 更新だけは残し、その後 `backend.reorder*` を呼ぶ
+>   （local backend は no-op、server backend は API 呼出）。完全な単一化は refactor-09 で
+>   `index.tsx` の `setState` 直書きと一緒に整理する
+> - `loadAll` の `loading` フラグはサーバモード時だけ立てる従前挙動を保つために
+>   `if (mode === 'local')` の早期 return を残した（local の loadAll は dish.items 派生
+>   再構築のみで瞬時に終わるため、loading フラグを立てるとフリッカーになる）
+> - 新規テスト 2 件追加: `setState({ mode: 'local' })` で items/dishes が残ること、
+>   迂回後の `addItem` が local backend を選んで負 ID を採番し API を叩かないこと。
+>   `npm test` 全 81 件グリーン（既存 79 + 新規 2）。`tsc --noEmit` もクリーン
 
 ### Phase 4: recipe-store にも同じパターンを適用
 
