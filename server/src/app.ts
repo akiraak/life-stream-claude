@@ -12,7 +12,7 @@ import { adminRouter } from './routes/admin';
 import { aiRouter } from './routes/ai';
 import { dishesRouter } from './routes/dishes';
 import { savedRecipesRouter } from './routes/saved-recipes';
-import { migrateRouter } from './routes/migrate';
+import { migrateRouter, migratePayloadTooLargeHandler } from './routes/migrate';
 import { docsRouter } from './routes/docs';
 import { logger } from './lib/logger';
 
@@ -34,7 +34,10 @@ export function createApp(options: CreateAppOptions = {}): Express {
   // /api/migrate だけは大きめのボディ（ログイン時のローカルデータ一括投入）を許す。
   // body-parser は req._body が既に立っていると no-op になるため、グローバルより前に
   // パス限定のパーサを挟むことで「migrate は大きめ・他は小さめ」を両立させる。
-  app.use('/api/migrate', express.json({ limit: migrateBodyLimit }));
+  // 上限超過時は body-parser が PayloadTooLargeError を投げるので、その直後に
+  // migrate 専用の 413 ハンドラを挟んで日本語メッセージに塗り潰す（router 内の
+  // error middleware では app レベルの body parser 由来エラーを捕捉できない）。
+  app.use('/api/migrate', express.json({ limit: migrateBodyLimit }), migratePayloadTooLargeHandler);
   app.use(express.json());
 
   // 構造化ロギング（リクエスト毎に req.id を採番し、レスポンス終了時に 1 行出す）

@@ -1,4 +1,4 @@
-import { Router, Request, Response, NextFunction } from 'express';
+import { Router, Request, Response, NextFunction, ErrorRequestHandler } from 'express';
 import {
   migrateLocalData,
   type LocalDish,
@@ -25,3 +25,21 @@ migrateRouter.post('/', (req: Request, res: Response, next: NextFunction) => {
     next(err);
   }
 });
+
+// body-parser の PayloadTooLargeError を 413 + 日本語メッセージで返す。
+// 汎用 errorHandler に流すと 'request entity too large' の生メッセージが
+// モバイル側 Alert にそのまま出てしまうため、migrate スコープでだけ塗り潰す。
+// migrateRouter ではなく app.use('/api/migrate', bodyParser, このハンドラ) として
+// マウントする必要がある（body parser は app レベルで走るので、
+// router 内の error middleware では捕捉できない）。
+export const migratePayloadTooLargeHandler: ErrorRequestHandler = (err, _req, res, next) => {
+  if (err && (err as { type?: string }).type === 'entity.too.large') {
+    res.status(413).json({
+      success: false,
+      data: null,
+      error: 'データが多すぎて移行できませんでした。一部を削除してから再度お試しください。',
+    });
+    return;
+  }
+  next(err);
+};

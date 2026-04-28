@@ -15,7 +15,7 @@
 - [ ] アイテム編集ダイアログから削除を削除
 - [ ] ログインでデータ移行したら「request entity too large」の表示 [plan](docs/plans/migrate-payload-too-large.md)
   - [x] Phase 1: `/api/migrate` のボディ上限を 10MB に引き上げ
-  - [ ] Phase 2: PayloadTooLarge を 413 + 日本語メッセージで返す
+  - [x] Phase 2: PayloadTooLarge を 413 + 日本語メッセージで返す
   - [ ] Phase 3: モバイル側 `runLoginMigration` の 413 フォールバック整備
 - [ ] basket@chobi.me を使えるようにする
 - [ ] サービスの状況をメールで定期報告

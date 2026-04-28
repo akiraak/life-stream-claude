@@ -90,6 +90,26 @@ describe('POST /api/migrate', () => {
     expect(Object.keys(res.body.data.savedRecipeIdMap)).toHaveLength(200);
   });
 
+  it('returns 413 with Japanese message when body exceeds the configured limit', async () => {
+    // DI で小さい上限の app を作り、本番上限（10MB）相当のダミーボディを生成しなくても
+    // 413 経路が踏めるようにする。
+    const smallApp = createApp({ migrateBodyLimit: '1kb' });
+    const { headers } = createAuthedUser('migrate-too-large@example.com');
+
+    const filler = 'a'.repeat(2048); // 1kb 上限を確実に超えるサイズ
+    const res = await request(smallApp)
+      .post('/api/migrate')
+      .set(headers)
+      .send({ dishes: [{ localId: 'd1', name: filler }] });
+
+    expect(res.status).toBe(413);
+    expect(res.body).toEqual({
+      success: false,
+      data: null,
+      error: 'データが多すぎて移行できませんでした。一部を削除してから再度お試しください。',
+    });
+  });
+
   it('isolates imported data per user', async () => {
     const alice = createAuthedUser('migrate-a@example.com');
     const bob = createAuthedUser('migrate-b@example.com');
