@@ -3,7 +3,6 @@
 > 作業が完了した項目を DONE.md に移動する。docs/plans/ にプランファイルがある場合は docs/plans/archive に移動させる。
 
 ## 機能開発
-- [ ] アイテム編集ダイアログから削除を削除 [plan](docs/plans/remove-delete-from-item-edit-dialog.md)
 - [ ] AI のトークン使用量を記録して料金集計できるようにする（`gemini-service.ts` で `usageMetadata` を取り出して `ai_usage` テーブルに保存、モデル別単価表で円換算。preview モデルは無料扱い。完了後にステータス報告メールに `cost` 行を追加）
 - [ ] 未ログイン/ログイン/有料の機能分けユーザー視点も考慮しながら明確にする
 

@@ -38,7 +38,7 @@ export default function ShoppingListScreen() {
   const [confirmDish, setConfirmDish] = useState<Dish | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [activeDish, setActiveDish] = useState<Dish | null>(null);
-  const [editItem, setEditItem] = useState<{ id: number; name: string } | null>(null);
+  const [editItem, setEditItem] = useState<{ id: number; name: string; dishId: number | null } | null>(null);
 
   const drag = useDishDragCoordinator({
     onMoveSuccess: (targetDishId) => {
@@ -158,20 +158,29 @@ export default function ShoppingListScreen() {
   }, [addDish]);
 
   const handlePressItemName = useCallback((id: number, name: string) => {
-    setEditItem({ id, name });
+    const dishId = itemDishMap.get(id) ?? null;
+    setEditItem({ id, name, dishId });
     setModalMode('edit');
-    setPresetDishId(itemDishMap.get(id) ?? null);
+    setPresetDishId(dishId);
     setModalVisible(true);
   }, [itemDishMap]);
 
   const handleUpdateItem = useCallback(async (name: string, dishId: number | null) => {
     if (!editItem) return;
     setModalVisible(false);
+    const nameChanged = name !== editItem.name;
+    const dishChanged = dishId !== editItem.dishId;
+    if (!nameChanged && !dishChanged) {
+      setEditItem(null);
+      return;
+    }
     try {
-      if (name !== editItem.name) {
+      if (nameChanged) {
         await updateItemName(editItem.id, name);
       }
-      await moveItemToDish(editItem.id, dishId);
+      if (dishChanged) {
+        await moveItemToDish(editItem.id, dishId);
+      }
       setToast(`${name} を更新しました`);
     } catch {
       Alert.alert('エラー', '更新に失敗しました');

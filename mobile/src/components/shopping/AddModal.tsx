@@ -74,6 +74,19 @@ export function AddModal({
     }
   }, [name, mode, selectedDishId, onSubmitItem, onSubmitDish, onUpdateItem]);
 
+  // 編集モードではボタン廃止。外タップ／キーボード確定で保存（空欄なら削除）。
+  const handleEditDismiss = useCallback(() => {
+    const trimmed = name.trim();
+    if (!trimmed) {
+      onDeleteItem?.();
+    } else {
+      onUpdateItem?.(trimmed, selectedDishId);
+    }
+  }, [name, selectedDishId, onUpdateItem, onDeleteItem]);
+
+  const handleOverlayPress = mode === 'edit' ? handleEditDismiss : onClose;
+  const handleEditingSubmit = mode === 'edit' ? handleEditDismiss : handleSubmit;
+
   if (!mounted) return null;
 
   return (
@@ -83,7 +96,7 @@ export function AddModal({
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         pointerEvents="box-none"
       >
-        <TouchableWithoutFeedback onPress={onClose}>
+        <TouchableWithoutFeedback onPress={handleOverlayPress}>
           <Animated.View style={[styles.overlay, { opacity: fadeAnim }]} />
         </TouchableWithoutFeedback>
 
@@ -104,7 +117,7 @@ export function AddModal({
             placeholderTextColor={colors.textMuted}
             value={name}
             onChangeText={setName}
-            onSubmitEditing={handleSubmit}
+            onSubmitEditing={handleEditingSubmit}
             autoComplete="off"
             importantForAutofill="no"
             returnKeyType="done"
@@ -148,23 +161,20 @@ export function AddModal({
             </View>
           )}
 
-          <View style={styles.buttons}>
-            {mode === 'edit' && (
-              <TouchableOpacity style={[styles.deleteBtn, { borderColor: colors.danger }]} onPress={onDeleteItem}>
-                <Text style={[styles.deleteBtnText, { color: colors.danger }]}>削除</Text>
+          {mode !== 'edit' && (
+            <View style={styles.buttons}>
+              <TouchableOpacity style={[styles.cancelBtn, { borderColor: colors.border }]} onPress={onClose}>
+                <Text style={[styles.cancelText, { color: colors.textMuted }]}>キャンセル</Text>
               </TouchableOpacity>
-            )}
-            <TouchableOpacity style={[styles.cancelBtn, { borderColor: colors.border }]} onPress={onClose}>
-              <Text style={[styles.cancelText, { color: colors.textMuted }]}>キャンセル</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.submitBtn, { backgroundColor: colors.primary, opacity: !name.trim() ? 0.5 : 1 }]}
-              onPress={handleSubmit}
-              disabled={!name.trim()}
-            >
-              <Text style={styles.submitText}>{mode === 'edit' ? '保存' : '追加'}</Text>
-            </TouchableOpacity>
-          </View>
+              <TouchableOpacity
+                style={[styles.submitBtn, { backgroundColor: colors.primary, opacity: !name.trim() ? 0.5 : 1 }]}
+                onPress={handleSubmit}
+                disabled={!name.trim()}
+              >
+                <Text style={styles.submitText}>追加</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </Animated.View>
       </KeyboardAvoidingView>
     </View>
@@ -221,16 +231,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 10,
     marginTop: 4,
-  },
-  deleteBtn: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-    borderWidth: 1,
-  },
-  deleteBtnText: {
-    fontSize: 15,
   },
   cancelBtn: {
     flex: 1,
