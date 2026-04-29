@@ -14,13 +14,5 @@
 - [ ] 料理レシピページのステップを見るのなかのテキストが画面右端からはみ出てる
 
 ## 開発管理画面
-- [ ] 開発管理画面の機能を切り出して他のプロジェクトからもすぐ使えるようにする（vibeboard として独立リポジトリ化） [plan](docs/plans/vibeboard-extraction.md)
-  - [x] Phase 1: vibeboard 環境構築（足場・CLI エントリ・ビルド通し）
-  - [x] Phase 2: 汎用化（ROOT_DIR / ブランド名のハードコード除去）
-  - [x] Phase 3: `vibeboard init` で親 CLAUDE.md にスニペット注入
-  - [x] Phase 4: README.md の整備（前提・Quick start・スニペット全文）
-  - [x] Phase 5: GitHub 経由で直接実行できる状態にする（`npx -y github:akiraak/vibeboard`）
-  - [x] Phase 6: cooking-basket 側を vibeboard に置き換え（dev-admin/ 削除）
-  - [ ] Phase 7: `vibeboard.config.json` 対応（任意・カテゴリ / 編集対象を可変化）
 - [ ] plansでアーカイブにしたら即アーカイブに移動した表示に反映して
 
